@@ -1,0 +1,69 @@
+{
+  "validation_passed": true,
+  "executed_at": "2026-10-14T19:50:27.034596+00:00",
+  "openaq": {
+    "source": "OpenAQ_Pollutants",
+    "total_rows": 1824,
+    "passed": true,
+    "error_count": 0,
+    "warning_count": 0,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "future_timestamps_count": 0,
+      "observed_parameters": [
+        "co",
+        "nh3",
+        "no2",
+        "o3",
+        "pm10",
+        "pm25",
+        "so2"
+      ],
+      "unknown_parameters": [],
+      "units_per_parameter": {
+        "co": [
+          "mg/m3"
+        ],
+        "nh3": [
+          "ug/m3"
+        ],
+        "no2": [
+          "ug/m3"
+        ],
+        "o3": [
+          "ug/m3"
+        ],
+        "pm10": [
+          "ug/m3"
+        ],
+        "pm25": [
+          "ug/m3"
+        ],
+        "so2": [
+          "ug/m3"
+        ]
+      },
+      "inconsistent_units": {},
+      "non_numeric_or_nan_values": 0,
+      "sentinel_values_count": 0,
+      "negative_values_count": 0,
+      "duplicate_observations": 0
+    }
+  },
+  "weather": {
+    "source": "OpenMeteo_Weather",
+    "total_rows": 52632,
+    "passed": true,
+    "error_count": 0,
+    "warning_count": 0,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "missing_weather_variables": [],
+      "future_timestamps_count": 0,
+      "range_violations": {},
+      "duplicate_timestamps": 0
+    }
+  }
+}

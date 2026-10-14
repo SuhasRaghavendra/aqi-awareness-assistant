@@ -1,0 +1,110 @@
+{
+  "stage": "validate",
+  "start_time": "2026-10-14T19:50:27.095767+00:00",
+  "end_time": "2026-10-14T19:50:27.100391+00:00",
+  "duration_s": 0.005,
+  "git_commit": "c112576",
+  "params_hash": "542931e8d09b",
+  "inputs": [
+    {
+      "path": "data\\raw\\openaq",
+      "exists": true,
+      "size_bytes": 4096
+    },
+    {
+      "path": "data\\raw\\weather",
+      "exists": true,
+      "size_bytes": 0
+    },
+    {
+      "path": "configs\\stations_selected.csv",
+      "exists": true,
+      "size_bytes": 9276,
+      "rows": 24,
+      "columns": [
+        "location_id",
+        "name",
+        "locality",
+        "provider",
+        "latitude",
+        "longitude",
+        "sensor_count",
+        "parameters",
+        "parameter_units",
+        "has_pm25",
+        "has_pm10",
+        "has_pm",
+        "datetime_first_utc",
+        "datetime_last_utc",
+        "active_years",
+        "target_city",
+        "selected",
+        "selection_status"
+      ],
+      "n_columns": 18
+    }
+  ],
+  "outputs": [
+    {
+      "path": "reports\\metrics\\data_validation.json",
+      "exists": true,
+      "size_bytes": 1446
+    }
+  ],
+  "frame_stats": {
+    "input": {
+      "rows": 1824,
+      "n_columns": 9,
+      "null_pct": {
+        "location_id": 0.0,
+        "sensors_id": 0.0,
+        "location": 0.0,
+        "datetime": 0.0,
+        "lat": 0.0,
+        "lon": 0.0,
+        "parameter": 0.0,
+        "units": 0.0,
+        "value": 0.0
+      }
+    },
+    "output": {
+      "rows": 52632,
+      "n_columns": 10,
+      "null_pct": {
+        "time": 0.0,
+        "temperature_2m": 0.0,
+        "relative_humidity_2m": 0.0,
+        "surface_pressure": 0.0,
+        "precipitation": 0.0,
+        "wind_speed_10m": 0.0,
+        "wind_direction_10m": 0.0,
+        "dew_point_2m": 0.0,
+        "boundary_layer_height": 0.0,
+        "location_id": 0.0
+      }
+    }
+  },
+  "drops": [],
+  "total_dropped": 0,
+  "cols_added": [
+    "boundary_layer_height",
+    "dew_point_2m",
+    "precipitation",
+    "relative_humidity_2m",
+    "surface_pressure",
+    "temperature_2m",
+    "time",
+    "wind_direction_10m",
+    "wind_speed_10m"
+  ],
+  "cols_removed": [
+    "datetime",
+    "lat",
+    "location",
+    "lon",
+    "parameter",
+    "sensors_id",
+    "units",
+    "value"
+  ]
+}

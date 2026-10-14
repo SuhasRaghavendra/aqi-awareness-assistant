@@ -94,3 +94,47 @@
 **Columns removed:** `active_years`, `datetime_first_utc`, `datetime_last_utc`, `has_pm`, `has_pm10`, `has_pm25`, `latitude`, `locality`, `longitude`, `name`, `parameter_units`, `parameters`, `provider`, `selected`, `selection_status`, `sensor_count`, `target_city`
 
 ---
+
+## validate — 2026-10-14
+
+| Field | Value |
+|---|---|
+| Stage | `validate` |
+| Start | 2026-10-14T19:48:46.506857+00:00 |
+| End | 2026-10-14T19:48:46.512051+00:00 |
+| Duration | 0.0 s |
+| Git commit | `c112576` |
+| Params hash | `542931e8d09b` |
+| Rows in | 1,824 |
+| Rows out | 52,632 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `boundary_layer_height`, `dew_point_2m`, `precipitation`, `relative_humidity_2m`, `surface_pressure`, `temperature_2m`, `time`, `wind_direction_10m`, `wind_speed_10m`
+**Columns removed:** `datetime`, `lat`, `location`, `lon`, `parameter`, `sensors_id`, `units`, `value`
+
+---
+
+## validate — 2026-10-14
+
+| Field | Value |
+|---|---|
+| Stage | `validate` |
+| Start | 2026-10-14T19:50:27.095767+00:00 |
+| End | 2026-10-14T19:50:27.100391+00:00 |
+| Duration | 0.0 s |
+| Git commit | `c112576` |
+| Params hash | `542931e8d09b` |
+| Rows in | 1,824 |
+| Rows out | 52,632 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `boundary_layer_height`, `dew_point_2m`, `precipitation`, `relative_humidity_2m`, `surface_pressure`, `temperature_2m`, `time`, `wind_direction_10m`, `wind_speed_10m`
+**Columns removed:** `datetime`, `lat`, `location`, `lon`, `parameter`, `sensors_id`, `units`, `value`
+
+---
