@@ -50,3 +50,47 @@
 **Columns removed:** none
 
 ---
+
+## download_openaq — 2026-10-14
+
+| Field | Value |
+|---|---|
+| Stage | `download_openaq` |
+| Start | 2026-10-14T19:32:04.357340+00:00 |
+| End | 2026-10-14T19:32:04.364227+00:00 |
+| Duration | 0.0 s |
+| Git commit | `afca63f` |
+| Params hash | `542931e8d09b` |
+| Rows in | 3 |
+| Rows out | 12 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `download_time`, `local_path`, `month`, `s3_key`, `sha256`, `size_bytes`, `status`, `year`
+**Columns removed:** `active_years`, `datetime_first_utc`, `datetime_last_utc`, `has_pm`, `has_pm10`, `has_pm25`, `latitude`, `locality`, `longitude`, `name`, `parameter_units`, `parameters`, `provider`, `selected`, `selection_status`, `sensor_count`, `target_city`
+
+---
+
+## download_weather — 2026-10-14
+
+| Field | Value |
+|---|---|
+| Stage | `download_weather` |
+| Start | 2026-10-14T19:33:26.141101+00:00 |
+| End | 2026-10-14T19:33:26.146632+00:00 |
+| Duration | 0.0 s |
+| Git commit | `afca63f` |
+| Params hash | `542931e8d09b` |
+| Rows in | 3 |
+| Rows out | 6 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `download_time`, `end_date`, `local_path`, `model_source`, `rows_count`, `sha256`, `size_bytes`, `start_date`, `status`, `year`
+**Columns removed:** `active_years`, `datetime_first_utc`, `datetime_last_utc`, `has_pm`, `has_pm10`, `has_pm25`, `latitude`, `locality`, `longitude`, `name`, `parameter_units`, `parameters`, `provider`, `selected`, `selection_status`, `sensor_count`, `target_city`
+
+---
