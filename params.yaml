@@ -1,0 +1,76 @@
+seed: 42
+
+data:
+  window_start: "2019-01-01"
+  snapshot_end: "2026-09-30"
+  cities:
+    - Bengaluru
+    - Delhi
+    - Mumbai
+    - Chennai
+    - Kolkata
+    - Hyderabad
+    - Pune
+    - Ahmedabad
+    - Lucknow
+  min_years_per_station: 3
+  min_hourly_completeness: 0.60
+
+units:
+  target_unit_ugm3: true
+  co_unit: "mg/m3"
+
+aggregation:
+  min_hours_per_day: 16
+  rolling_8h_pollutants:
+    - co
+    - o3
+
+aqi:
+  min_subindices: 3
+  require_pm: true
+
+weather:
+  variables:
+    - temperature_2m
+    - relative_humidity_2m
+    - surface_pressure
+    - precipitation
+    - wind_speed_10m
+    - wind_direction_10m
+
+clean:
+  max_missing_frac_row: 0.5
+  ffill_limit_days: 2
+  winsor_lower_q: 0.005
+  winsor_upper_q: 0.995
+  drop_cols_over_missing: 0.7
+
+features:
+  horizon_days: 1
+  lags:
+    - 1
+    - 2
+    - 3
+    - 7
+  rolling_windows:
+    - 3
+    - 7
+    - 14
+  use_calendar: true
+  use_station_embedding: "city_onehot"
+
+split:
+  train_end: "2023-12-31"
+  val_end: "2024-12-31"
+
+train:
+  models:
+    - persistence
+    - seasonal_naive
+    - city_month_mean
+    - ridge
+    - random_forest
+    - xgboost
+    - lightgbm
+  cv_folds: 4
