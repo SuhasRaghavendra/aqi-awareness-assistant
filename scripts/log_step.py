@@ -110,7 +110,7 @@ def _summarise_metrics(metrics: dict[str, dict]) -> str:
         rows_out = data.get("frame_stats", {}).get("output", {}).get("rows", "?")
         dropped = data.get("total_dropped", "?")
         dur = data.get("duration_s", "?")
-        lines.append(f"- **{name}**: rows {rows_in} → {rows_out}  |  dropped {dropped}  |  {dur}s")
+        lines.append(f"- **{name}**: rows {rows_in} -> {rows_out}  |  dropped {dropped}  |  {dur}s")
     return "\n".join(lines)
 
 

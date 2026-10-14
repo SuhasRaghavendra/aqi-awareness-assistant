@@ -5,3 +5,4 @@
 | Step | Date | Title | Phase | Author | Commit | Entry |
 |---|---|---|---|---|---|---|
 | 001 | 2026-10-14 | Repo scaffold and logging scaffold | 2 | <student-A> | `dac49f45050f` | [001-repo-scaffold-and-logging-scaffold.md](001-repo-scaffold-and-logging-scaffold.md) |
+| 002 | 2026-10-14 | Station discovery and selection | 1 | <student-A> | `9ac854f0df70` | [002-station-discovery-and-selection.md](002-station-discovery-and-selection.md) |

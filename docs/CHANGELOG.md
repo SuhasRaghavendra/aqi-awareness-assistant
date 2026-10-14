@@ -10,6 +10,12 @@ and include the step number, e.g. `feat(step-014): compute CPCB sub-indices`.
 ## [Unreleased]
 
 ### Added
+- **Step 002** (Phase 1): Station discovery and selection — [002-station-discovery-and-selection.md](logbook/002-station-discovery-and-selection.md) — 2026-10-15
+
+### Added
+- **Step 002** (Phase 1): Station discovery and selection — [002-station-discovery-and-selection.md](logbook/002-station-discovery-and-selection.md) — 2026-10-15
+
+### Added
 - **Step 001** (Phase 2): Repo scaffold and logging scaffold — [001-repo-scaffold-and-logging-scaffold.md](logbook/001-repo-scaffold-and-logging-scaffold.md) — 2026-10-14
 
 ### Added
