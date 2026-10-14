@@ -7,3 +7,4 @@
 | 001 | 2026-10-14 | Repo scaffold and logging scaffold | 2 | <student-A> | `dac49f45050f` | [001-repo-scaffold-and-logging-scaffold.md](001-repo-scaffold-and-logging-scaffold.md) |
 | 002 | 2026-10-14 | Station discovery and selection | 1 | <student-A> | `9ac854f0df70` | [002-station-discovery-and-selection.md](002-station-discovery-and-selection.md) |
 | 003 | 2026-10-14 | Data acquisition OpenAQ and weather | 1 | <student-A> | `987906331a87` | [003-data-acquisition-openaq-and-weather.md](003-data-acquisition-openaq-and-weather.md) |
+| 004 | 2026-10-14 | Data validation and data card | 1 | <student-A> | `92251db8deb0` | [004-data-validation-and-data-card.md](004-data-validation-and-data-card.md) |

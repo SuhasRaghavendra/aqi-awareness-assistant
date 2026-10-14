@@ -10,6 +10,9 @@ and include the step number, e.g. `feat(step-014): compute CPCB sub-indices`.
 ## [Unreleased]
 
 ### Added
+- **Step 004** (Phase 1): Data validation and data card — [004-data-validation-and-data-card.md](logbook/004-data-validation-and-data-card.md) — 2026-10-15
+
+### Added
 - **Step 003** (Phase 1): Data acquisition OpenAQ and weather — [003-data-acquisition-openaq-and-weather.md](logbook/003-data-acquisition-openaq-and-weather.md) — 2026-10-15
 
 ### Added

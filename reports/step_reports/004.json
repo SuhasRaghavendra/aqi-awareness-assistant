@@ -1,0 +1,515 @@
+{
+  "step": "004",
+  "title": "Data validation and data card",
+  "phase": 1,
+  "timestamp_ist": "2026-10-14T19:51:30+05:30",
+  "branch": "main",
+  "commit": "92251db8deb0bc27324fc16c90ccc53368d8d4d8",
+  "mlflow_run": "N/A",
+  "git_status": "",
+  "git_diff_stat": "docs/data_card.md                    | 121 +++++++++++++++\n docs/data_change_log.md              |  44 ++++++\n docs/decisions.md                    |   1 +\n reports/metrics/data_validation.json |  69 +++++++++\n reports/metrics/validate_stats.json  | 110 ++++++++++++++\n src/data/ingest.py                   | 186 ++++++++++++++++++++++-\n src/data/validate.py                 | 280 ++++++++++++++++++++++++++++++++++-\n tests/test_validate.py               | 153 +++++++++++++++++++\n 8 files changed, 960 insertions(+), 4 deletions(-)",
+  "dvc_status": "(command not found: dvc)",
+  "dvc_diff": "(command not found: dvc)",
+  "metrics_summary": {
+    "discover_stations_stats": {
+      "stage": "discover_stations",
+      "start_time": "2026-10-14T18:47:48.783315+00:00",
+      "end_time": "2026-10-14T18:47:49.784728+00:00",
+      "duration_s": 1.001,
+      "git_commit": "6d00fbe",
+      "params_hash": "542931e8d09b",
+      "inputs": [],
+      "outputs": [
+        {
+          "path": "data\\raw\\station_catalog.csv",
+          "exists": true,
+          "size_bytes": 10126,
+          "rows": 27,
+          "columns": [
+            "location_id",
+            "name",
+            "locality",
+            "provider",
+            "latitude",
+            "longitude",
+            "sensor_count",
+            "parameters",
+            "parameter_units",
+            "has_pm25",
+            "has_pm10",
+            "has_pm",
+            "datetime_first_utc",
+            "datetime_last_utc",
+            "active_years",
+            "target_city",
+            "selected",
+            "selection_status"
+          ],
+          "n_columns": 18
+        },
+        {
+          "path": "configs\\stations_selected.csv",
+          "exists": true,
+          "size_bytes": 9276,
+          "rows": 24,
+          "columns": [
+            "location_id",
+            "name",
+            "locality",
+            "provider",
+            "latitude",
+            "longitude",
+            "sensor_count",
+            "parameters",
+            "parameter_units",
+            "has_pm25",
+            "has_pm10",
+            "has_pm",
+            "datetime_first_utc",
+            "datetime_last_utc",
+            "active_years",
+            "target_city",
+            "selected",
+            "selection_status"
+          ],
+          "n_columns": 18
+        }
+      ],
+      "frame_stats": {
+        "input": {
+          "rows": 27,
+          "n_columns": 18,
+          "null_pct": {
+            "location_id": 0.0,
+            "name": 0.0,
+            "locality": 0.0,
+            "provider": 0.0,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "sensor_count": 0.0,
+            "parameters": 0.0,
+            "parameter_units": 0.0,
+            "has_pm25": 0.0,
+            "has_pm10": 0.0,
+            "has_pm": 0.0,
+            "datetime_first_utc": 0.0,
+            "datetime_last_utc": 0.0,
+            "active_years": 0.0,
+            "target_city": 0.0,
+            "selected": 0.0,
+            "selection_status": 0.0
+          }
+        },
+        "output": {
+          "rows": 24,
+          "n_columns": 18,
+          "null_pct": {
+            "location_id": 0.0,
+            "name": 0.0,
+            "locality": 0.0,
+            "provider": 0.0,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "sensor_count": 0.0,
+            "parameters": 0.0,
+            "parameter_units": 0.0,
+            "has_pm25": 0.0,
+            "has_pm10": 0.0,
+            "has_pm": 0.0,
+            "datetime_first_utc": 0.0,
+            "datetime_last_utc": 0.0,
+            "active_years": 0.0,
+            "target_city": 0.0,
+            "selected": 0.0,
+            "selection_status": 0.0
+          }
+        }
+      },
+      "drops": [
+        {
+          "reason": "Excluded (not meeting geographic scope or minimum criteria)",
+          "n": 3
+        }
+      ],
+      "total_dropped": 3,
+      "cols_added": [],
+      "cols_removed": []
+    },
+    "download_openaq_stats": {
+      "stage": "download_openaq",
+      "start_time": "2026-10-14T19:32:04.357340+00:00",
+      "end_time": "2026-10-14T19:32:04.364227+00:00",
+      "duration_s": 0.007,
+      "git_commit": "afca63f",
+      "params_hash": "542931e8d09b",
+      "inputs": [
+        {
+          "path": "configs\\stations_selected.csv",
+          "exists": true,
+          "size_bytes": 9276,
+          "rows": 24,
+          "columns": [
+            "location_id",
+            "name",
+            "locality",
+            "provider",
+            "latitude",
+            "longitude",
+            "sensor_count",
+            "parameters",
+            "parameter_units",
+            "has_pm25",
+            "has_pm10",
+            "has_pm",
+            "datetime_first_utc",
+            "datetime_last_utc",
+            "active_years",
+            "target_city",
+            "selected",
+            "selection_status"
+          ],
+          "n_columns": 18
+        }
+      ],
+      "outputs": [
+        {
+          "path": "data\\raw\\openaq_manifest.csv",
+          "exists": true,
+          "size_bytes": 3513,
+          "rows": 12,
+          "columns": [
+            "location_id",
+            "year",
+            "month",
+            "s3_key",
+            "local_path",
+            "size_bytes",
+            "sha256",
+            "download_time",
+            "status"
+          ],
+          "n_columns": 9
+        }
+      ],
+      "frame_stats": {
+        "input": {
+          "rows": 3,
+          "n_columns": 18,
+          "null_pct": {
+            "location_id": 0.0,
+            "name": 0.0,
+            "locality": 0.0,
+            "provider": 0.0,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "sensor_count": 0.0,
+            "parameters": 0.0,
+            "parameter_units": 0.0,
+            "has_pm25": 0.0,
+            "has_pm10": 0.0,
+            "has_pm": 0.0,
+            "datetime_first_utc": 0.0,
+            "datetime_last_utc": 0.0,
+            "active_years": 0.0,
+            "target_city": 0.0,
+            "selected": 0.0,
+            "selection_status": 0.0
+          }
+        },
+        "output": {
+          "rows": 12,
+          "n_columns": 9,
+          "null_pct": {
+            "location_id": 0.0,
+            "year": 0.0,
+            "month": 0.0,
+            "s3_key": 0.0,
+            "local_path": 0.0,
+            "size_bytes": 0.0,
+            "sha256": 0.0,
+            "download_time": 0.0,
+            "status": 0.0
+          }
+        }
+      },
+      "drops": [],
+      "total_dropped": 0,
+      "cols_added": [
+        "download_time",
+        "local_path",
+        "month",
+        "s3_key",
+        "sha256",
+        "size_bytes",
+        "status",
+        "year"
+      ],
+      "cols_removed": [
+        "active_years",
+        "datetime_first_utc",
+        "datetime_last_utc",
+        "has_pm",
+        "has_pm10",
+        "has_pm25",
+        "latitude",
+        "locality",
+        "longitude",
+        "name",
+        "parameter_units",
+        "parameters",
+        "provider",
+        "selected",
+        "selection_status",
+        "sensor_count",
+        "target_city"
+      ]
+    },
+    "download_weather_stats": {
+      "stage": "download_weather",
+      "start_time": "2026-10-14T19:33:26.141101+00:00",
+      "end_time": "2026-10-14T19:33:26.146632+00:00",
+      "duration_s": 0.005,
+      "git_commit": "afca63f",
+      "params_hash": "542931e8d09b",
+      "inputs": [
+        {
+          "path": "configs\\stations_selected.csv",
+          "exists": true,
+          "size_bytes": 9276,
+          "rows": 24,
+          "columns": [
+            "location_id",
+            "name",
+            "locality",
+            "provider",
+            "latitude",
+            "longitude",
+            "sensor_count",
+            "parameters",
+            "parameter_units",
+            "has_pm25",
+            "has_pm10",
+            "has_pm",
+            "datetime_first_utc",
+            "datetime_last_utc",
+            "active_years",
+            "target_city",
+            "selected",
+            "selection_status"
+          ],
+          "n_columns": 18
+        }
+      ],
+      "outputs": [
+        {
+          "path": "data\\raw\\weather_manifest.csv",
+          "exists": true,
+          "size_bytes": 1558,
+          "rows": 6,
+          "columns": [
+            "location_id",
+            "year",
+            "start_date",
+            "end_date",
+            "local_path",
+            "rows_count",
+            "size_bytes",
+            "sha256",
+            "model_source",
+            "download_time",
+            "status"
+          ],
+          "n_columns": 11
+        }
+      ],
+      "frame_stats": {
+        "input": {
+          "rows": 3,
+          "n_columns": 18,
+          "null_pct": {
+            "location_id": 0.0,
+            "name": 0.0,
+            "locality": 0.0,
+            "provider": 0.0,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "sensor_count": 0.0,
+            "parameters": 0.0,
+            "parameter_units": 0.0,
+            "has_pm25": 0.0,
+            "has_pm10": 0.0,
+            "has_pm": 0.0,
+            "datetime_first_utc": 0.0,
+            "datetime_last_utc": 0.0,
+            "active_years": 0.0,
+            "target_city": 0.0,
+            "selected": 0.0,
+            "selection_status": 0.0
+          }
+        },
+        "output": {
+          "rows": 6,
+          "n_columns": 11,
+          "null_pct": {
+            "location_id": 0.0,
+            "year": 0.0,
+            "start_date": 0.0,
+            "end_date": 0.0,
+            "local_path": 0.0,
+            "rows_count": 0.0,
+            "size_bytes": 0.0,
+            "sha256": 0.0,
+            "model_source": 0.0,
+            "download_time": 0.0,
+            "status": 0.0
+          }
+        }
+      },
+      "drops": [],
+      "total_dropped": 0,
+      "cols_added": [
+        "download_time",
+        "end_date",
+        "local_path",
+        "model_source",
+        "rows_count",
+        "sha256",
+        "size_bytes",
+        "start_date",
+        "status",
+        "year"
+      ],
+      "cols_removed": [
+        "active_years",
+        "datetime_first_utc",
+        "datetime_last_utc",
+        "has_pm",
+        "has_pm10",
+        "has_pm25",
+        "latitude",
+        "locality",
+        "longitude",
+        "name",
+        "parameter_units",
+        "parameters",
+        "provider",
+        "selected",
+        "selection_status",
+        "sensor_count",
+        "target_city"
+      ]
+    },
+    "validate_stats": {
+      "stage": "validate",
+      "start_time": "2026-10-14T19:50:27.095767+00:00",
+      "end_time": "2026-10-14T19:50:27.100391+00:00",
+      "duration_s": 0.005,
+      "git_commit": "c112576",
+      "params_hash": "542931e8d09b",
+      "inputs": [
+        {
+          "path": "data\\raw\\openaq",
+          "exists": true,
+          "size_bytes": 4096
+        },
+        {
+          "path": "data\\raw\\weather",
+          "exists": true,
+          "size_bytes": 0
+        },
+        {
+          "path": "configs\\stations_selected.csv",
+          "exists": true,
+          "size_bytes": 9276,
+          "rows": 24,
+          "columns": [
+            "location_id",
+            "name",
+            "locality",
+            "provider",
+            "latitude",
+            "longitude",
+            "sensor_count",
+            "parameters",
+            "parameter_units",
+            "has_pm25",
+            "has_pm10",
+            "has_pm",
+            "datetime_first_utc",
+            "datetime_last_utc",
+            "active_years",
+            "target_city",
+            "selected",
+            "selection_status"
+          ],
+          "n_columns": 18
+        }
+      ],
+      "outputs": [
+        {
+          "path": "reports\\metrics\\data_validation.json",
+          "exists": true,
+          "size_bytes": 1446
+        }
+      ],
+      "frame_stats": {
+        "input": {
+          "rows": 1824,
+          "n_columns": 9,
+          "null_pct": {
+            "location_id": 0.0,
+            "sensors_id": 0.0,
+            "location": 0.0,
+            "datetime": 0.0,
+            "lat": 0.0,
+            "lon": 0.0,
+            "parameter": 0.0,
+            "units": 0.0,
+            "value": 0.0
+          }
+        },
+        "output": {
+          "rows": 52632,
+          "n_columns": 10,
+          "null_pct": {
+            "time": 0.0,
+            "temperature_2m": 0.0,
+            "relative_humidity_2m": 0.0,
+            "surface_pressure": 0.0,
+            "precipitation": 0.0,
+            "wind_speed_10m": 0.0,
+            "wind_direction_10m": 0.0,
+            "dew_point_2m": 0.0,
+            "boundary_layer_height": 0.0,
+            "location_id": 0.0
+          }
+        }
+      },
+      "drops": [],
+      "total_dropped": 0,
+      "cols_added": [
+        "boundary_layer_height",
+        "dew_point_2m",
+        "precipitation",
+        "relative_humidity_2m",
+        "surface_pressure",
+        "temperature_2m",
+        "time",
+        "wind_direction_10m",
+        "wind_speed_10m"
+      ],
+      "cols_removed": [
+        "datetime",
+        "lat",
+        "location",
+        "lon",
+        "parameter",
+        "sensors_id",
+        "units",
+        "value"
+      ]
+    }
+  },
+  "changed_files": {},
+  "logbook_entry": "docs\\logbook\\004-data-validation-and-data-card.md"
+}
