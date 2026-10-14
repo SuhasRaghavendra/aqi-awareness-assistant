@@ -1,8 +1,77 @@
 {
   "step": "001",
   "title": "Repo scaffold and logging scaffold",
-  "logbook_entry": "C:\\Users\\Suhas Raghavendra\\Desktop\\MLOPS Project\\docs\\logbook\\001-repo-scaffold-and-logging-scaffold.md",
-  "git_commit": "a7dd5fb103e64ea7cb8dede5418d0c6632fa2d4d",
-  "timestamp": "2026-10-14T13:29:21.949785+00:00",
-  "metrics": {}
+  "phase": 2,
+  "timestamp_ist": "2026-10-14T14:07:34+05:30",
+  "branch": "master",
+  "commit": "dac49f45050f5a8aa6019a4e2c4d2000612da068",
+  "mlflow_run": "N/A",
+  "git_status": "D .dvc/config\n M .dvcignore\n M .env.example\n M .github/pull_request_template.md\n M .gitignore\n M .pre-commit-config.yaml\n M Makefile\n M configs/cpcb_breakpoints.yaml\n M docs/CHANGELOG.md\n M docs/data_change_log.md\n M docs/logbook/001-repo-scaffold-and-logging-scaffold.md\n D docs/logbook/INDEX.md\n M docs/logbook/_TEMPLATE.md\n M params.yaml\n M pyproject.toml\n M reports/step_reports/001.json\n M requirements.txt\n M scripts/build_logbook_index.py\n M scripts/check_logbook.py\n M scripts/log_step.py\n M src/config.py\n M src/utils/logging_utils.py\n M src/utils/mlflow_utils.py\n M src/utils/stage_stats.py\n M tests/test_stage_stats.py\n?? README.md\n?? data/\n?? docs/decisions.md\n?? docs/setup_howto.md\n?? dvc.yaml\n?? models/\n?? reports/figures/\n?? reports/metrics/\n?? reports/step_reports/.gitkeep\n?? src/data/clean.py\n?? src/data/discover_stations.py\n?? src/data/download_openaq.py\n?? src/data/download_weather.py\n?? src/data/hourly_to_daily.py\n?? src/data/ingest.py\n?? src/data/merge.py\n?? src/data/validate.py\n?? src/features/aqi_utils.py\n?? src/features/build_features.py\n?? src/models/baselines.py\n?? src/models/compare_runs.py\n?? src/models/evaluate.py\n?? src/models/train.py",
+  "git_diff_stat": ".dvc/config                                        |   0\n .dvcignore                                         |   7 +-\n .env.example                                       |   2 +\n .github/pull_request_template.md                   |  46 ++-\n .gitignore                                         |  51 ++-\n .pre-commit-config.yaml                            |  31 +-\n Makefile                                           |  74 +++-\n configs/cpcb_breakpoints.yaml                      | 160 ++++----\n docs/CHANGELOG.md                                  |  32 +-\n docs/data_change_log.md                            |   6 +-\n .../001-repo-scaffold-and-logging-scaffold.md      | 287 ++++++++++++--\n docs/logbook/INDEX.md                              |   8 -\n docs/logbook/_TEMPLATE.md                          |  19 +-\n params.yaml                                        |   5 +-\n pyproject.toml                                     |  10 +-\n reports/step_reports/001.json                      |  77 +++-\n requirements.txt                                   |  51 ++-\n scripts/build_logbook_index.py                     | 141 +++----\n scripts/check_logbook.py                           | 132 ++++---\n scripts/log_step.py                                | 413 ++++++++++++++-------\n src/config.py                                      |  68 ++--\n src/utils/logging_utils.py                         | 192 ++++++----\n src/utils/mlflow_utils.py                          | 146 ++++----\n src/utils/stage_stats.py                           | 407 ++++++++++++--------\n tests/test_stage_stats.py                          | 256 +++++++++----\n 25 files changed, 1764 insertions(+), 857 deletions(-)\nwarning: in the working copy of '.dvcignore', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.env.example', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.github/pull_request_template.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.pre-commit-config.yaml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'Makefile', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'configs/cpcb_breakpoints.yaml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/data_change_log.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/logbook/_TEMPLATE.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'params.yaml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'pyproject.toml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'requirements.txt', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'scripts/build_logbook_index.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'scripts/check_logbook.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'scripts/log_step.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/config.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/utils/logging_utils.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/utils/mlflow_utils.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/utils/stage_stats.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/test_stage_stats.py', LF will be replaced by CRLF the next time Git touches it",
+  "dvc_status": "validate:\n\tchanged deps:\n\t\tmodified:           src\\data\\ingest.py\n\t\tmodified:           src\\data\\validate.py\n\t\tmodified:           data\\raw\\openaq\n\t\tmodified:           data\\raw\\weather\n\t\tdeleted:            configs\\stations_selected.csv\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tdeleted:            reports\\metrics\\data_validation.json\nhourly_to_daily:\n\tchanged deps:\n\t\tmodified:           src\\data\\hourly_to_daily.py\n\t\tmodified:           src\\utils\\stage_stats.py\n\t\tmodified:           data\\raw\\openaq\n\t\tmodified:           configs\\cpcb_breakpoints.yaml\n\t\tmodified:           src\\features\\aqi_utils.py\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tdeleted:            data\\interim\\pollutants_daily.parquet\n\t\tdeleted:            reports\\metrics\\hourly_to_daily_stats.json\nmerge_weather:\n\tchanged deps:\n\t\tmodified:           src\\data\\merge.py\n\t\tdeleted:            data\\interim\\pollutants_daily.parquet\n\t\tmodified:           data\\raw\\weather\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tdeleted:            data\\interim\\station_day.parquet\n\t\tdeleted:            reports\\metrics\\merge_stats.json\nclean:\n\tchanged deps:\n\t\tmodified:           src\\data\\clean.py\n\t\tdeleted:            data\\interim\\station_day.parquet\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tdeleted:            data\\interim\\station_day_clean.parquet\n\t\tdeleted:            reports\\metrics\\clean_stats.json\nfeatures:\n\tchanged deps:\n\t\tmodified:           src\\features\\build_features.py\n\t\tmodified:           src\\features\\aqi_utils.py\n\t\tdeleted:            data\\interim\\station_day_clean.parquet\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tdeleted:            data\\processed\\train.parquet\n\t\tdeleted:            data\\processed\\val.parquet\n\t\tdeleted:            data\\processed\\test.parquet\n\t\tdeleted:            data\\processed\\feature_list.json\n\t\tdeleted:            reports\\metrics\\features_stats.json\ntrain:\n\tchanged deps:\n\t\tmodified:           src\\models\\train.py\n\t\tmodified:           src\\models\\baselines.py\n\t\tdeleted:            data\\processed\\train.parquet\n\t\tdeleted:            data\\processed\\val.parquet\n\t\tnew:                params.yaml\n\tchanged outs:\n\t\tmodified:           models\n\t\tdeleted:            reports\\metrics\\val_metrics.json\nevaluate:\n\tchanged deps:\n\t\tmodified:           src\\models\\evaluate.py\n\t\tmodified:           models\n\t\tdeleted:            data\\processed\\test.parquet\n\tchanged outs:\n\t\tmodified:           reports\\figures\\evaluation\n\t\tdeleted:            reports\\metrics\\test_metrics.json",
+  "dvc_diff": "Added:\n    models\\\n    models\\.gitkeep\n    reports\\figures\\evaluation\\\n    reports\\figures\\evaluation\\.gitkeep\n\nfiles summary: 2 added",
+  "metrics_summary": {},
+  "changed_files": {
+    "code": [
+      "scripts/build_logbook_index.py",
+      "scripts/check_logbook.py",
+      "scripts/log_step.py",
+      "src/config.py",
+      "src/utils/logging_utils.py",
+      "src/utils/mlflow_utils.py",
+      "src/utils/stage_stats.py",
+      "src/data/clean.py",
+      "src/data/discover_stations.py",
+      "src/data/download_openaq.py",
+      "src/data/download_weather.py",
+      "src/data/hourly_to_daily.py",
+      "src/data/ingest.py",
+      "src/data/merge.py",
+      "src/data/validate.py",
+      "src/features/aqi_utils.py",
+      "src/features/build_features.py",
+      "src/models/baselines.py",
+      "src/models/compare_runs.py",
+      "src/models/evaluate.py",
+      "src/models/train.py"
+    ],
+    "config": [
+      "configs/cpcb_breakpoints.yaml",
+      "params.yaml",
+      "dvc.yaml"
+    ],
+    "docs": [
+      "docs/CHANGELOG.md",
+      "docs/data_change_log.md",
+      "docs/logbook/001-repo-scaffold-and-logging-scaffold.md",
+      "docs/logbook/INDEX.md",
+      "docs/logbook/_TEMPLATE.md",
+      "reports/step_reports/001.json",
+      "docs/decisions.md",
+      "docs/setup_howto.md",
+      "reports/figures/",
+      "reports/metrics/",
+      "reports/step_reports/.gitkeep"
+    ],
+    "data": [
+      "data/",
+      "models/"
+    ],
+    "tests": [
+      "tests/test_stage_stats.py"
+    ],
+    "other": [
+      "dvc/config",
+      ".dvcignore",
+      ".env.example",
+      ".github/pull_request_template.md",
+      ".gitignore",
+      ".pre-commit-config.yaml",
+      "Makefile",
+      "pyproject.toml",
+      "requirements.txt",
+      "README.md"
+    ]
+  },
+  "logbook_entry": "docs\\logbook\\001-repo-scaffold-and-logging-scaffold.md"
 }

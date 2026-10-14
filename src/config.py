@@ -1,61 +1,57 @@
 """
 src/config.py
-Central config loader: reads params.yaml and .env.
-All scripts import from here — no hard-coded paths or magic numbers.
+-------------
+Central configuration loader.
+
+Reads params.yaml and (optionally) .env, exposing typed settings to all
+pipeline stages.  Every src/ module imports from here — no hard-coded paths
+or magic numbers anywhere else.
 """
+
 from __future__ import annotations
 
+import os
+from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import yaml
 from dotenv import load_dotenv
-import os
 
-# Project root is two levels up from this file (src/config.py → src → root)
-ROOT = Path(__file__).resolve().parents[1]
-
-# Load .env (silently skip if missing — CI environments may not have it)
-load_dotenv(ROOT / ".env", override=False)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_params(params_path: Path | None = None) -> dict:
+@lru_cache(maxsize=1)
+def load_params(params_path: Path | None = None) -> dict[str, Any]:
+    """Load and cache params.yaml.
+
+    Parameters
+    ----------
+    params_path:
+        Override the default ``<repo>/params.yaml`` location (useful in tests).
     """
-    Load params.yaml.
+    path = params_path or (_REPO_ROOT / "params.yaml")
+    with path.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
 
-    Args:
-        params_path: Path to params.yaml. Defaults to project root.
 
-    Returns:
-        Parsed YAML as a nested dict.
-    """
-    if params_path is None:
-        params_path = ROOT / "params.yaml"
-    with open(params_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+def load_env(env_path: Path | None = None) -> None:
+    """Load .env into ``os.environ`` (no-op if the file does not exist)."""
+    load_dotenv(env_path or (_REPO_ROOT / ".env"), override=False)
 
 
 def get_openaq_api_key() -> str:
-    """
-    Return the OpenAQ API key from the environment.
+    """Return the OpenAQ API key from the environment.
 
-    Raises:
-        EnvironmentError: If the key is not set.
+    Raises
+    ------
+    EnvironmentError
+        If ``OPENAQ_API_KEY`` is not set.
     """
-    key = os.environ.get("OPENAQ_API_KEY", "").strip()
+    load_env()
+    key = os.getenv("OPENAQ_API_KEY", "")
     if not key:
         raise EnvironmentError(
-            "OPENAQ_API_KEY is not set. Add it to your .env file (see .env.example)."
+            "OPENAQ_API_KEY is not set.  Copy .env.example → .env and add your key."
         )
     return key
-
-
-# Convenience path constants
-DATA_DIR = ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"
-INTERIM_DIR = DATA_DIR / "interim"
-PROCESSED_DIR = DATA_DIR / "processed"
-CONFIGS_DIR = ROOT / "configs"
-REPORTS_DIR = ROOT / "reports"
-MODELS_DIR = ROOT / "models"
-LOGS_DIR = ROOT / "logs"
-DOCS_DIR = ROOT / "docs"

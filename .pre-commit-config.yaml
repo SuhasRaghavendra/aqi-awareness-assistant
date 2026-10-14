@@ -1,30 +1,37 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-added-large-files
-        args: ["--maxkb=500"]
-      - id: check-yaml
-      - id: check-merge-conflict
-
+  # Python syntax / import sorting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.4
     hooks:
       - id: ruff
         args: [--fix]
+      - id: ruff-format
 
+  # Code formatting
   - repo: https://github.com/psf/black
     rev: 24.4.2
     hooks:
       - id: black
 
+  # Trailing whitespace / EOF
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: debug-statements
+      - id: check-merge-conflict
+
+  # Logbook check (pre-push only)
   - repo: local
     hooks:
       - id: check-logbook
-        name: Check logbook completeness
+        name: Logbook completeness check
         entry: python scripts/check_logbook.py
         language: system
-        stages: [push]
+        stages: [pre-push]
         pass_filenames: false

@@ -1,25 +1,60 @@
+# Python
 __pycache__/
-.venv/
-venv/
-.ipynb_checkpoints/
-mlruns/
-mlartifacts/
-mlflow.db
-.env
-logs/
-data/raw/*
-data/interim/*
-data/processed/*
-models/*
-!models/.gitkeep
-!data/raw/.gitkeep
-!data/interim/.gitkeep
-!data/processed/.gitkeep
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+*.egg
 *.egg-info/
 dist/
 build/
+.eggs/
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb.bak
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Environment / secrets
+.env
+
+# Logs (raw JSONL runs; summaries committed via reports/)
+logs/
+
+# Data (managed by DVC)
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Models (managed by DVC)
+models/*
+!models/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# pytest / coverage
 .pytest_cache/
+.coverage
+htmlcov/
+
+# ruff / black cache
 .ruff_cache/
-*.log

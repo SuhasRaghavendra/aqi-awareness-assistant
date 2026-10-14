@@ -1,9 +1,9 @@
 # Step <NNN> — <short title>
-- **Date/time:** <ISO timestamp, IST>
-- **Author:** <student>      **Reviewer:** <other student>
-- **Phase:** <1–9>           **Branch / PR:** <branch> / #<n>
-- **Git commit(s):** <hash(es)>      **Data version:** <git tag + dvc md5 of tracked inputs>
-- **MLflow run IDs (if any):** <ids>
+- **Date/time:** <ISO timestamp, IST, e.g. 2026-10-14T19:22:14+05:30>
+- **Author:** <student-A>      **Reviewer:** <student-B>
+- **Phase:** <1–9>           **Branch / PR:** `<branch>` / #<n>
+- **Git commit(s):** `<hash(es)>`      **Data version:** <git-tag> / <dvc-md5 of tracked inputs>
+- **MLflow run IDs (if any):** <ids or N/A>
 
 ## 1. Objective
 What this step is meant to achieve and why (1–3 sentences).
@@ -24,16 +24,19 @@ What this step is meant to achieve and why (1–3 sentences).
 ```
 
 ## 4. Results / evidence
-Key numbers, small tables, figure paths, screenshot paths. Quote real output, never invented numbers.
+Key numbers, small tables, figure paths, screenshot paths.
+Quote real output, never invented numbers.
 
 ## 5. Decisions and rationale
-Each decision, alternatives considered, why chosen (also copy to docs/decisions.md if it is a design decision).
+Each decision, alternatives considered, why chosen.
+(Also copy to `docs/decisions.md` if it is a design decision.)
 
 ## 6. Problems encountered and fixes
 Errors, surprises, data issues, and how they were resolved.
 
 ## 7. Verification
-How to reproduce/check this step (commands + expected output). Tests added/passing.
+How to reproduce/check this step (commands + expected output).
+Tests added/passing.
 
 ## 8. Next step
 One line.

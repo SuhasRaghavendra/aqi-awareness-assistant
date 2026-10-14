@@ -1,0 +1,108 @@
+stages:
+  validate:
+    cmd: python -m src.data.ingest
+    deps:
+      - src/data/ingest.py
+      - src/data/validate.py
+      - data/raw/openaq
+      - data/raw/weather
+      - configs/stations_selected.csv
+    params:
+      - data
+    metrics:
+      - reports/metrics/data_validation.json:
+          cache: false
+
+  hourly_to_daily:
+    cmd: python -m src.data.hourly_to_daily
+    deps:
+      - src/data/hourly_to_daily.py
+      - src/utils/stage_stats.py
+      - data/raw/openaq
+      - configs/cpcb_breakpoints.yaml
+      - src/features/aqi_utils.py
+    params:
+      - units
+      - aggregation
+      - aqi
+    outs:
+      - data/interim/pollutants_daily.parquet
+    metrics:
+      - reports/metrics/hourly_to_daily_stats.json:
+          cache: false
+
+  merge_weather:
+    cmd: python -m src.data.merge
+    deps:
+      - src/data/merge.py
+      - data/interim/pollutants_daily.parquet
+      - data/raw/weather
+    params:
+      - weather
+    outs:
+      - data/interim/station_day.parquet
+    metrics:
+      - reports/metrics/merge_stats.json:
+          cache: false
+
+  clean:
+    cmd: python -m src.data.clean
+    deps:
+      - src/data/clean.py
+      - data/interim/station_day.parquet
+    params:
+      - clean
+      - split
+      - seed
+    outs:
+      - data/interim/station_day_clean.parquet
+    metrics:
+      - reports/metrics/clean_stats.json:
+          cache: false
+
+  features:
+    cmd: python -m src.features.build_features
+    deps:
+      - src/features/build_features.py
+      - src/features/aqi_utils.py
+      - data/interim/station_day_clean.parquet
+    params:
+      - features
+      - split
+      - seed
+    outs:
+      - data/processed/train.parquet
+      - data/processed/val.parquet
+      - data/processed/test.parquet
+      - data/processed/feature_list.json
+    metrics:
+      - reports/metrics/features_stats.json:
+          cache: false
+
+  train:
+    cmd: python -m src.models.train
+    deps:
+      - src/models/train.py
+      - src/models/baselines.py
+      - data/processed/train.parquet
+      - data/processed/val.parquet
+    params:
+      - train
+      - seed
+    outs:
+      - models/
+    metrics:
+      - reports/metrics/val_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+      - src/models/evaluate.py
+      - models/
+      - data/processed/test.parquet
+    outs:
+      - reports/figures/evaluation/
+    metrics:
+      - reports/metrics/test_metrics.json:
+          cache: false

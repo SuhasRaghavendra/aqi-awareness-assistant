@@ -1,17 +1,37 @@
-## Pull Request Checklist
+## Summary of Changes
+<!-- One paragraph describing what this PR does and why. -->
 
-**Required before merging:**
+## Logbook Entry
+<!-- Link to the logbook entry for this PR's step(s). -->
+- [ ] `docs/logbook/NNN-<slug>.md` — [link here](../docs/logbook/)
 
-- [ ] **Logbook entry link:** `docs/logbook/<step>.md` — paste the link here:
-- [ ] **What changed:** (brief summary of code/data/config changes)
-- [ ] **Tests run:** `pytest -q` passing? ✅ / ❌
-- [ ] **Lint/format:** `ruff check` and `black --check` passing? ✅ / ❌
-- [ ] **Data version:** Git tag + DVC md5 (if data changed):
-- [ ] **MLflow run IDs** (if models were trained):
-- [ ] **DVC status:** `dvc status` output (paste here if data changed):
-- [ ] **Step-Close Protocol:** `scripts/log_step.py` was run?
+## What changed
+| Type | Path | Change summary |
+|---|---|---|
+| code | src/... | |
+| config | params.yaml / dvc.yaml | |
+| data | data/... | |
+| docs | docs/... | |
 
-**Conventional Commit format:** `feat(step-NNN): <description>`
+## Tests run
+- [ ] `pytest -q` passes
+- [ ] `ruff check` passes
+- [ ] `black --check` passes
+- [ ] `python scripts/check_logbook.py` passes
 
----
-*Reviewed by:*
+## Data version
+- Git tag: <!-- e.g. data-v1 -->
+- DVC md5 of changed tracked files: <!-- paste from dvc diff -->
+
+## MLflow run IDs (if applicable)
+<!-- Paste run IDs or N/A -->
+
+## Screenshots / evidence
+<!-- Attach or link screenshots for MLflow UI, DVC diff, etc. -->
+
+## Reviewer checklist
+- [ ] Logbook entry narrative is complete (no TODO sections)
+- [ ] No hard-coded paths or magic numbers
+- [ ] No data committed (only .dvc files)
+- [ ] No secrets committed (.env not included)
+- [ ] Commit messages follow Conventional Commits with step number

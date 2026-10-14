@@ -1,1 +1,6 @@
-/tmp/dvc-tmp
+# DVC ignore patterns
+/tmp
+.ipynb_checkpoints
+__pycache__
+*.pyc
+.venv

@@ -1,5 +1,4 @@
 seed: 42
-
 data:
   window_start: "2019-01-01"
   snapshot_end: "2026-09-30"
@@ -18,7 +17,7 @@ data:
 
 units:
   target_unit_ugm3: true
-  co_unit: "mg/m3"
+  co_unit: mg/m3
 
 aggregation:
   min_hours_per_day: 16
@@ -58,7 +57,7 @@ features:
     - 7
     - 14
   use_calendar: true
-  use_station_embedding: "city_onehot"
+  use_station_embedding: city_onehot
 
 split:
   train_end: "2023-12-31"
