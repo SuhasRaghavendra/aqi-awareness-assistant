@@ -1,0 +1,44 @@
+{
+  "total_locations_discovered": 27,
+  "target_cities": [
+    "Bengaluru",
+    "Delhi",
+    "Mumbai",
+    "Chennai",
+    "Kolkata",
+    "Hyderabad",
+    "Pune",
+    "Ahmedabad",
+    "Lucknow"
+  ],
+  "stations_per_city_discovered": {
+    "Bengaluru": 9,
+    "Chennai": 2,
+    "Delhi": 6,
+    "Hyderabad": 2,
+    "Kolkata": 2,
+    "Mumbai": 3,
+    "Pune": 2
+  },
+  "stations_per_city_selected": {
+    "Bengaluru": 8,
+    "Chennai": 2,
+    "Delhi": 5,
+    "Hyderabad": 2,
+    "Kolkata": 2,
+    "Mumbai": 3,
+    "Pune": 2
+  },
+  "total_selected_stations": 24,
+  "providers": {
+    "CPCB / State Pollution Control Board": 27
+  },
+  "download_estimates": {
+    "selected_stations_count": 24,
+    "window_months": 93,
+    "estimated_files_count": 66960,
+    "estimated_compressed_size_mb": 1116.0,
+    "estimated_uncompressed_size_mb": 8370.0
+  },
+  "generated_at": "2026-10-15T00:17:48.802394"
+}

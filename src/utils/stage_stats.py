@@ -252,7 +252,7 @@ def track_stage(
         st.end_time = datetime.now(tz=timezone.utc).isoformat()
         st.duration_s = time.perf_counter() - t0
         logger.info(
-            "Stage '%s' finished in %.1fs  rows: %d → %d  dropped: %d",
+            "Stage '%s' finished in %.1fs  rows: %d -> %d  dropped: %d",
             stage,
             st.duration_s,
             st.rows_in,
@@ -265,7 +265,7 @@ def track_stage(
         metrics_path = _METRICS_DIR / f"{stage}_stats.json"
         data = st.to_dict()
         metrics_path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-        logger.info("Stage stats written → %s", metrics_path)
+        logger.info("Stage stats written -> %s", metrics_path)
 
         # ── Append to data_change_log.md ─────────────────────────────────────
         _append_change_log(st)
@@ -303,4 +303,4 @@ def _append_change_log(st: StageStats) -> None:
 """
     with _CHANGE_LOG.open("a", encoding="utf-8") as fh:
         fh.write(section)
-    logger.info("data_change_log.md updated → %s", _CHANGE_LOG)
+    logger.info("data_change_log.md updated -> %s", _CHANGE_LOG)

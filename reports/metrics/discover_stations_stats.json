@@ -1,0 +1,124 @@
+{
+  "stage": "discover_stations",
+  "start_time": "2026-10-14T18:47:48.783315+00:00",
+  "end_time": "2026-10-14T18:47:49.784728+00:00",
+  "duration_s": 1.001,
+  "git_commit": "6d00fbe",
+  "params_hash": "542931e8d09b",
+  "inputs": [],
+  "outputs": [
+    {
+      "path": "data\\raw\\station_catalog.csv",
+      "exists": true,
+      "size_bytes": 10126,
+      "rows": 27,
+      "columns": [
+        "location_id",
+        "name",
+        "locality",
+        "provider",
+        "latitude",
+        "longitude",
+        "sensor_count",
+        "parameters",
+        "parameter_units",
+        "has_pm25",
+        "has_pm10",
+        "has_pm",
+        "datetime_first_utc",
+        "datetime_last_utc",
+        "active_years",
+        "target_city",
+        "selected",
+        "selection_status"
+      ],
+      "n_columns": 18
+    },
+    {
+      "path": "configs\\stations_selected.csv",
+      "exists": true,
+      "size_bytes": 9276,
+      "rows": 24,
+      "columns": [
+        "location_id",
+        "name",
+        "locality",
+        "provider",
+        "latitude",
+        "longitude",
+        "sensor_count",
+        "parameters",
+        "parameter_units",
+        "has_pm25",
+        "has_pm10",
+        "has_pm",
+        "datetime_first_utc",
+        "datetime_last_utc",
+        "active_years",
+        "target_city",
+        "selected",
+        "selection_status"
+      ],
+      "n_columns": 18
+    }
+  ],
+  "frame_stats": {
+    "input": {
+      "rows": 27,
+      "n_columns": 18,
+      "null_pct": {
+        "location_id": 0.0,
+        "name": 0.0,
+        "locality": 0.0,
+        "provider": 0.0,
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "sensor_count": 0.0,
+        "parameters": 0.0,
+        "parameter_units": 0.0,
+        "has_pm25": 0.0,
+        "has_pm10": 0.0,
+        "has_pm": 0.0,
+        "datetime_first_utc": 0.0,
+        "datetime_last_utc": 0.0,
+        "active_years": 0.0,
+        "target_city": 0.0,
+        "selected": 0.0,
+        "selection_status": 0.0
+      }
+    },
+    "output": {
+      "rows": 24,
+      "n_columns": 18,
+      "null_pct": {
+        "location_id": 0.0,
+        "name": 0.0,
+        "locality": 0.0,
+        "provider": 0.0,
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "sensor_count": 0.0,
+        "parameters": 0.0,
+        "parameter_units": 0.0,
+        "has_pm25": 0.0,
+        "has_pm10": 0.0,
+        "has_pm": 0.0,
+        "datetime_first_utc": 0.0,
+        "datetime_last_utc": 0.0,
+        "active_years": 0.0,
+        "target_city": 0.0,
+        "selected": 0.0,
+        "selection_status": 0.0
+      }
+    }
+  },
+  "drops": [
+    {
+      "reason": "Excluded (not meeting geographic scope or minimum criteria)",
+      "n": 3
+    }
+  ],
+  "total_dropped": 3,
+  "cols_added": [],
+  "cols_removed": []
+}
