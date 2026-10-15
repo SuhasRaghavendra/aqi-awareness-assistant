@@ -5,3 +5,6 @@
 | Step | Date | Title | Phase | Author | Commit | Entry |
 |---|---|---|---|---|---|---|
 | 001 | 2026-10-14 | Repo scaffold and logging scaffold | 2 | <student-A> | `dac49f45050f` | [001-repo-scaffold-and-logging-scaffold.md](001-repo-scaffold-and-logging-scaffold.md) |
+| 002 | 2026-10-14 | Station discovery and catalog | 1 | <student-A> | `6d00fbe6588c` | [002-station-discovery-and-catalog.md](002-station-discovery-and-catalog.md) |
+| 003 | 2026-10-15 | OpenAQ and Weather Download and Ingestion Validation | 1 | Student A | `6d00fbe` | [003-openaq-and-weather-download-and-validation.md](003-openaq-and-weather-download-and-validation.md) |
+| 005 | 2026-10-15 | DVC dataset versioning and pipeline setup | 3 | <student-A> | `---` | [005-dvc-dataset-versioning.md](005-dvc-dataset-versioning.md) |

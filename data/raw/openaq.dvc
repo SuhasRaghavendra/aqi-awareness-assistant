@@ -1,0 +1,6 @@
+outs:
+- md5: 6d18906931c5f94851d8eaa98d24e8f9.dir
+  size: 302230623
+  nfiles: 108303
+  hash: md5
+  path: openaq
