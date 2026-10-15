@@ -251,3 +251,69 @@
 **Columns removed:** none
 
 ---
+
+## merge — 2026-10-15
+
+| Field | Value |
+|---|---|
+| Stage | `merge` |
+| Start | 2026-10-15T13:09:57.517211+00:00 |
+| End | 2026-10-15T13:09:57.531571+00:00 |
+| Duration | 0.0 s |
+| Git commit | `eb9856b` |
+| Params hash | `49d91b162fbf` |
+| Rows in | 13,763 |
+| Rows out | 13,763 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `precipitation_sum`, `relative_humidity_2m_mean`, `surface_pressure_mean`, `temperature_2m_max`, `temperature_2m_mean`, `temperature_2m_min`, `wind_direction_10m_mean`, `wind_speed_10m_mean`
+**Columns removed:** none
+
+---
+
+## clean — 2026-10-15
+
+| Field | Value |
+|---|---|
+| Stage | `clean` |
+| Start | 2026-10-15T13:10:13.855011+00:00 |
+| End | 2026-10-15T13:10:13.866293+00:00 |
+| Duration | 0.0 s |
+| Git commit | `eb9856b` |
+| Params hash | `49d91b162fbf` |
+| Rows in | 13,763 |
+| Rows out | 9,561 |
+| Total dropped | 4,202 |
+
+**Rows dropped by reason:**
+  - `missing_target_aqi`: 4,202 rows
+
+**Columns added:** `co_was_missing`, `no2_was_missing`, `o3_was_missing`, `pm10_was_missing`, `pm25_was_missing`, `precipitation_sum_was_missing`, `relative_humidity_2m_mean_was_missing`, `so2_was_missing`, `surface_pressure_mean_was_missing`, `temperature_2m_max_was_missing`, `temperature_2m_mean_was_missing`, `temperature_2m_min_was_missing`, `wind_direction_10m_mean_was_missing`, `wind_speed_10m_mean_was_missing`
+**Columns removed:** `nh3`, `sub_nh3`, `sub_no`, `sub_nox`
+
+---
+
+## features — 2026-10-15
+
+| Field | Value |
+|---|---|
+| Stage | `features` |
+| Start | 2026-10-15T13:10:24.028381+00:00 |
+| End | 2026-10-15T13:10:24.047726+00:00 |
+| Duration | 0.0 s |
+| Git commit | `eb9856b` |
+| Params hash | `49d91b162fbf` |
+| Rows in | 9,561 |
+| Rows out | 3,023 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `aqi_diff1`, `aqi_lag_1`, `aqi_lag_2`, `aqi_lag_3`, `aqi_lag_7`, `aqi_rolling_max_14`, `aqi_rolling_max_3`, `aqi_rolling_max_7`, `aqi_rolling_mean_14`, `aqi_rolling_mean_3`, `aqi_rolling_mean_7`, `aqi_rolling_std_14`, `aqi_rolling_std_3`, `aqi_rolling_std_7`, `city_Ahmedabad`, `city_Bengaluru`, `city_Chennai`, `city_Delhi`, `city_Hyderabad`, `city_Kolkata`, `city_Mumbai`, `city_Pune`, `city_mean_aqi_other_stations`, `co_lag_1`, `co_lag_2`, `co_lag_3`, `co_lag_7`, `cos_day_of_year`, `cos_month`, `day_of_week`, `day_of_year`, `is_festival`, `is_weekend`, `month`, `no2_lag_1`, `no2_lag_2`, `no2_lag_3`, `no2_lag_7`, `o3_lag_1`, `o3_lag_2`, `o3_lag_3`, `o3_lag_7`, `pm10_lag_1`, `pm10_lag_2`, `pm10_lag_3`, `pm10_lag_7`, `pm25_diff1`, `pm25_lag_1`, `pm25_lag_2`, `pm25_lag_3`, `pm25_lag_7`, `pm25_pm10_ratio`, `pm25_rolling_max_14`, `pm25_rolling_max_3`, `pm25_rolling_max_7`, `pm25_rolling_mean_14`, `pm25_rolling_mean_3`, `pm25_rolling_mean_7`, `pm25_rolling_std_14`, `pm25_rolling_std_3`, `pm25_rolling_std_7`, `precipitation_sum_lag1`, `precipitation_sum_roll3_mean`, `relative_humidity_2m_mean_lag1`, `relative_humidity_2m_mean_roll3_mean`, `season_monsoon`, `season_post_monsoon`, `season_summer`, `season_winter`, `sin_day_of_year`, `sin_month`, `so2_lag_1`, `so2_lag_2`, `so2_lag_3`, `so2_lag_7`, `surface_pressure_mean_lag1`, `surface_pressure_mean_roll3_mean`, `target_aqi`, `target_category`, `temperature_2m_mean_lag1`, `temperature_2m_mean_roll3_mean`, `wind_speed_10m_mean_lag1`, `wind_speed_10m_mean_roll3_mean`
+**Columns removed:** none
+
+---

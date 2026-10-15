@@ -75,19 +75,19 @@ stages:
     outs:
     - path: data/interim/station_day.parquet
       hash: md5
-      md5: ff1f2e0607cc3052b26fa1dfe9ceaa1f
-      size: 330581
+      md5: 41a4579f100522f810b126fbfd803afa
+      size: 772612
     - path: reports/metrics/merge_stats.json
       hash: md5
-      md5: b224c79d4881c8363dd9fc5018ef2360
-      size: 5345
+      md5: f495e6d37ef5ee9feb2bef1cb8dc988c
+      size: 5347
   clean:
     cmd: python -m src.data.clean
     deps:
     - path: data/interim/station_day.parquet
       hash: md5
-      md5: ff1f2e0607cc3052b26fa1dfe9ceaa1f
-      size: 330581
+      md5: 41a4579f100522f810b126fbfd803afa
+      size: 772612
     - path: src/data/clean.py
       hash: md5
       md5: eea93650a6fc44de7ff7ad2a1623520c
@@ -107,19 +107,19 @@ stages:
     outs:
     - path: data/interim/station_day_clean.parquet
       hash: md5
-      md5: 9c4e2ba7df08236d98b40654b87b7cf6
-      size: 285410
+      md5: 25fc02ec91f4369a706591d47a42aff3
+      size: 648998
     - path: reports/metrics/clean_stats.json
       hash: md5
-      md5: 5c62e44a3eb87a4a7fba29cc0c1448ee
-      size: 6030
+      md5: 6e064c33ae5e9bae57b0406329ef8cca
+      size: 7124
   features:
     cmd: python -m src.features.build_features
     deps:
     - path: data/interim/station_day_clean.parquet
       hash: md5
-      md5: 9c4e2ba7df08236d98b40654b87b7cf6
-      size: 285410
+      md5: 25fc02ec91f4369a706591d47a42aff3
+      size: 648998
     - path: src/features/aqi_utils.py
       hash: md5
       md5: d7d3854b35ad48352d1641b2139fb699
@@ -150,24 +150,24 @@ stages:
     outs:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: 4962d68d9a9df685c57af2f38356f994
-      size: 2733
+      md5: 1648f970f1c0301ac2ab3389d6cc88b1
+      size: 3210
     - path: data/processed/test.parquet
       hash: md5
-      md5: 0b311d52931c6130c2f1f865c5bcc0db
-      size: 375130
+      md5: 82dd5a47017b2b3155a35073d2550006
+      size: 976113
     - path: data/processed/train.parquet
       hash: md5
-      md5: 50e87117ec4b64de313cbfb0dbec02a1
-      size: 526842
+      md5: 9294593f28a923361e2b9ae052c713aa
+      size: 1189972
     - path: data/processed/val.parquet
       hash: md5
-      md5: 29927ee75f6650f38d38057cb2bcf141
-      size: 439631
+      md5: 2d7307b5c1d86f40aefe855ec301c730
+      size: 1221877
     - path: reports/metrics/features_stats.json
       hash: md5
-      md5: d6da3fed8d213e57f54371a9fa0c0fe7
-      size: 19211
+      md5: 71409f5b814a4e4804cc725fd352c850
+      size: 22349
   validate:
     cmd: python -m src.data.ingest
     deps:
