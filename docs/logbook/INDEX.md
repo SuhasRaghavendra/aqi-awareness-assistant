@@ -13,3 +13,4 @@
 | 007 | 2026-10-15 | Feature engineering and chronological split | 5 | <student-A> | `9cc4b9a` | [007-feature-engineering-and-split.md](007-feature-engineering-and-split.md) |
 | 008 | 2026-10-15 | Baseline models evaluation and MLflow tracking | 6 | Srijan Kumar G S | `783ae9e` | [008-baseline-models-evaluation-and-mlflow-tracking.md](008-baseline-models-evaluation-and-mlflow-tracking.md) |
 | 009 | 2026-10-15 | Feature ablation studies and MLflow experiment comparison | 7 | Srijan Kumar G S | `04fcfbd` | [009-feature-ablation-studies-and-mlflow-experiment-comparison.md](009-feature-ablation-studies-and-mlflow-experiment-comparison.md) |
+| 010 | 2026-10-15 | Milestone 1 synthesis report and release tagging | 9 | Srijan Kumar G S | `2a5d1dd` | [010-milestone-1-synthesis-report-and-release-tagging.md](010-milestone-1-synthesis-report-and-release-tagging.md) |
