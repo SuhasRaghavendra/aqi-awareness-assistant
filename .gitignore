@@ -38,10 +38,14 @@ data/processed/*
 !data/raw/.gitkeep
 !data/interim/.gitkeep
 !data/processed/.gitkeep
+!data/**/*.dvc
+!data/**/.gitignore
+!*.dvc
 
 # Models (managed by DVC)
 models/*
 !models/.gitkeep
+!models/**/*.dvc
 
 # OS
 .DS_Store

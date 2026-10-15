@@ -1,0 +1,5 @@
+outs:
+- md5: cebf73cd3726d22d5d2ef5163ebb8451
+  size: 416366
+  hash: md5
+  path: station_catalog.csv

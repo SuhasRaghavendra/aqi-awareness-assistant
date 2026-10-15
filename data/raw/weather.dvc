@@ -1,0 +1,6 @@
+outs:
+- md5: 84dcf723d4a0cace631b08d3724f669e.dir
+  size: 570528625
+  nfiles: 659
+  hash: md5
+  path: weather
