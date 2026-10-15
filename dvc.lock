@@ -1,0 +1,217 @@
+schema: '2.0'
+stages:
+  hourly_to_daily:
+    cmd: python -m src.data.hourly_to_daily
+    deps:
+    - path: configs/cpcb_breakpoints.yaml
+      hash: md5
+      md5: cc1ededc9baabd963ad2613cad4430b6
+      size: 2581
+    - path: data/raw/openaq
+      hash: md5
+      md5: 6d18906931c5f94851d8eaa98d24e8f9.dir
+      size: 302230623
+      nfiles: 108303
+    - path: src/data/hourly_to_daily.py
+      hash: md5
+      md5: 5f69e54fb28b1d61a07b710396403b6f
+      size: 16007
+    - path: src/features/aqi_utils.py
+      hash: md5
+      md5: d7d3854b35ad48352d1641b2139fb699
+      size: 5556
+    - path: src/utils/stage_stats.py
+      hash: md5
+      md5: e05da55ede833131691f6e0d59c28786
+      size: 11098
+    params:
+      params.yaml:
+        aggregation:
+          min_hours_per_day: 16
+          rolling_8h_pollutants:
+          - co
+          - o3
+        aqi:
+          min_subindices: 3
+          require_pm: true
+        units:
+          target_unit_ugm3: true
+          co_unit: mg/m3
+    outs:
+    - path: data/interim/pollutants_daily.parquet
+      hash: md5
+      md5: 5a18b4e72631ff606e09e1f3a5cd35b3
+      size: 499504
+    - path: reports/metrics/hourly_to_daily_stats.json
+      hash: md5
+      md5: 167aabee3f71d563572109604f05bd5c
+      size: 3468
+  merge_weather:
+    cmd: python -m src.data.merge
+    deps:
+    - path: data/interim/pollutants_daily.parquet
+      hash: md5
+      md5: 5a18b4e72631ff606e09e1f3a5cd35b3
+      size: 499504
+    - path: data/raw/weather
+      hash: md5
+      md5: 84dcf723d4a0cace631b08d3724f669e.dir
+      size: 570528625
+      nfiles: 659
+    - path: src/data/merge.py
+      hash: md5
+      md5: 68fe5fde472505544ada06aaed797255
+      size: 7350
+    params:
+      params.yaml:
+        weather:
+          variables:
+          - temperature_2m
+          - relative_humidity_2m
+          - surface_pressure
+          - precipitation
+          - wind_speed_10m
+          - wind_direction_10m
+    outs:
+    - path: data/interim/station_day.parquet
+      hash: md5
+      md5: ff1f2e0607cc3052b26fa1dfe9ceaa1f
+      size: 330581
+    - path: reports/metrics/merge_stats.json
+      hash: md5
+      md5: b224c79d4881c8363dd9fc5018ef2360
+      size: 5345
+  clean:
+    cmd: python -m src.data.clean
+    deps:
+    - path: data/interim/station_day.parquet
+      hash: md5
+      md5: ff1f2e0607cc3052b26fa1dfe9ceaa1f
+      size: 330581
+    - path: src/data/clean.py
+      hash: md5
+      md5: eea93650a6fc44de7ff7ad2a1623520c
+      size: 9789
+    params:
+      params.yaml:
+        clean:
+          max_missing_frac_row: 0.5
+          ffill_limit_days: 2
+          winsor_lower_q: 0.005
+          winsor_upper_q: 0.995
+          drop_cols_over_missing: 0.7
+        seed: 42
+        split:
+          train_end: '2022-12-31'
+          val_end: '2025-12-31'
+    outs:
+    - path: data/interim/station_day_clean.parquet
+      hash: md5
+      md5: 9c4e2ba7df08236d98b40654b87b7cf6
+      size: 285410
+    - path: reports/metrics/clean_stats.json
+      hash: md5
+      md5: 5c62e44a3eb87a4a7fba29cc0c1448ee
+      size: 6030
+  features:
+    cmd: python -m src.features.build_features
+    deps:
+    - path: data/interim/station_day_clean.parquet
+      hash: md5
+      md5: 9c4e2ba7df08236d98b40654b87b7cf6
+      size: 285410
+    - path: src/features/aqi_utils.py
+      hash: md5
+      md5: d7d3854b35ad48352d1641b2139fb699
+      size: 5556
+    - path: src/features/build_features.py
+      hash: md5
+      md5: c4bc372532ed5143ccb3234a49ca76b4
+      size: 16764
+    params:
+      params.yaml:
+        features:
+          horizon_days: 1
+          lags:
+          - 1
+          - 2
+          - 3
+          - 7
+          rolling_windows:
+          - 3
+          - 7
+          - 14
+          use_calendar: true
+          use_station_embedding: city_onehot
+        seed: 42
+        split:
+          train_end: '2022-12-31'
+          val_end: '2025-12-31'
+    outs:
+    - path: data/processed/feature_list.json
+      hash: md5
+      md5: 4962d68d9a9df685c57af2f38356f994
+      size: 2733
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 0b311d52931c6130c2f1f865c5bcc0db
+      size: 375130
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 50e87117ec4b64de313cbfb0dbec02a1
+      size: 526842
+    - path: data/processed/val.parquet
+      hash: md5
+      md5: 29927ee75f6650f38d38057cb2bcf141
+      size: 439631
+    - path: reports/metrics/features_stats.json
+      hash: md5
+      md5: d6da3fed8d213e57f54371a9fa0c0fe7
+      size: 19211
+  validate:
+    cmd: python -m src.data.ingest
+    deps:
+    - path: configs/stations_selected.csv
+      hash: md5
+      md5: 281eb94382db76911856dd9671b17f92
+      size: 9276
+    - path: data/raw/openaq
+      hash: md5
+      md5: 6d18906931c5f94851d8eaa98d24e8f9.dir
+      size: 302230623
+      nfiles: 108303
+    - path: data/raw/weather
+      hash: md5
+      md5: 84dcf723d4a0cace631b08d3724f669e.dir
+      size: 570528625
+      nfiles: 659
+    - path: src/data/ingest.py
+      hash: md5
+      md5: 1aec8889472de720eea41dcf21a536eb
+      size: 7068
+    - path: src/data/validate.py
+      hash: md5
+      md5: 91e9185cda7805e610dca98a09478bec
+      size: 10655
+    params:
+      params.yaml:
+        data:
+          window_start: '2019-01-01'
+          snapshot_end: '2026-09-30'
+          cities:
+          - Bengaluru
+          - Delhi
+          - Mumbai
+          - Chennai
+          - Kolkata
+          - Hyderabad
+          - Pune
+          - Ahmedabad
+          - Lucknow
+          min_years_per_station: 3
+          min_hourly_completeness: 0.6
+    outs:
+    - path: reports/metrics/data_validation.json
+      hash: md5
+      md5: c058258ed38cbdda2475b613606e05d3
+      size: 1446
