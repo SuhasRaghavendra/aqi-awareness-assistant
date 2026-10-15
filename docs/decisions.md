@@ -26,6 +26,8 @@
 | D-014 | 2026-10-15 | Dual evaluation strategy for Task B (Direct Multi-class Classifiers and Regress-Then-Bucket) | Only train direct classification models | Regress-Then-Bucket leverages continuous AQI predictions and achieves 97.97% within-one-category accuracy, while direct Random Forest Classifier achieves 0.6077 Macro-F1. | [Step 008](logbook/008-baseline-models-evaluation-and-mlflow-tracking.md) |
 | D-015 | 2026-10-15 | Prioritize `import lightgbm` before pandas/pyarrow on Windows environments | Disable LightGBM; reinstall system C++ runtimes | Resolves an OpenMP C-runtime access violation caused by PyArrow's threading DLL colliding with LightGBM's C-API on Windows. | [Step 008](logbook/008-baseline-models-evaluation-and-mlflow-tracking.md) |
 | D-016 | 2026-10-15 | Use project-local `.venv` directory for Python virtual environment | Windows Store Python global site-packages | Avoids Windows 260-character `MAX_PATH` file path exhaustion during package extraction (e.g. MLflow DB migration scripts). | [Step 008](logbook/008-baseline-models-evaluation-and-mlflow-tracking.md) |
+| D-017 | 2026-10-15 | Retain full multimodal feature space (Lags + Weather + Spatial + Calendar) based on ablation evidence | Lag-only model; discard weather due to API latency | Dropping lags degrades RMSE by +10.50% (worse than persistence), and dropping weather degrades RMSE by +3.30%. Both are vital for production accuracy. | [Step 009](logbook/009-feature-ablation-studies-and-mlflow-experiment-comparison.md) |
 
 ---
 _Add new rows above this line._
+

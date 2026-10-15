@@ -276,9 +276,9 @@ stages:
     outs:
     - path: reports/figures/evaluation/
       hash: md5
-      md5: 50b3ffacdb4a01b47d2cddbc2a7de310.dir
-      size: 729566
-      nfiles: 5
+      md5: 30eeff50e303204b48e7a738b1021f20.dir
+      size: 867526
+      nfiles: 6
     - path: reports/metrics/test_metrics.json
       hash: md5
       md5: 66446105a2fee08b7772880831ce88f2

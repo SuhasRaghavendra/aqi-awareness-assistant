@@ -1,0 +1,42 @@
+[
+  {
+    "ablation": "Full Feature Set (All)",
+    "n_features": 129,
+    "mae": 27.091,
+    "rmse": 42.785,
+    "r2": 0.7473,
+    "delta_rmse_vs_full": 0.0,
+    "pct_degradation": 0.0,
+    "train_time_sec": 0.092
+  },
+  {
+    "ablation": "No Weather Features",
+    "n_features": 103,
+    "mae": 27.049,
+    "rmse": 44.196,
+    "r2": 0.7304,
+    "delta_rmse_vs_full": 1.411,
+    "pct_degradation": 3.3,
+    "train_time_sec": 0.08
+  },
+  {
+    "ablation": "No Lag Features",
+    "n_features": 76,
+    "mae": 31.018,
+    "rmse": 47.279,
+    "r2": 0.6915,
+    "delta_rmse_vs_full": 4.494,
+    "pct_degradation": 10.5,
+    "train_time_sec": 0.063
+  },
+  {
+    "ablation": "No Spatial Features",
+    "n_features": 118,
+    "mae": 26.424,
+    "rmse": 43.329,
+    "r2": 0.7409,
+    "delta_rmse_vs_full": 0.544,
+    "pct_degradation": 1.27,
+    "train_time_sec": 0.086
+  }
+]

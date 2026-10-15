@@ -10,6 +10,9 @@ and include the step number, e.g. `feat(step-014): compute CPCB sub-indices`.
 ## [Unreleased]
 
 ### Added
+- **Step 009** (Phase 7): Feature ablation studies and MLflow experiment comparison — [009-feature-ablation-studies-and-mlflow-experiment-comparison.md](logbook/009-feature-ablation-studies-and-mlflow-experiment-comparison.md) — 2026-10-15
+
+### Added
 - **Step 008** (Phase 6): Baseline models evaluation and MLflow tracking — [008-baseline-models-evaluation-and-mlflow-tracking.md](logbook/008-baseline-models-evaluation-and-mlflow-tracking.md) — 2026-10-15
 
 ### Added
