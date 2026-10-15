@@ -1,0 +1,19 @@
+experiment_id,experiment_name,run_id,run_name,status,start_time,step_id,task,model_family,model_type,val_mae,val_rmse,val_r2,val_within_20_rate,val_skill_score,val_accuracy,val_macro_f1,val_within_one_category,train_time_sec
+2,aqi-classification-baselines,05e624f3baba4d51bff71fedef896e8b,random_forest_clf,FINISHED,2026-10-15 17:46:12.325,008,classification,tree_ensemble,RandomForestClassifier,,,,,,0.7295,0.6077,0.9743,0.358
+2,aqi-classification-baselines,44003082c36b44f9b181535c2af284c1,lightgbm_clf,FINISHED,2026-10-15 17:46:13.363,008,classification,gradient_boosting,LGBMClassifier,,,,,,0.6701,0.5586,0.967,0.84
+2,aqi-classification-baselines,4e4f2a72afac4cd398fec07b0d9ba6cc,regress_then_bucket,FINISHED,2026-10-15 17:46:11.354,008,classification,hybrid,RegressThenBucketClassifier,,,,,,0.6674,0.5318,0.9797,0.003
+2,aqi-classification-baselines,d4234b32bb83455da1ba2ee7e6c8e53d,logistic_regression,FINISHED,2026-10-15 17:46:11.818,008,classification,linear,LogisticRegression,,,,,,0.3516,0.3273,0.9039,0.341
+2,aqi-classification-baselines,226683db5b0e470ba5f9cf61dc36293b,majority_class,FINISHED,2026-10-15 17:46:11.234,008,classification,heuristic,MajorityClassBaseline,,,,,,0.4516,0.1037,0.8652,0.002
+1,aqi-regression-baselines,9c59e04f7c1c41348418a0f20bd30b04,ridge,FINISHED,2026-10-15 17:46:09.107,008,regression,linear,RidgeCV,27.091,42.785,0.7473,0.5617,0.0514,,,,0.084
+1,aqi-regression-baselines,c2af4c3394af41cca5d210bf404a20e6,ridge,FINISHED,2026-10-15 17:39:52.307,008,regression,linear,RidgeCV,27.091,42.785,0.7473,0.5617,0.0514,,,,0.106
+1,aqi-regression-baselines,8b88c14c0e5e4c328545ed5e75f7f3dd,lightgbm_reg,FINISHED,2026-10-15 17:46:11.098,008,regression,gradient_boosting,LGBMRegressor,26.605,43.578,0.7379,0.5827,0.0339,,,,0.152
+1,aqi-regression-baselines,ed26b2876b0546f3a5d5a08eea7ea6cd,persistence,FINISHED,2026-10-15 17:46:08.628,008,regression,heuristic,PersistenceBaseline,23.526,45.105,0.7192,0.6775,0.0,,,,0.001
+1,aqi-regression-baselines,a41fcb9354fe4e29b17c522c22c4fecc,persistence,FINISHED,2026-10-15 17:39:51.773,008,regression,heuristic,PersistenceBaseline,23.526,45.105,0.7192,0.6775,0.0,,,,0.001
+1,aqi-regression-baselines,d6381fdbecdc4c06825b1507b0fe355e,xgboost_reg,FINISHED,2026-10-15 17:46:10.807,008,regression,gradient_boosting,XGBRegressor,28.491,45.646,0.7124,0.5584,-0.012,,,,0.444
+1,aqi-regression-baselines,e857f843aa9b4716ae24017fc95c5a5f,xgboost_reg,FINISHED,2026-10-15 17:39:54.166,008,regression,gradient_boosting,XGBRegressor,28.491,45.646,0.7124,0.5584,-0.012,,,,0.541
+1,aqi-regression-baselines,105059fbef704a46a21b26fe0ede7aaa,seasonal_naive,FINISHED,2026-10-15 17:46:08.755,008,regression,heuristic,WeeklySeasonalNaiveBaseline,42.437,68.824,0.3462,0.4496,-0.5259,,,,0.001
+1,aqi-regression-baselines,a32387dfc35d4d37b0c9806d0ce069a8,seasonal_naive,FINISHED,2026-10-15 17:39:51.903,008,regression,heuristic,WeeklySeasonalNaiveBaseline,42.437,68.824,0.3462,0.4496,-0.5259,,,,0.0
+1,aqi-regression-baselines,bd7a551511b041b9a298b514945e039d,station_month_mean,FINISHED,2026-10-15 17:46:08.927,008,regression,heuristic,StationMonthMeanBaseline,52.265,72.726,0.27,0.3182,-0.6124,,,,0.083
+1,aqi-regression-baselines,8d4da84237fd4572b754bef72c5caad5,station_month_mean,FINISHED,2026-10-15 17:39:52.090,008,regression,heuristic,StationMonthMeanBaseline,52.265,72.726,0.27,0.3182,-0.6124,,,,0.085
+1,aqi-regression-baselines,73b748f3ec004a069754a76423d66a28,random_forest_reg,FINISHED,2026-10-15 17:46:10.237,008,regression,tree_ensemble,RandomForestRegressor,58.109,75.741,0.2082,0.2922,-0.6792,,,,1.005
+1,aqi-regression-baselines,4f37c89875f94a91b6e6999296529971,random_forest_reg,FINISHED,2026-10-15 17:39:53.492,008,regression,tree_ensemble,RandomForestRegressor,58.109,75.741,0.2082,0.2922,-0.6792,,,,1.067

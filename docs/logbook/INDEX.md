@@ -11,3 +11,4 @@
 | 005 | 2026-10-15 | DVC dataset versioning and pipeline setup | 3 | <student-A> | `6d40ad3` | [005-dvc-dataset-versioning.md](005-dvc-dataset-versioning.md) |
 | 006 | 2026-10-15 | Hourly to daily AQI computation and EDA | 4 | <student-A> | `41ecc50` | [006-hourly-to-daily-aqi-and-eda.md](006-hourly-to-daily-aqi-and-eda.md) |
 | 007 | 2026-10-15 | Feature engineering and chronological split | 5 | <student-A> | `9cc4b9a` | [007-feature-engineering-and-split.md](007-feature-engineering-and-split.md) |
+| 008 | 2026-10-15 | Baseline models evaluation and MLflow tracking | 6 | Srijan Kumar G S | `783ae9e` | [008-baseline-models-evaluation-and-mlflow-tracking.md](008-baseline-models-evaluation-and-mlflow-tracking.md) |

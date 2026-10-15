@@ -1,9 +1,6 @@
 [core]
-remote = local_storage
-
+    remote = origin
 ['remote "origin"']
-url = https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.dvc
-
-[remote "local_storage"]
-url = ../dvc_remote
-
+    url = https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.dvc
+['remote "local_storage"']
+    url = ../dvc_remote

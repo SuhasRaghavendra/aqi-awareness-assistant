@@ -215,3 +215,71 @@ stages:
       hash: md5
       md5: c058258ed38cbdda2475b613606e05d3
       size: 1446
+  train:
+    cmd: python -m src.models.train
+    deps:
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 9294593f28a923361e2b9ae052c713aa
+      size: 1189972
+    - path: data/processed/val.parquet
+      hash: md5
+      md5: 2d7307b5c1d86f40aefe855ec301c730
+      size: 1221877
+    - path: src/models/baselines.py
+      hash: md5
+      md5: 9e6767874f7bf4c4c98288da97100c55
+      size: 7298
+    - path: src/models/train.py
+      hash: md5
+      md5: 81f425813296d97736bd7baf8b03f7ad
+      size: 23217
+    params:
+      params.yaml:
+        seed: 42
+        train:
+          models:
+          - persistence
+          - seasonal_naive
+          - city_month_mean
+          - ridge
+          - random_forest
+          - xgboost
+          - lightgbm
+          cv_folds: 4
+    outs:
+    - path: models/
+      hash: md5
+      md5: a89cd4ef8e2e69887e0905d4079ad6c0.dir
+      size: 17663551
+      nfiles: 14
+    - path: reports/metrics/val_metrics.json
+      hash: md5
+      md5: 3bc9e26bba17edd887b2a4f278c9eb8b
+      size: 3007
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 82dd5a47017b2b3155a35073d2550006
+      size: 976113
+    - path: models/
+      hash: md5
+      md5: a89cd4ef8e2e69887e0905d4079ad6c0.dir
+      size: 17663551
+      nfiles: 14
+    - path: src/models/evaluate.py
+      hash: md5
+      md5: f6bd680c9547cb0c3c6e149c84a6d83a
+      size: 11527
+    outs:
+    - path: reports/figures/evaluation/
+      hash: md5
+      md5: 50b3ffacdb4a01b47d2cddbc2a7de310.dir
+      size: 729566
+      nfiles: 5
+    - path: reports/metrics/test_metrics.json
+      hash: md5
+      md5: 66446105a2fee08b7772880831ce88f2
+      size: 2738

@@ -62,3 +62,4 @@ htmlcov/
 
 # ruff / black cache
 .ruff_cache/
+/models

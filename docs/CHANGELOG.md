@@ -10,6 +10,9 @@ and include the step number, e.g. `feat(step-014): compute CPCB sub-indices`.
 ## [Unreleased]
 
 ### Added
+- **Step 008** (Phase 6): Baseline models evaluation and MLflow tracking — [008-baseline-models-evaluation-and-mlflow-tracking.md](logbook/008-baseline-models-evaluation-and-mlflow-tracking.md) — 2026-10-15
+
+### Added
 - **Step 004** (Phase 1): Data validation and data card — [004-data-validation-and-data-card.md](logbook/004-data-validation-and-data-card.md) — 2026-10-15
 
 ### Added
