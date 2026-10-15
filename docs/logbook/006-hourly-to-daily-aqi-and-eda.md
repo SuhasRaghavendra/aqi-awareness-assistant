@@ -1,14 +1,9 @@
-# Step 006 — Hourly→Daily Aggregation, CPCB AQI Computation, and EDA
-
-## Metadata
-| Field | Value |
-|---|---|
-| **Step** | 006 |
-| **Phase** | 4 — Data Processing and Exploration (EDA) |
-| **Date** | 2026-10-15 |
-| **Author** | <student-A> |
-| **Commit** | `41ecc50` |
-| **Status** | COMPLETE |
+# Step 006 — Hourly to daily AQI computation and EDA
+- **Date/time:** 2026-10-15T18:00:00+05:30
+- **Author:** <student-A>      **Reviewer:** <student-B>
+- **Phase:** 4           **Branch / PR:** `main` / #6
+- **Git commit(s):** `41ecc50`      **Data version:** `data-v1`
+- **MLflow run IDs:** N/A
 
 ---
 

@@ -2,7 +2,7 @@
 - **Date/time:** 2026-10-15T08:00:00+05:30
 - **Author:** <student-A>      **Reviewer:** <student-B>
 - **Phase:** 3           **Branch / PR:** `main` / #5
-- **Git commit(s):** `<to be recorded after manual commit>`      **Data version:** `data-v1` / `data-v2`
+- **Git commit(s):** `6d40ad3`      **Data version:** `data-v1` / `data-v2`
 - **MLflow run IDs (if any):** N/A
 
 ## 1. Objective

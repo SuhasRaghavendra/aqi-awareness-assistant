@@ -8,3 +8,6 @@
 | 002 | 2026-10-14 | Station discovery and selection | 1 | <student-A> | `9ac854f0df70` | [002-station-discovery-and-selection.md](002-station-discovery-and-selection.md) |
 | 003 | 2026-10-14 | Data acquisition OpenAQ and weather | 1 | <student-A> | `987906331a87` | [003-data-acquisition-openaq-and-weather.md](003-data-acquisition-openaq-and-weather.md) |
 | 004 | 2026-10-14 | Data validation and data card | 1 | <student-A> | `92251db8deb0` | [004-data-validation-and-data-card.md](004-data-validation-and-data-card.md) |
+| 005 | 2026-10-15 | DVC dataset versioning and pipeline setup | 3 | <student-A> | `6d40ad3` | [005-dvc-dataset-versioning.md](005-dvc-dataset-versioning.md) |
+| 006 | 2026-10-15 | Hourly to daily AQI computation and EDA | 4 | <student-A> | `41ecc50` | [006-hourly-to-daily-aqi-and-eda.md](006-hourly-to-daily-aqi-and-eda.md) |
+| 007 | 2026-10-15 | Feature engineering and chronological split | 5 | <student-A> | `9cc4b9a` | [007-feature-engineering-and-split.md](007-feature-engineering-and-split.md) |
