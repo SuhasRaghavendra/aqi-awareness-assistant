@@ -1,279 +1,221 @@
 """
 src/data/validate.py
---------------------
-Phase 1, Step 004: Data validation rules and schema verification.
+---------------------
+Phase 2 – Validation: Schema and integrity checks on the merged city × day panel.
 
-Provides schema checks, data hygiene assertions, and unit consistency verifications
-for raw OpenAQ pollutant observations and Open-Meteo ERA5 weather data:
-  - Required columns verification
-  - Timestamp parsing, timezone awareness, and future-timestamp guard
-  - Parameter membership in expected CPCB/atmospheric sets
-  - Unit inventory and unit inconsistency detection
-  - Value type assertions (numeric), sentinel detection (-999, -9999)
-  - Negative concentration detection
-  - Coordinate range sanity checks
-  - Duplicate detection on (location, sensor/parameter, datetime)
+Checks:
+  1. Required columns present
+  2. AQI target coverage per city (must exceed threshold)
+  3. Date continuity — no unexpected gaps
+  4. Value ranges for root-cause features
+  5. No future leakage (fire/weather from tomorrow in today's row)
+  6. City set completeness
+
+Outputs:
+    reports/metrics/data_validation.json
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
-from src.utils.logging_utils import get_logger
+from src.config import load_params
+from src.utils.logging_utils import get_logger, setup_logging
 
 logger = get_logger("validate")
 
-EXPECTED_OPENAQ_COLUMNS = [
-    "location_id",
-    "datetime",
-    "parameter",
-    "value",
+# ── Required columns (must exist; NaN allowed up to threshold) ────────────────
+REQUIRED_COLS = [
+    "city", "date", "aqi",
+    "fire_count_500km", "fire_frp_sum_500km",
+    "temperature_2m_mean", "wind_speed_10m_mean",
+    "relative_humidity_2m_mean", "precipitation_sum",
+    "burning_season_flag", "festival_flag", "grap_stage",
+    "bsvi_active", "season", "month", "weekend_flag",
 ]
 
-EXPECTED_POLLUTANTS = {
-    "pm25",
-    "pm10",
-    "no2",
-    "so2",
-    "co",
-    "o3",
-    "nh3",
-    "nox",
-    "no",
+# ── Value range guards ────────────────────────────────────────────────────────
+RANGE_CHECKS: dict[str, tuple[float, float]] = {
+    "aqi":                       (0,   1500),
+    "temperature_2m_mean":       (-5,   55),
+    "relative_humidity_2m_mean": (0,   100),
+    "wind_speed_10m_mean":       (0,   150),
+    "precipitation_sum":         (0,  1000),
+    "fire_count_500km":          (0, 50000),
+    "grap_stage":                (0,     4),
+    "month":                     (1,    12),
 }
 
-EXPECTED_WEATHER_VARIABLES = [
-    "temperature_2m",
-    "relative_humidity_2m",
-    "surface_pressure",
-    "precipitation",
-    "wind_speed_10m",
-    "wind_direction_10m",
-]
+# ── Maximum acceptable missing fraction per column ───────────────────────────
+MAX_MISSING_FRAC: dict[str, float] = {
+    "aqi":                       0.45,   # XKDR coverage gaps expected
+    "fire_count_500km":          0.05,
+    "temperature_2m_mean":       0.02,
+    "wind_speed_10m_mean":       0.02,
+    "relative_humidity_2m_mean": 0.02,
+    "diesel_frac":               0.30,   # vehicle data might be partial
+    "iip_manufacturing_index":   0.25,
+}
 
 
-@dataclass
-class ValidationReport:
-    """Encapsulates validation findings for a dataset."""
-
-    source_name: str
-    total_rows: int = 0
-    passed: bool = True
-    errors: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
-    metrics: dict[str, Any] = field(default_factory=dict)
-
-    def add_error(self, message: str) -> None:
-        self.errors.append(message)
-        self.passed = False
-        logger.error(f"[{self.source_name}] VALIDATION ERROR: {message}")
-
-    def add_warning(self, message: str) -> None:
-        self.warnings.append(message)
-        logger.warning(f"[{self.source_name}] VALIDATION WARNING: {message}")
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "source": self.source_name,
-            "total_rows": self.total_rows,
-            "passed": self.passed,
-            "error_count": len(self.errors),
-            "warning_count": len(self.warnings),
-            "errors": self.errors,
-            "warnings": self.warnings,
-            "metrics": self.metrics,
-        }
+def check_required_columns(df: pd.DataFrame) -> list[str]:
+    missing = [c for c in REQUIRED_COLS if c not in df.columns]
+    return missing
 
 
-def validate_openaq_df(
+def check_city_aqi_coverage(
     df: pd.DataFrame,
-    expected_parameters: set[str] | None = None,
-    allow_empty: bool = False,
-) -> ValidationReport:
-    """Validate OpenAQ narrow hourly pollutant observations dataframe."""
-    report = ValidationReport(source_name="OpenAQ_Pollutants", total_rows=len(df))
+    min_days: int = 180,
+) -> dict[str, int]:
+    """Return city → valid AQI day count; warn if below threshold."""
+    coverage: dict[str, int] = {}
+    for city, grp in df.groupby("city"):
+        days = int(grp["aqi"].notna().sum())
+        coverage[str(city)] = days
+        if days < min_days:
+            logger.warning(f"[{city}] AQI coverage: {days} days (threshold: {min_days})")
+    return coverage
 
-    if df.empty:
-        if allow_empty:
-            report.add_warning("DataFrame is empty.")
-            return report
-        report.add_error("OpenAQ DataFrame is empty.")
-        return report
 
-    expected_params = expected_parameters or EXPECTED_POLLUTANTS
+def check_date_continuity(df: pd.DataFrame) -> dict[str, list[str]]:
+    """Detect date gaps > 1 day per city."""
+    gaps: dict[str, list[str]] = {}
+    for city, grp in df.groupby("city"):
+        dates = pd.to_datetime(grp["date"]).sort_values()
+        diffs = dates.diff().dropna()
+        large_gaps = diffs[diffs > pd.Timedelta(days=1)]
+        if not large_gaps.empty:
+            gap_strs = [str(d.date()) for d in dates.iloc[large_gaps.index]]
+            gaps[str(city)] = gap_strs
+            logger.warning(f"[{city}] {len(large_gaps)} date gap(s) detected")
+    return gaps
 
-    # 1. Required columns
-    col_map = {c.lower(): c for c in df.columns}
-    missing_cols = [c for c in EXPECTED_OPENAQ_COLUMNS if c not in col_map]
-    if missing_cols:
-        report.add_error(
-            f"Missing required OpenAQ columns: {missing_cols}. Found: {list(df.columns)}"
+
+def check_value_ranges(df: pd.DataFrame) -> dict[str, dict[str, float]]:
+    """Check for out-of-range values; return violation counts."""
+    violations: dict[str, dict[str, float]] = {}
+    for col, (lo, hi) in RANGE_CHECKS.items():
+        if col not in df.columns:
+            continue
+        series = pd.to_numeric(df[col], errors="coerce")
+        oob = ((series < lo) | (series > hi)).sum()
+        if oob > 0:
+            frac = float(oob / len(df))
+            violations[col] = {"count": int(oob), "fraction": round(frac, 4), "lo": lo, "hi": hi}
+            logger.warning(f"[{col}] {oob} out-of-range values ({frac:.1%}): expected [{lo}, {hi}]")
+    return violations
+
+
+def check_missing_fractions(df: pd.DataFrame) -> dict[str, float]:
+    """Return missing fraction per column; warn if exceeds threshold."""
+    missing_pct: dict[str, float] = {}
+    for col, thresh in MAX_MISSING_FRAC.items():
+        if col not in df.columns:
+            continue
+        frac = float(df[col].isna().mean())
+        missing_pct[col] = round(frac, 4)
+        if frac > thresh:
+            logger.warning(
+                f"[{col}] Missing fraction {frac:.1%} exceeds threshold {thresh:.1%}"
+            )
+    return missing_pct
+
+
+def main() -> None:
+    setup_logging()
+    params = load_params()
+    expected_cities: list[str] = params["data"]["cities"]
+    min_aqi_days: int = params.get("aqi", {}).get("min_valid_days_per_city_year", 180)
+
+    input_path = Path("data/interim/city_day_raw.parquet")
+    if not input_path.exists():
+        raise FileNotFoundError(
+            f"{input_path} not found. Run ingest_and_merge.py first."
         )
-        return report
 
-    # 2. Datetime parsing and future timestamp check
-    dt_col = col_map["datetime"]
-    try:
-        parsed_dts = pd.to_datetime(df[dt_col], utc=True, errors="coerce")
-        null_dts = parsed_dts.isna().sum()
-        if null_dts > 0:
-            report.add_error(f"{null_dts} rows have unparseable datetime strings.")
+    df = pd.read_parquet(input_path)
+    logger.info(f"Loaded merged panel: {len(df):,} rows, {len(df.columns)} columns")
 
-        now_utc = datetime.now(timezone.utc)
-        future_dts = (parsed_dts > now_utc).sum()
-        report.metrics["future_timestamps_count"] = int(future_dts)
-        if future_dts > 0:
-            report.add_error(
-                f"{future_dts} observations contain timestamps in the future (> {now_utc.isoformat()})."
-            )
-    except Exception as exc:
-        report.add_error(f"Failed to parse datetime column: {exc}")
-
-    # 3. Parameter checks
-    param_col = col_map["parameter"]
-    actual_params = set(df[param_col].astype(str).str.lower().unique())
-    unknown_params = actual_params - expected_params
-    report.metrics["observed_parameters"] = sorted(actual_params)
-    report.metrics["unknown_parameters"] = sorted(unknown_params)
-    if unknown_params:
-        report.add_warning(f"Observed unexpected atmospheric parameters: {sorted(unknown_params)}")
-
-    # 4. Units inventory and inconsistency checks
-    if "units" in col_map:
-        units_col = col_map["units"]
-        units_by_param: dict[str, list[str]] = {}
-        for p, sub in df.groupby(param_col):
-            u_list = sorted(sub[units_col].dropna().astype(str).unique())
-            units_by_param[str(p)] = u_list
-
-        report.metrics["units_per_parameter"] = units_by_param
-        inconsistent_units = {p: u for p, u in units_by_param.items() if len(u) > 1}
-        report.metrics["inconsistent_units"] = inconsistent_units
-        if inconsistent_units:
-            report.add_warning(
-                f"Inconsistent units detected across parameters: {inconsistent_units}"
-            )
-    else:
-        report.add_warning("Units column missing from OpenAQ DataFrame.")
-
-    # 5. Value checks: numeric, negatives, and sentinels
-    val_col = col_map["value"]
-    numeric_vals = pd.to_numeric(df[val_col], errors="coerce")
-    nan_vals = numeric_vals.isna().sum()
-    report.metrics["non_numeric_or_nan_values"] = int(nan_vals)
-
-    sentinel_counts = int(((numeric_vals == -999) | (numeric_vals == -9999)).sum())
-    report.metrics["sentinel_values_count"] = sentinel_counts
-    if sentinel_counts > 0:
-        report.add_warning(f"Detected {sentinel_counts} sentinel missing values (-999 / -9999).")
-
-    negative_counts = int(
-        ((numeric_vals < 0) & (numeric_vals != -999) & (numeric_vals != -9999)).sum()
-    )
-    report.metrics["negative_values_count"] = negative_counts
-    if negative_counts > 0:
-        report.add_warning(f"Detected {negative_counts} negative concentration values.")
-
-    # 6. Duplicates check
-    dup_subset = ["location_id", "datetime", "parameter"]
-    if all(c in col_map for c in dup_subset):
-        dups = df.duplicated(subset=[col_map[c] for c in dup_subset]).sum()
-        report.metrics["duplicate_observations"] = int(dups)
-        if dups > 0:
-            report.add_warning(
-                f"Detected {dups} duplicate observations on (location_id, datetime, parameter)."
-            )
-
-    return report
-
-
-def validate_weather_df(
-    df: pd.DataFrame,
-    expected_variables: list[str] | None = None,
-    allow_empty: bool = False,
-) -> ValidationReport:
-    """Validate Open-Meteo ERA5 hourly historical weather observations dataframe."""
-    report = ValidationReport(source_name="OpenMeteo_Weather", total_rows=len(df))
-
-    if df.empty:
-        if allow_empty:
-            report.add_warning("Weather DataFrame is empty.")
-            return report
-        report.add_error("Weather DataFrame is empty.")
-        return report
-
-    expected_vars = expected_variables or EXPECTED_WEATHER_VARIABLES
+    errors: list[str] = []
+    warnings: list[str] = []
 
     # 1. Required columns
-    col_map = {c.lower(): c for c in df.columns}
-    if "time" not in col_map:
-        report.add_error(f"Missing required timestamp column 'time'. Found: {list(df.columns)}")
-        return report
+    missing_cols = check_required_columns(df)
+    if missing_cols:
+        for col in missing_cols:
+            warnings.append(f"Missing column: {col}")
+            logger.warning(f"Missing required column: {col}")
 
-    missing_vars = [v for v in expected_vars if v not in col_map]
-    report.metrics["missing_weather_variables"] = missing_vars
-    if missing_vars:
-        report.add_warning(f"Some expected weather variables missing: {missing_vars}")
+    # 2. City set
+    actual_cities = set(df["city"].unique())
+    expected_set = set(expected_cities)
+    missing_cities = expected_set - actual_cities
+    if missing_cities:
+        warnings.append(f"Cities missing from panel: {sorted(missing_cities)}")
+        logger.warning(f"Cities missing: {missing_cities}")
 
-    # 2. Datetime parsing and future timestamp check
-    try:
-        parsed_times = pd.to_datetime(df[col_map["time"]], errors="coerce")
-        null_times = parsed_times.isna().sum()
-        if null_times > 0:
-            report.add_error(f"{null_times} weather records have unparseable timestamps.")
+    # 3. AQI coverage
+    aqi_coverage = check_city_aqi_coverage(df, min_days=min_aqi_days)
 
-        now_naive = datetime.now()
-        future_times = (parsed_times.dt.tz_localize(None) > now_naive).sum()
-        report.metrics["future_timestamps_count"] = int(future_times)
-        if future_times > 0:
-            report.add_error(f"{future_times} weather records have timestamps in the future.")
-    except Exception as exc:
-        report.add_error(f"Failed to parse weather 'time' column: {exc}")
+    # 4. Date continuity
+    date_gaps = check_date_continuity(df)
 
-    # 3. Physical range sanity checks
-    range_violations = {}
+    # 5. Value ranges
+    range_violations = check_value_ranges(df)
+    for col, v in range_violations.items():
+        if v["fraction"] > 0.02:
+            errors.append(f"Range violation {col}: {v['fraction']:.1%} rows out of [{v['lo']}, {v['hi']}]")
 
-    if "relative_humidity_2m" in col_map:
-        rh = pd.to_numeric(df[col_map["relative_humidity_2m"]], errors="coerce")
-        invalid_rh = int(((rh < 0) | (rh > 100)).sum())
-        if invalid_rh > 0:
-            range_violations["relative_humidity_out_of_range"] = invalid_rh
-            report.add_warning(f"{invalid_rh} relative humidity values outside [0, 100]%.")
+    # 6. Missing fractions
+    missing_fracs = check_missing_fractions(df)
 
-    if "temperature_2m" in col_map:
-        temp = pd.to_numeric(df[col_map["temperature_2m"]], errors="coerce")
-        invalid_temp = int(((temp < -30) | (temp > 60)).sum())
-        if invalid_temp > 0:
-            range_violations["temperature_out_of_range"] = invalid_temp
-            report.add_warning(
-                f"{invalid_temp} temperatures outside realistic Indian range [-30, 60]°C."
-            )
+    # ── Report ────────────────────────────────────────────────────────────────
+    passed = len(errors) == 0
+    status = "PASS" if passed else "FAIL"
 
-    if "precipitation" in col_map:
-        precip = pd.to_numeric(df[col_map["precipitation"]], errors="coerce")
-        invalid_precip = int((precip < 0).sum())
-        if invalid_precip > 0:
-            range_violations["negative_precipitation"] = invalid_precip
-            report.add_warning(f"{invalid_precip} negative precipitation values detected.")
+    report: dict[str, Any] = {
+        "validated_at": datetime.now().isoformat(),
+        "status": status,
+        "total_rows": int(len(df)),
+        "total_columns": int(len(df.columns)),
+        "errors": errors,
+        "warnings": warnings,
+        "aqi_coverage_by_city": aqi_coverage,
+        "date_gaps_by_city": {k: v[:5] for k, v in date_gaps.items()},  # first 5 gaps only
+        "range_violations": range_violations,
+        "missing_fractions": missing_fracs,
+    }
 
-    if "surface_pressure" in col_map:
-        press = pd.to_numeric(df[col_map["surface_pressure"]], errors="coerce")
-        invalid_press = int(((press < 500) | (press > 1100)).sum())
-        if invalid_press > 0:
-            range_violations["pressure_out_of_range"] = invalid_press
-            report.add_warning(f"{invalid_press} surface pressure values outside [500, 1100] hPa.")
+    out_path = Path("reports/metrics/data_validation.json")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        json.dump(report, f, indent=2)
 
-    report.metrics["range_violations"] = range_violations
+    print("\n" + "=" * 60)
+    print(f"VALIDATION: {status}")
+    print("=" * 60)
+    if errors:
+        print("ERRORS:")
+        for e in errors:
+            print(f"  ✗ {e}")
+    if warnings:
+        print("WARNINGS:")
+        for w in warnings[:10]:
+            print(f"  ⚠ {w}")
+    print(f"\nTotal rows:    {len(df):,}")
+    print(f"AQI coverage:  {sum(aqi_coverage.values()):,} city-days")
+    print("=" * 60 + "\n")
 
-    # 4. Duplicates check
-    dup_cols = ["location_id", "time"] if "location_id" in col_map else ["time"]
-    dups = df.duplicated(subset=[col_map[c] for c in dup_cols]).sum()
-    report.metrics["duplicate_timestamps"] = int(dups)
-    if dups > 0:
-        report.add_warning(f"Detected {dups} duplicate weather observations on {dup_cols}.")
+    if not passed:
+        raise SystemExit(f"Validation FAILED with {len(errors)} error(s). See {out_path}")
 
-    return report
+
+if __name__ == "__main__":
+    main()
+

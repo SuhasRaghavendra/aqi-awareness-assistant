@@ -1,39 +1,36 @@
 """
 src/data/download_weather.py
-----------------------------
-Phase 1, Step 003: Download Open-Meteo ERA5 historical weather data.
+-----------------------------
+Phase 1 – Step C: Download daily meteorological data from Open-Meteo ERA5
+archive for all 9 target cities.
 
-For each selected air quality monitoring station coordinate, fetches hourly
-weather reanalysis data from Open-Meteo in yearly chunks:
-  Variables:
-    - temperature_2m (°C)
-    - relative_humidity_2m (%)
-    - dew_point_2m (°C)
-    - surface_pressure (hPa)
-    - precipitation (mm)
-    - wind_speed_10m (km/h or m/s)
-    - wind_direction_10m (degrees)
-    - boundary_layer_height (m)
+No API key required. Open-Meteo is completely free for non-commercial use
+(10,000 requests/day). Uses ECMWF ERA5 reanalysis: 1940–present, ~0.25° grid.
 
-Key Features:
-  - Local disk caching per (station, year) in Parquet format
-  - Throttled requests with exponential backoff on errors
-  - Timezone standardized to Asia/Kolkata
-  - Manifest generation: data/raw/weather_manifest.csv
-  - Offline --mock mode for testing and sandbox execution
+Variables downloaded (daily aggregates):
+  temperature_2m_mean / max / min    (°C)
+  relative_humidity_2m_mean          (%)
+  wind_speed_10m_mean                (km/h)
+  wind_direction_10m_dominant        (degrees)
+  precipitation_sum                  (mm)
+  surface_pressure_mean              (hPa)
+  vapour_pressure_deficit_mean       (kPa)
 
 Usage:
-  python -m src.data.download_weather --help
-  python -m src.data.download_weather --mock
-  python -m src.data.download_weather --limit-stations 2 --limit-years 1
+    python -m src.data.download_weather [--start 2019-01-01] [--end 2026-09-30]
+    python -m src.data.download_weather --mock    # fast offline test
+
+Outputs:
+    data/raw/weather/city_weather_daily.parquet
+    reports/metrics/download_weather_stats.json
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
+import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -49,331 +46,186 @@ logger = get_logger("download_weather")
 
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 DEFAULT_TIMEZONE = "Asia/Kolkata"
-DEFAULT_VARIABLES = [
-    "temperature_2m",
-    "relative_humidity_2m",
-    "dew_point_2m",
-    "surface_pressure",
-    "precipitation",
-    "wind_speed_10m",
-    "wind_direction_10m",
-    "boundary_layer_height",
+
+CITY_COORDS: dict[str, tuple[float, float]] = {
+    "Delhi":     (28.6139, 77.2090),
+    "Mumbai":    (19.0760, 72.8777),
+    "Bengaluru": (12.9716, 77.5946),
+    "Chennai":   (13.0827, 80.2707),
+    "Kolkata":   (22.5726, 88.3639),
+    "Hyderabad": (17.3850, 78.4867),
+    "Pune":      (18.5204, 73.8567),
+    "Ahmedabad": (23.0225, 72.5714),
+    "Lucknow":   (26.8467, 80.9462),
+}
+
+DAILY_VARIABLES = [
+    "temperature_2m_mean",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "relative_humidity_2m_mean",
+    "wind_speed_10m_mean",
+    "wind_direction_10m_dominant",
+    "precipitation_sum",
+    "surface_pressure_mean",
+    "vapour_pressure_deficit_mean",
 ]
 
 
-def compute_sha256(filepath: Path) -> str:
-    """Calculate the SHA256 hash of a file."""
-    h = hashlib.sha256()
-    with filepath.open("rb") as f:
-        while chunk := f.read(65536):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def generate_yearly_intervals(window_start: str, snapshot_end: str) -> list[tuple[int, str, str]]:
-    """Split date range into (year, chunk_start, chunk_end) tuples."""
-    start_dt = datetime.fromisoformat(window_start)
-    end_dt = datetime.fromisoformat(snapshot_end)
-
-    intervals = []
-    for year in range(start_dt.year, end_dt.year + 1):
-        chunk_start = f"{year}-01-01" if year > start_dt.year else window_start
-        chunk_end = f"{year}-12-31" if year < end_dt.year else snapshot_end
-        intervals.append((year, chunk_start, chunk_end))
-
-    return intervals
-
-
-def fetch_weather_chunk(
+def fetch_city_weather(
+    city: str,
     lat: float,
     lon: float,
-    start_date: str,
-    end_date: str,
-    variables: list[str],
-    timezone_name: str = DEFAULT_TIMEZONE,
-    max_retries: int = 3,
+    start: str,
+    end: str,
+    retries: int = 4,
+    delay: float = 1.5,
 ) -> pd.DataFrame:
-    """Fetch hourly weather from Open-Meteo for a specific coordinate and date range."""
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": start_date,
-        "end_date": end_date,
-        "hourly": ",".join(variables),
-        "timezone": timezone_name,
+    """Fetch daily ERA5 weather for one city from Open-Meteo."""
+    params: dict[str, Any] = {
+        "latitude":   lat,
+        "longitude":  lon,
+        "start_date": start,
+        "end_date":   end,
+        "daily":      ",".join(DAILY_VARIABLES),
+        "timezone":   DEFAULT_TIMEZONE,
+        "models":     "era5",
     }
 
-    retries = max_retries
-    while retries > 0:
+    for attempt in range(1, retries + 1):
         try:
-            resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=30)
+            resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=60)
             if resp.status_code == 429:
-                logger.warning("Rate limit hit (429) from Open-Meteo. Throttling for 10s...")
-                time.sleep(10)
-                retries -= 1
+                wait = 30 * attempt
+                logger.warning(f"[{city}] Rate-limited (429). Waiting {wait}s …")
+                time.sleep(wait)
                 continue
             resp.raise_for_status()
             data = resp.json()
-            hourly = data.get("hourly", {})
-            if not hourly or "time" not in hourly:
-                raise ValueError("Open-Meteo response missing 'hourly.time' data.")
-            df = pd.DataFrame(hourly)
+            daily = data.get("daily", {})
+            if not daily or "time" not in daily:
+                raise ValueError("Open-Meteo response missing daily.time")
+            df = pd.DataFrame(daily)
+            df.rename(columns={"time": "date"}, inplace=True)
+            df["city"] = city
+            logger.info(f"[{city}] Downloaded {len(df):,} daily weather rows ({start}→{end})")
             return df
         except Exception as exc:
-            retries -= 1
-            logger.warning(
-                f"Weather request failed ({start_date} to {end_date}, retries left={retries}): {exc}"
-            )
-            if retries == 0:
-                raise
-            time.sleep(2.0 * (max_retries - retries + 1))
+            logger.warning(f"[{city}] Weather attempt {attempt}/{retries}: {exc}")
+            time.sleep(delay * attempt)
 
-    raise RuntimeError(
-        f"Failed to fetch weather data for ({lat}, {lon}) {start_date} to {end_date}"
-    )
+    logger.error(f"[{city}] All weather download retries exhausted")
+    return pd.DataFrame()
 
 
-def generate_mock_weather_chunk(
+def generate_mock_weather(
+    city: str,
     lat: float,
-    lon: float,
-    start_date: str,
-    end_date: str,
-    variables: list[str],
+    start: str,
+    end: str,
 ) -> pd.DataFrame:
-    """Generate synthetic hourly weather dataframe matching Open-Meteo ERA5 schema."""
-    date_range = pd.date_range(start=f"{start_date} 00:00:00", end=f"{end_date} 23:00:00", freq="h")
-    n_hours = len(date_range)
+    """Generate realistic mock daily weather for testing without network."""
+    dates = pd.date_range(start, end, freq="D")
+    n = len(dates)
+    rng = np.random.default_rng(abs(hash(city)) % (2**31))
 
-    # Base weather patterns
-    hours = date_range.hour.values
-    t_base = 25.0 + 5.0 * np.sin((hours - 9) * 2 * np.pi / 24) + np.random.normal(0, 1.0, n_hours)
-    rh_base = np.clip(
-        65.0 - 15.0 * np.sin((hours - 9) * 2 * np.pi / 24) + np.random.normal(0, 3.0, n_hours),
-        20.0,
-        98.0,
-    )
-    wind_spd = np.clip(
-        10.0 + 3.0 * np.sin(hours * 2 * np.pi / 24) + np.random.normal(0, 1.5, n_hours), 0.5, 35.0
-    )
+    # Seasonal temperature variation
+    day_of_year = np.array([d.timetuple().tm_yday for d in dates])
+    temp_base = 25.0 + (10.0 if lat > 20 else 3.0) * np.cos(2 * np.pi * (day_of_year - 15) / 365)
+    humidity_base = 60.0 + 25.0 * np.sin(2 * np.pi * (day_of_year - 180) / 365)
 
-    data: dict[str, Any] = {"time": date_range.strftime("%Y-%m-%dT%H:%M")}
+    df = pd.DataFrame({
+        "date": dates.strftime("%Y-%m-%d"),
+        "city": city,
+        "temperature_2m_mean": (temp_base + rng.normal(0, 2, n)).round(1),
+        "temperature_2m_max": (temp_base + 5 + rng.normal(0, 2, n)).round(1),
+        "temperature_2m_min": (temp_base - 5 + rng.normal(0, 2, n)).round(1),
+        "relative_humidity_2m_mean": np.clip(humidity_base + rng.normal(0, 10, n), 15, 97).round(1),
+        "wind_speed_10m_mean": np.clip(rng.exponential(8, n), 0.5, 60).round(1),
+        "wind_direction_10m_dominant": rng.uniform(0, 360, n).round(0),
+        "precipitation_sum": np.where(rng.random(n) > 0.85, rng.exponential(5, n), 0).round(1),
+        "surface_pressure_mean": (1010.0 + rng.normal(0, 5, n)).round(1),
+        "vapour_pressure_deficit_mean": np.clip(rng.exponential(0.8, n), 0, 4).round(2),
+    })
+    return df
 
-    for v in variables:
-        if "temperature" in v:
-            data[v] = np.round(t_base, 2)
-        elif "relative_humidity" in v:
-            data[v] = np.round(rh_base, 1)
-        elif "dew_point" in v:
-            data[v] = np.round(t_base - ((100 - rh_base) / 5.0), 2)
-        elif "surface_pressure" in v:
-            data[v] = np.round(920.0 + np.random.normal(0, 1.5, n_hours), 1)
-        elif "precipitation" in v:
-            data[v] = np.round(
-                np.where(
-                    np.random.random(n_hours) > 0.92, np.random.exponential(2.0, n_hours), 0.0
-                ),
-                2,
-            )
-        elif "wind_speed" in v:
-            data[v] = np.round(wind_spd, 2)
-        elif "wind_direction" in v:
-            data[v] = np.round((np.random.uniform(0, 360, n_hours)), 1)
-        elif "boundary_layer_height" in v:
-            data[v] = np.round(
-                np.clip(800.0 + 600.0 * np.sin((hours - 6) * np.pi / 12), 150.0, 2200.0), 1
-            )
-        else:
-            data[v] = np.round(np.random.normal(10, 2, n_hours), 2)
 
-    return pd.DataFrame(data)
+def add_derived_weather(df: pd.DataFrame) -> pd.DataFrame:
+    """Add secondary weather-derived features for pollution trapping."""
+    if "wind_speed_10m_mean" in df.columns and "relative_humidity_2m_mean" in df.columns:
+        wind = df["wind_speed_10m_mean"].fillna(5.0)
+        hum = df["relative_humidity_2m_mean"].fillna(50.0)
+        df["inversion_risk_flag"] = ((wind < 5.0) & (hum > 70.0)).astype(int)
+        df["fog_risk_flag"] = ((hum > 85.0) & (wind < 3.0)).astype(int)
+
+    if "precipitation_sum" in df.columns:
+        df["rain_washout_flag"] = (df["precipitation_sum"].fillna(0) > 5.0).astype(int)
+
+    return df
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Phase 1: Download Open-Meteo ERA5 weather data")
-    parser.add_argument(
-        "--stations-file",
-        type=Path,
-        default=Path("configs/stations_selected.csv"),
-        help="Selected stations CSV",
-    )
-    parser.add_argument(
-        "--output-dir", type=Path, default=Path("data/raw/weather"), help="Weather output directory"
-    )
-    parser.add_argument(
-        "--manifest",
-        type=Path,
-        default=Path("data/raw/weather_manifest.csv"),
-        help="Weather manifest CSV",
-    )
-    parser.add_argument("--limit-stations", type=int, default=None, help="Limit number of stations")
-    parser.add_argument(
-        "--limit-years", type=int, default=None, help="Limit number of years per station"
-    )
-    parser.add_argument(
-        "--throttle-delay", type=float, default=0.5, help="Delay between API requests in seconds"
-    )
-    parser.add_argument(
-        "--mock", action="store_true", help="Generate realistic mock weather data for testing"
-    )
+    setup_logging()
+    parser = argparse.ArgumentParser(description="Download Open-Meteo ERA5 daily weather for 9 cities")
+    parser.add_argument("--start", default="2019-01-01")
+    parser.add_argument("--end",   default="2026-09-30")
+    parser.add_argument("--output-dir", type=Path, default=Path("data/raw/weather"))
+    parser.add_argument("--mock", action="store_true", help="Generate mock data (no network)")
     args = parser.parse_args()
 
-    setup_logging(stage="download_weather")
-    logger.info("Starting Phase 1 Step 003: Open-Meteo Weather Download...")
-
     params = load_params()
-    data_cfg = params.get("data", {})
-    window_start = data_cfg.get("window_start", "2019-01-01")
-    snapshot_end = data_cfg.get("snapshot_end", "2026-09-30")
-
-    weather_cfg = params.get("weather", {})
-    variables = weather_cfg.get("variables", DEFAULT_VARIABLES)
-    # Ensure dew_point_2m and boundary_layer_height are included
-    for var in ["dew_point_2m", "boundary_layer_height"]:
-        if var not in variables:
-            variables.append(var)
-
-    if not args.stations_file.exists():
-        logger.error(
-            f"Stations file not found at {args.stations_file}. Run discover_stations first."
-        )
-        raise FileNotFoundError(f"{args.stations_file} does not exist.")
-
-    stations_df = pd.read_csv(args.stations_file)
-    if "selected" in stations_df.columns:
-        stations_df = stations_df[stations_df["selected"]].copy()
-
-    if args.limit_stations:
-        stations_df = stations_df.head(args.limit_stations)
-        logger.info(f"Limiting to first {args.limit_stations} stations.")
-
-    yearly_chunks = generate_yearly_intervals(window_start, snapshot_end)
-    if args.limit_years:
-        yearly_chunks = yearly_chunks[: args.limit_years]
-        logger.info(f"Limiting to first {args.limit_years} years.")
-
-    logger.info(
-        f"Loaded {len(stations_df)} stations. Processing {len(yearly_chunks)} year intervals per station."
-    )
-    logger.info(f"Variables to fetch: {variables}")
-
+    cities: list[str] = params["data"]["cities"]
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    args.manifest.parent.mkdir(parents=True, exist_ok=True)
 
-    manifest_records: list[dict[str, Any]] = []
-    total_chunks = len(stations_df) * len(yearly_chunks)
-    chunk_counter = 0
+    frames: list[pd.DataFrame] = []
+    for city in cities:
+        lat, lon = CITY_COORDS[city]
+        logger.info(f"Downloading weather for {city} ({lat}, {lon}) …")
+        if args.mock:
+            df = generate_mock_weather(city, lat, args.start, args.end)
+        else:
+            df = fetch_city_weather(city, lat, lon, args.start, args.end)
+            time.sleep(0.5)   # polite throttle
 
-    for _, station in stations_df.iterrows():
-        loc_id = int(station["location_id"])
-        lat = float(station["latitude"])
-        lon = float(station["longitude"])
-        station_name = station["name"]
+        if not df.empty:
+            df = add_derived_weather(df)
+            frames.append(df)
 
-        station_dir = args.output_dir / f"locationid={loc_id}"
-        station_dir.mkdir(parents=True, exist_ok=True)
+    if not frames:
+        raise RuntimeError("No weather data downloaded. Check network access.")
 
-        for year, chunk_start, chunk_end in yearly_chunks:
-            chunk_counter += 1
-            out_file = station_dir / f"weather_{loc_id}_{year}.parquet"
-            now_iso = datetime.now(timezone.utc).isoformat()
+    df_all = pd.concat(frames, ignore_index=True)
+    df_all["date"] = pd.to_datetime(df_all["date"]).dt.strftime("%Y-%m-%d")
+    df_all = df_all.sort_values(["city", "date"]).reset_index(drop=True)
 
-            # Resumable cache check
-            if out_file.exists() and out_file.stat().st_size > 1000:
-                logger.info(
-                    f"[{chunk_counter}/{total_chunks}] Station {loc_id} ({year}) already cached at {out_file.name}"
-                )
-                manifest_records.append(
-                    {
-                        "location_id": loc_id,
-                        "year": year,
-                        "start_date": chunk_start,
-                        "end_date": chunk_end,
-                        "local_path": str(out_file),
-                        "rows_count": len(pd.read_parquet(out_file)),
-                        "size_bytes": out_file.stat().st_size,
-                        "sha256": compute_sha256(out_file),
-                        "model_source": "Open-Meteo ERA5 Reanalysis",
-                        "download_time": now_iso,
-                        "status": "cached",
-                    }
-                )
-                continue
+    out_path = args.output_dir / "city_weather_daily.parquet"
+    df_all.to_parquet(out_path, index=False)
+    logger.info(f"Saved city weather → {out_path} ({len(df_all):,} rows)")
 
-            logger.info(
-                f"[{chunk_counter}/{total_chunks}] Fetching weather for station {loc_id} ({station_name}) [{chunk_start} -> {chunk_end}]..."
-            )
+    stats: dict[str, Any] = {
+        "downloaded_at": datetime.now().isoformat(),
+        "source": "mock" if args.mock else "Open-Meteo ERA5",
+        "start": args.start,
+        "end": args.end,
+        "cities": cities,
+        "total_rows": len(df_all),
+        "columns": list(df_all.columns),
+        "coverage_by_city": df_all.groupby("city")["date"].count().astype(int).to_dict(),
+    }
+    metrics_path = Path("reports/metrics/download_weather_stats.json")
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(metrics_path, "w") as f:
+        json.dump(stats, f, indent=2)
 
-            if args.mock:
-                weather_df = generate_mock_weather_chunk(
-                    lat, lon, chunk_start, chunk_end, variables
-                )
-            else:
-                weather_df = fetch_weather_chunk(lat, lon, chunk_start, chunk_end, variables)
-                time.sleep(args.throttle_delay)
-
-            weather_df["location_id"] = loc_id
-            weather_df.to_parquet(out_file, index=False)
-            file_size = out_file.stat().st_size
-            sha256_hash = compute_sha256(out_file)
-
-            manifest_records.append(
-                {
-                    "location_id": loc_id,
-                    "year": year,
-                    "start_date": chunk_start,
-                    "end_date": chunk_end,
-                    "local_path": str(out_file),
-                    "rows_count": len(weather_df),
-                    "size_bytes": file_size,
-                    "sha256": sha256_hash,
-                    "model_source": "Open-Meteo ERA5 Reanalysis",
-                    "download_time": now_iso,
-                    "status": "downloaded" if not args.mock else "mock_generated",
-                }
-            )
-
-    manifest_df = pd.DataFrame(manifest_records)
-    if manifest_df.empty:
-        manifest_df = pd.DataFrame(
-            columns=[
-                "location_id",
-                "year",
-                "start_date",
-                "end_date",
-                "local_path",
-                "rows_count",
-                "size_bytes",
-                "sha256",
-                "model_source",
-                "download_time",
-                "status",
-            ]
-        )
-
-    # Track stage stats
-    with track_stage(
-        "download_weather", inputs=[str(args.stations_file)], outputs=[str(args.manifest)]
-    ) as st:
-        st.record_input_frame(stations_df)
-        st.record_output_frame(manifest_df)
-        manifest_df.to_csv(args.manifest, index=False)
-        logger.info(f"Saved weather manifest with {len(manifest_df)} entries to {args.manifest}")
-
-    total_size_mb = (
-        manifest_df["size_bytes"].sum() / (1024 * 1024) if not manifest_df.empty else 0.0
-    )
-    total_hours = manifest_df["rows_count"].sum() if not manifest_df.empty else 0
-    status_counts = manifest_df["status"].value_counts().to_dict() if not manifest_df.empty else {}
+    with track_stage("download_weather", inputs=[], outputs=[str(out_path)]) as st:
+        st.record_output_frame(df_all)
 
     print("\n" + "=" * 60)
     print("WEATHER DOWNLOAD SUMMARY")
     print("=" * 60)
-    print(f"Stations Processed:       {len(stations_df)}")
-    print(f"Weather Chunks Processed: {len(manifest_df)}")
-    print(f"Total Hourly Rows:        {total_hours:,}")
-    print(f"Total Weather Volume:     {total_size_mb:.2f} MB")
-    print(f"Status Breakdown:         {status_counts}")
-    print(f"Manifest Path:            {args.manifest}")
+    for city, cnt in stats["coverage_by_city"].items():
+        print(f"  {city:<12}: {cnt:>5} city-days")
+    print(f"\nTotal rows: {len(df_all):,}  |  Columns: {len(df_all.columns)}")
     print("=" * 60 + "\n")
 
 

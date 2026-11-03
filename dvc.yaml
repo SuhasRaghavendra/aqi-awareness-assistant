@@ -1,71 +1,141 @@
 stages:
-  validate:
-    cmd: python -m src.data.ingest
+
+  # ── Step 1: Download AQI labels (XKDR API) ───────────────────────────────
+  download_aqi:
+    cmd: python -m src.data.download_aqi
     deps:
-      - src/data/ingest.py
-      - src/data/validate.py
-      - data/raw/openaq
-      - data/raw/weather
-      - configs/stations_selected.csv
+      - src/data/download_aqi.py
+      - src/config.py
     params:
       - data
-    metrics:
-      - reports/metrics/data_validation.json:
-          cache: false
-
-  hourly_to_daily:
-    cmd: python -m src.data.hourly_to_daily
-    deps:
-      - src/data/hourly_to_daily.py
-      - src/utils/stage_stats.py
-      - data/raw/openaq
-      - configs/cpcb_breakpoints.yaml
-      - src/features/aqi_utils.py
-    params:
-      - units
-      - aggregation
       - aqi
     outs:
-      - data/interim/pollutants_daily.parquet
+      - data/raw/aqi/city_aqi_daily.parquet
+      - data/raw/aqi/station_aqi_raw.parquet
     metrics:
-      - reports/metrics/hourly_to_daily_stats.json:
+      - reports/metrics/download_aqi_stats.json:
           cache: false
 
-  merge_weather:
-    cmd: python -m src.data.merge
+  # ── Step 2: Download fire events (NASA FIRMS VIIRS) ───────────────────────
+  download_fires:
+    cmd: python -m src.data.download_fires
     deps:
-      - src/data/merge.py
-      - data/interim/pollutants_daily.parquet
-      - data/raw/weather
+      - src/data/download_fires.py
+      - src/config.py
     params:
+      - data
+      - fires
+    outs:
+      - data/raw/fires/india_fires_raw.parquet
+      - data/raw/fires/city_fires_daily.parquet
+    metrics:
+      - reports/metrics/download_fires_stats.json:
+          cache: false
+
+  # ── Step 3: Download meteorological data (Open-Meteo ERA5) ───────────────
+  download_weather:
+    cmd: python -m src.data.download_weather
+    deps:
+      - src/data/download_weather.py
+      - src/config.py
+    params:
+      - data
       - weather
     outs:
-      - data/interim/station_day.parquet
+      - data/raw/weather/city_weather_daily.parquet
+    metrics:
+      - reports/metrics/download_weather_stats.json:
+          cache: false
+
+  # ── Step 4: Download vehicle registration data (data.gov.in / static CSV) ─
+  download_vehicles:
+    cmd: python -m src.data.download_vehicles
+    deps:
+      - src/data/download_vehicles.py
+      - src/config.py
+      - configs/vehicle_state_reference.csv
+    outs:
+      - data/raw/vehicles/city_vehicles_annual.parquet
+      - data/raw/vehicles/state_vehicles_annual.parquet
+    metrics:
+      - reports/metrics/download_vehicles_stats.json:
+          cache: false
+
+  # ── Step 5: Download industrial data (MOSPI IIP + CEA power) ─────────────
+  download_industrial:
+    cmd: python -m src.data.download_industrial
+    deps:
+      - src/data/download_industrial.py
+      - src/config.py
+    outs:
+      - data/raw/industrial/iip_monthly.parquet
+      - data/raw/industrial/state_power_monthly.parquet
+    metrics:
+      - reports/metrics/download_industrial_stats.json:
+          cache: false
+
+  # ── Step 6: Merge all sources into city × day panel ───────────────────────
+  ingest_and_merge:
+    cmd: python -m src.data.ingest_and_merge
+    deps:
+      - src/data/ingest_and_merge.py
+      - src/config.py
+      - data/raw/aqi/city_aqi_daily.parquet
+      - data/raw/fires/city_fires_daily.parquet
+      - data/raw/weather/city_weather_daily.parquet
+      - data/raw/vehicles/city_vehicles_annual.parquet
+      - data/raw/industrial/iip_monthly.parquet
+      - data/raw/industrial/state_power_monthly.parquet
+      - configs/grap_calendar.csv
+      - configs/festival_dates.yaml
+    params:
+      - data
+    outs:
+      - data/interim/city_day_raw.parquet
     metrics:
       - reports/metrics/merge_stats.json:
           cache: false
 
+  # ── Step 7: Schema validation ─────────────────────────────────────────────
+  validate:
+    cmd: python -m src.data.validate
+    deps:
+      - src/data/validate.py
+      - src/config.py
+      - data/interim/city_day_raw.parquet
+    params:
+      - aqi
+    metrics:
+      - reports/metrics/data_validation.json:
+          cache: false
+
+  # ── Step 8: Clean (winsorize, impute, drop) ───────────────────────────────
   clean:
     cmd: python -m src.data.clean
     deps:
       - src/data/clean.py
-      - data/interim/station_day.parquet
+      - src/features/aqi_utils.py
+      - src/config.py
+      - data/interim/city_day_raw.parquet
     params:
       - clean
       - split
+      - aqi
       - seed
     outs:
-      - data/interim/station_day_clean.parquet
+      - data/interim/city_day_clean.parquet
     metrics:
       - reports/metrics/clean_stats.json:
           cache: false
 
+  # ── Step 9: Feature engineering & chronological split ────────────────────
   features:
     cmd: python -m src.features.build_features
     deps:
       - src/features/build_features.py
       - src/features/aqi_utils.py
-      - data/interim/station_day_clean.parquet
+      - src/config.py
+      - data/interim/city_day_clean.parquet
     params:
       - features
       - split
@@ -75,17 +145,21 @@ stages:
       - data/processed/val.parquet
       - data/processed/test.parquet
       - data/processed/feature_list.json
+      - models/scaler.joblib
     metrics:
       - reports/metrics/features_stats.json:
           cache: false
 
+  # ── Step 10: Model training (unchanged model families) ───────────────────
   train:
     cmd: python -m src.models.train
     deps:
       - src/models/train.py
       - src/models/baselines.py
+      - src/config.py
       - data/processed/train.parquet
       - data/processed/val.parquet
+      - data/processed/feature_list.json
     params:
       - train
       - seed
@@ -95,12 +169,15 @@ stages:
       - reports/metrics/val_metrics.json:
           cache: false
 
+  # ── Step 11: Holdout evaluation ───────────────────────────────────────────
   evaluate:
     cmd: python -m src.models.evaluate
     deps:
       - src/models/evaluate.py
+      - src/config.py
       - models/
       - data/processed/test.parquet
+      - data/processed/feature_list.json
     outs:
       - reports/figures/evaluation/
     metrics:

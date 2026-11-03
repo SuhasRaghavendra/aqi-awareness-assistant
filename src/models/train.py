@@ -240,7 +240,8 @@ def main() -> None:
 
     # 3. Station-Month Mean Baseline
     t0 = time.time()
-    st_month_mean = StationMonthMeanBaseline(station_col="location_id", month_col="month", date_col="date")
+    st_col = "city" if "city" in df_train.columns else "location_id"
+    st_month_mean = StationMonthMeanBaseline(station_col=st_col, month_col="month", date_col="date")
     st_month_mean.fit(df_train, y_train_reg)
     preds_val_smm = st_month_mean.predict(df_val)
     time_smm = time.time() - t0

@@ -1,68 +1,76 @@
 seed: 42
+
 data:
   window_start: "2019-01-01"
   snapshot_end: "2026-09-30"
   cities:
-    - Bengaluru
     - Delhi
     - Mumbai
+    - Bengaluru
     - Chennai
     - Kolkata
     - Hyderabad
     - Pune
     - Ahmedabad
     - Lucknow
-  min_years_per_station: 3
-  min_hourly_completeness: 0.60
 
-units:
-  target_unit_ugm3: true
-  co_unit: mg/m3
-
-aggregation:
-  min_hours_per_day: 16
-  rolling_8h_pollutants:
-    - co
-    - o3
-
+# --- AQI labels from XKDR India Air Quality Database ---
 aqi:
-  min_subindices: 3
-  require_pm: true
+  source: xkdr          # xkdr | datagov
+  aqi_parameter: AQI    # parameter name in XKDR API
+  min_valid_days_per_city_year: 180  # drop city-year if fewer valid AQI days
 
+# --- Fire events from NASA FIRMS VIIRS ---
+fires:
+  source: firms_viirs_snpp   # VIIRS_SNPP_SP (Standard Processing)
+  radius_km: 500             # aggregate fires within this radius of each city
+  country_code: IND
+
+# --- Weather from Open-Meteo ERA5 (no key required) ---
 weather:
   variables:
-    - temperature_2m
-    - relative_humidity_2m
-    - surface_pressure
-    - precipitation
-    - wind_speed_10m
-    - wind_direction_10m
+    - temperature_2m_mean
+    - temperature_2m_max
+    - temperature_2m_min
+    - relative_humidity_2m_mean
+    - wind_speed_10m_mean
+    - wind_direction_10m_dominant
+    - precipitation_sum
+    - surface_pressure_mean
+    - vapour_pressure_deficit_mean
 
-clean:
-  max_missing_frac_row: 0.5
-  ffill_limit_days: 2
-  winsor_lower_q: 0.005
-  winsor_upper_q: 0.995
-  drop_cols_over_missing: 0.7
+# --- Vehicle data from data.gov.in ---
+vehicles:
+  source: datagov           # data.gov.in API
+  granularity: state_year   # annual state-wise totals interpolated to daily
 
+# --- Industrial data (MOSPI IIP + CEA) ---
+industrial:
+  iip_source: mospi_manual  # manually downloaded CSV from esankhyiki.mospi.gov.in
+  power_source: cea_manual  # manually downloaded from npp.gov.in
+
+# --- Feature engineering ---
 features:
   horizon_days: 1
-  lags:
-    - 1
-    - 2
-    - 3
-    - 7
-  rolling_windows:
-    - 3
-    - 7
-    - 14
+  aqi_lags: [1, 3, 7, 14]
+  fire_lags: [1, 3, 7]
+  rolling_windows: [7, 14, 30]
   use_calendar: true
-  use_station_embedding: city_onehot
+  use_city_onehot: true
 
+# --- Chronological split ---
 split:
   train_end: "2022-12-31"
-  val_end: "2025-12-31"
+  val_end:   "2025-12-31"
 
+# --- Cleaning ---
+clean:
+  max_missing_frac_row: 0.5
+  ffill_limit_days: 3
+  winsor_lower_q: 0.005
+  winsor_upper_q: 0.995
+
+# --- Training ---
 train:
   models:
     - persistence

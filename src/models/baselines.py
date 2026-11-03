@@ -109,10 +109,11 @@ class StationMonthMeanBaseline(BaseEstimator, RegressorMixin):
 
         self.global_mean_ = float(df["_target"].mean())
 
-        if self.station_col in df.columns and self.month_col in df.columns:
-            grouped = df.groupby([self.station_col, self.month_col])["_target"].mean()
+        st_col = self.station_col if self.station_col in df.columns else ("city" if "city" in df.columns else None)
+        if st_col and self.month_col in df.columns:
+            grouped = df.groupby([st_col, self.month_col])["_target"].mean()
             self.station_month_means_ = {(st, m): float(val) for (st, m), val in grouped.items()}
-            st_grouped = df.groupby(self.station_col)["_target"].mean()
+            st_grouped = df.groupby(st_col)["_target"].mean()
             self.station_means_ = {st: float(val) for st, val in st_grouped.items()}
 
         return self
@@ -122,9 +123,10 @@ class StationMonthMeanBaseline(BaseEstimator, RegressorMixin):
         if self.month_col not in df.columns and self.date_col in df.columns:
             df[self.month_col] = pd.to_datetime(df[self.date_col]).dt.month
 
+        st_col = self.station_col if self.station_col in df.columns else ("city" if "city" in df.columns else None)
         preds = []
         for _, row in df.iterrows():
-            st = row.get(self.station_col, None)
+            st = row.get(st_col, None) if st_col else None
             m = row.get(self.month_col, None)
             val = self.station_month_means_.get((st, m))
             if val is None:
