@@ -1,0 +1,33 @@
+{
+  "downloaded_at": "2026-11-03T20:35:19.293308",
+  "start": "2019-01-01",
+  "end": "2026-09-30",
+  "cities": [
+    "Delhi",
+    "Mumbai",
+    "Bengaluru",
+    "Chennai",
+    "Kolkata",
+    "Hyderabad",
+    "Pune",
+    "Ahmedabad",
+    "Lucknow"
+  ],
+  "total_city_day_rows": 20701,
+  "coverage_by_city": {
+    "Ahmedabad": 2340,
+    "Bengaluru": 2346,
+    "Chennai": 2436,
+    "Delhi": 2346,
+    "Hyderabad": 2612,
+    "Kolkata": 2398,
+    "Lucknow": 2346,
+    "Mumbai": 2408,
+    "Pune": 1469
+  },
+  "aqi_range": {
+    "min": 9.4,
+    "max": 500.0,
+    "mean": 99.57569199555577
+  }
+}

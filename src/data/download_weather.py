@@ -59,6 +59,8 @@ CITY_COORDS: dict[str, tuple[float, float]] = {
     "Lucknow":   (26.8467, 80.9462),
 }
 
+from datetime import timedelta
+
 DAILY_VARIABLES = [
     "temperature_2m_mean",
     "temperature_2m_max",
@@ -68,7 +70,17 @@ DAILY_VARIABLES = [
     "wind_direction_10m_dominant",
     "precipitation_sum",
     "surface_pressure_mean",
-    "vapour_pressure_deficit_mean",
+]
+
+OPEN_METEO_VARS = [
+    "temperature_2m_mean",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "relative_humidity_2m_mean",
+    "wind_speed_10m_mean",
+    "wind_direction_10m_dominant",
+    "precipitation_sum",
+    "pressure_msl_mean",
 ]
 
 
@@ -82,14 +94,15 @@ def fetch_city_weather(
     delay: float = 1.5,
 ) -> pd.DataFrame:
     """Fetch daily ERA5 weather for one city from Open-Meteo."""
+    max_archive_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+    eff_end = min(end, max_archive_date)
     params: dict[str, Any] = {
         "latitude":   lat,
         "longitude":  lon,
         "start_date": start,
-        "end_date":   end,
-        "daily":      ",".join(DAILY_VARIABLES),
+        "end_date":   eff_end,
+        "daily":      OPEN_METEO_VARS,
         "timezone":   DEFAULT_TIMEZONE,
-        "models":     "era5",
     }
 
     for attempt in range(1, retries + 1):
@@ -106,9 +119,9 @@ def fetch_city_weather(
             if not daily or "time" not in daily:
                 raise ValueError("Open-Meteo response missing daily.time")
             df = pd.DataFrame(daily)
-            df.rename(columns={"time": "date"}, inplace=True)
+            df.rename(columns={"time": "date", "pressure_msl_mean": "surface_pressure_mean"}, inplace=True)
             df["city"] = city
-            logger.info(f"[{city}] Downloaded {len(df):,} daily weather rows ({start}→{end})")
+            logger.info(f"[{city}] Downloaded {len(df):,} daily weather rows ({start}->{end})")
             return df
         except Exception as exc:
             logger.warning(f"[{city}] Weather attempt {attempt}/{retries}: {exc}")
@@ -165,7 +178,7 @@ def add_derived_weather(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="download_weather")
     parser = argparse.ArgumentParser(description="Download Open-Meteo ERA5 daily weather for 9 cities")
     parser.add_argument("--start", default="2019-01-01")
     parser.add_argument("--end",   default="2026-09-30")
@@ -200,7 +213,7 @@ def main() -> None:
 
     out_path = args.output_dir / "city_weather_daily.parquet"
     df_all.to_parquet(out_path, index=False)
-    logger.info(f"Saved city weather → {out_path} ({len(df_all):,} rows)")
+    logger.info(f"Saved city weather -> {out_path} ({len(df_all):,} rows)")
 
     stats: dict[str, Any] = {
         "downloaded_at": datetime.now().isoformat(),

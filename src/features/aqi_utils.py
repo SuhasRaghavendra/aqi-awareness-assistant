@@ -30,6 +30,7 @@ Rules:
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -46,8 +47,9 @@ CATEGORY_BANDS = [
 ]
 
 
+@lru_cache(maxsize=4)
 def load_cpcb_breakpoints(
-    config_path: str | Path = "configs/cpcb_breakpoints.yaml",
+    config_path: str = "configs/cpcb_breakpoints.yaml",
 ) -> dict[str, Any]:
     """Load CPCB pollutant breakpoint tables from YAML configuration."""
     cfg_file = Path(config_path)

@@ -383,3 +383,135 @@
 **Columns removed:** `aqi`, `aqi_category`, `aqi_diff1`, `aqi_lag_1`, `aqi_lag_2`, `aqi_lag_3`, `aqi_lag_7`, `aqi_rolling_max_14`, `aqi_rolling_max_3`, `aqi_rolling_max_7`, `aqi_rolling_mean_14`, `aqi_rolling_mean_3`, `aqi_rolling_mean_7`, `aqi_rolling_std_14`, `aqi_rolling_std_3`, `aqi_rolling_std_7`, `city`, `city_Ahmedabad`, `city_Bengaluru`, `city_Chennai`, `city_Delhi`, `city_Hyderabad`, `city_Kolkata`, `city_Mumbai`, `city_Pune`, `city_mean_aqi_other_stations`, `co`, `co_lag_1`, `co_lag_2`, `co_lag_3`, `co_lag_7`, `co_was_missing`, `cos_day_of_year`, `cos_month`, `date`, `day_of_week`, `day_of_year`, `dominant_pollutant`, `is_aqi_valid`, `is_festival`, `is_weekend`, `latitude`, `location_id`, `longitude`, `month`, `n_hours_co`, `n_hours_nh3`, `n_hours_no`, `n_hours_no2`, `n_hours_nox`, `n_hours_o3`, `n_hours_pm10`, `n_hours_pm25`, `n_hours_so2`, `no`, `no2`, `no2_lag_1`, `no2_lag_2`, `no2_lag_3`, `no2_lag_7`, `no2_was_missing`, `nox`, `o3`, `o3_lag_1`, `o3_lag_2`, `o3_lag_3`, `o3_lag_7`, `o3_was_missing`, `pm10`, `pm10_lag_1`, `pm10_lag_2`, `pm10_lag_3`, `pm10_lag_7`, `pm10_was_missing`, `pm25`, `pm25_diff1`, `pm25_lag_1`, `pm25_lag_2`, `pm25_lag_3`, `pm25_lag_7`, `pm25_pm10_ratio`, `pm25_rolling_max_14`, `pm25_rolling_max_3`, `pm25_rolling_max_7`, `pm25_rolling_mean_14`, `pm25_rolling_mean_3`, `pm25_rolling_mean_7`, `pm25_rolling_std_14`, `pm25_rolling_std_3`, `pm25_rolling_std_7`, `pm25_was_missing`, `precipitation_sum`, `precipitation_sum_lag1`, `precipitation_sum_roll3_mean`, `precipitation_sum_was_missing`, `relative_humidity_2m_mean`, `relative_humidity_2m_mean_lag1`, `relative_humidity_2m_mean_roll3_mean`, `relative_humidity_2m_mean_was_missing`, `season_monsoon`, `season_post_monsoon`, `season_summer`, `season_winter`, `sin_day_of_year`, `sin_month`, `so2`, `so2_lag_1`, `so2_lag_2`, `so2_lag_3`, `so2_lag_7`, `so2_was_missing`, `station_name`, `sub_co`, `sub_no2`, `sub_o3`, `sub_pm10`, `sub_pm25`, `sub_so2`, `surface_pressure_mean`, `surface_pressure_mean_lag1`, `surface_pressure_mean_roll3_mean`, `surface_pressure_mean_was_missing`, `target_aqi`, `target_category`, `temperature_2m_max`, `temperature_2m_max_was_missing`, `temperature_2m_mean`, `temperature_2m_mean_lag1`, `temperature_2m_mean_roll3_mean`, `temperature_2m_mean_was_missing`, `temperature_2m_min`, `temperature_2m_min_was_missing`, `wind_direction_10m_mean`, `wind_direction_10m_mean_was_missing`, `wind_speed_10m_mean`, `wind_speed_10m_mean_lag1`, `wind_speed_10m_mean_roll3_mean`, `wind_speed_10m_mean_was_missing`
 
 ---
+
+## download_weather — 2026-11-03
+
+| Field | Value |
+|---|---|
+| Stage | `download_weather` |
+| Start | 2026-11-03T13:42:32.199210+00:00 |
+| End | 2026-11-03T13:42:32.212781+00:00 |
+| Duration | 0.0 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 0 |
+| Rows out | 25,470 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `city`, `date`, `fog_risk_flag`, `inversion_risk_flag`, `precipitation_sum`, `rain_washout_flag`, `relative_humidity_2m_mean`, `surface_pressure_mean`, `temperature_2m_max`, `temperature_2m_mean`, `temperature_2m_min`, `wind_direction_10m_dominant`, `wind_speed_10m_mean`
+**Columns removed:** none
+
+---
+
+## download_weather — 2026-11-03
+
+| Field | Value |
+|---|---|
+| Stage | `download_weather` |
+| Start | 2026-11-03T15:40:54.189899+00:00 |
+| End | 2026-11-03T15:40:54.198467+00:00 |
+| Duration | 0.0 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 0 |
+| Rows out | 25,470 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `city`, `date`, `fog_risk_flag`, `inversion_risk_flag`, `precipitation_sum`, `rain_washout_flag`, `relative_humidity_2m_mean`, `surface_pressure_mean`, `temperature_2m_max`, `temperature_2m_mean`, `temperature_2m_min`, `wind_direction_10m_dominant`, `wind_speed_10m_mean`
+**Columns removed:** none
+
+---
+
+## clean — 2026-11-07
+
+| Field | Value |
+|---|---|
+| Stage | `clean` |
+| Start | 2026-11-07T10:27:16.984932+00:00 |
+| End | 2026-11-07T10:27:17.007876+00:00 |
+| Duration | 0.0 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 25,470 |
+| Rows out | 24,739 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** `aqi_category`
+**Columns removed:** none
+
+---
+
+## features — 2026-11-07
+
+| Field | Value |
+|---|---|
+| Stage | `features` |
+| Start | 2026-11-07T10:27:58.496676+00:00 |
+| End | 2026-11-07T10:27:58.548189+00:00 |
+| Duration | 0.1 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 20,643 |
+| Rows out | 12,235 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** none
+**Columns removed:** none
+
+---
+
+## train — 2026-11-07
+
+| Field | Value |
+|---|---|
+| Stage | `train` |
+| Start | 2026-11-07T10:28:50.021572+00:00 |
+| End | 2026-11-07T10:28:50.043639+00:00 |
+| Duration | 0.0 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 12,235 |
+| Rows out | 8,325 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** none
+**Columns removed:** none
+
+---
+
+## evaluate — 2026-11-07
+
+| Field | Value |
+|---|---|
+| Stage | `evaluate` |
+| Start | 2026-11-07T10:29:24.283864+00:00 |
+| End | 2026-11-07T10:29:24.300607+00:00 |
+| Duration | 0.0 s |
+| Git commit | `6a2e749` |
+| Params hash | `5a840e55f95b` |
+| Rows in | 83 |
+| Rows out | 0 |
+| Total dropped | 0 |
+
+**Rows dropped by reason:**
+  - (none)
+
+**Columns added:** none
+**Columns removed:** `aqi`, `aqi_category`, `aqi_diff_1d`, `aqi_diff_7d`, `aqi_lag_1`, `aqi_lag_14`, `aqi_lag_3`, `aqi_lag_7`, `aqi_roll_mean_14d`, `aqi_roll_mean_30d`, `aqi_roll_mean_7d`, `aqi_roll_std_14d`, `aqi_roll_std_30d`, `aqi_roll_std_7d`, `bsvi_active`, `burning_season_flag`, `city`, `city_ahmedabad`, `city_bengaluru`, `city_chennai`, `city_delhi`, `city_elevation_m`, `city_hyderabad`, `city_kolkata`, `city_lat`, `city_lon`, `city_lucknow`, `city_mumbai`, `city_population_lakh`, `city_pune`, `cng_frac`, `date`, `day_of_week`, `day_of_year`, `diesel_frac`, `diesel_vehicle_intensity`, `dow_cos`, `dow_sin`, `ev_frac`, `festival_burning_overlap`, `festival_flag`, `fire_burning_season`, `fire_count_500km`, `fire_count_500km_lag_1`, `fire_count_500km_lag_3`, `fire_count_500km_lag_7`, `fire_count_500km_roll_max_14d`, `fire_count_500km_roll_max_30d`, `fire_count_500km_roll_max_7d`, `fire_count_500km_roll_mean_14d`, `fire_count_500km_roll_mean_30d`, `fire_count_500km_roll_mean_7d`, `fire_dist_min_km`, `fire_frp_sum_500km`, `fire_frp_sum_500km_lag_1`, `fire_frp_sum_500km_lag_3`, `fire_frp_sum_500km_lag_7`, `fire_frp_sum_500km_roll_max_14d`, `fire_frp_sum_500km_roll_max_30d`, `fire_frp_sum_500km_roll_max_7d`, `fire_frp_sum_500km_roll_mean_14d`, `fire_frp_sum_500km_roll_mean_30d`, `fire_frp_sum_500km_roll_mean_7d`, `fire_x_low_wind`, `fog_risk_flag`, `grap_active`, `grap_lag_1`, `grap_severe`, `grap_stage`, `iip_manufacturing_index`, `inversion_risk_flag`, `inversion_risk_flag_lag_1`, `inversion_risk_flag_lag_3`, `inversion_x_fire`, `month`, `month_cos`, `month_sin`, `odd_even_active`, `precip_roll_sum_7d`, `precipitation_sum`, `precipitation_sum_lag_1`, `precipitation_sum_lag_3`, `rain_washout_flag`, `relative_humidity_2m_mean`, `relative_humidity_2m_mean_lag_1`, `relative_humidity_2m_mean_lag_3`, `season`, `season_monsoon`, `season_post_monsoon`, `season_summer`, `season_winter`, `station_count`, `surface_pressure_mean`, `target_aqi`, `target_category`, `temperature_2m_max`, `temperature_2m_mean`, `temperature_2m_mean_lag_1`, `temperature_2m_mean_lag_3`, `temperature_2m_min`, `two_wheeler_frac`, `vehicles_per_lakh`, `weekend_flag`, `wind_direction_10m_dominant`, `wind_roll_mean_3d`, `wind_roll_mean_7d`, `wind_speed_10m_mean`, `wind_speed_10m_mean_lag_1`, `wind_speed_10m_mean_lag_3`, `winter_stagnation_index`, `year`
+
+---

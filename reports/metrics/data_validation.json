@@ -1,0 +1,30 @@
+{
+  "validated_at": "2026-11-07T15:57:03.880824",
+  "status": "PASS",
+  "total_rows": 25470,
+  "total_columns": 43,
+  "errors": [],
+  "warnings": [],
+  "aqi_coverage_by_city": {
+    "Ahmedabad": 2340,
+    "Bengaluru": 2346,
+    "Chennai": 2436,
+    "Delhi": 2346,
+    "Hyderabad": 2612,
+    "Kolkata": 2398,
+    "Lucknow": 2346,
+    "Mumbai": 2408,
+    "Pune": 1469
+  },
+  "date_gaps_by_city": {},
+  "range_violations": {},
+  "missing_fractions": {
+    "aqi": 0.1872,
+    "fire_count_500km": 0.0,
+    "temperature_2m_mean": 0.0,
+    "wind_speed_10m_mean": 0.0,
+    "relative_humidity_2m_mean": 0.0,
+    "diesel_frac": 0.0,
+    "iip_manufacturing_index": 1.0
+  }
+}

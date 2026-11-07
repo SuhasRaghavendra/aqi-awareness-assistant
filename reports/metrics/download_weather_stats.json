@@ -1,0 +1,73 @@
+{
+  "stage": "download_weather",
+  "start_time": "2026-11-03T15:40:54.189899+00:00",
+  "end_time": "2026-11-03T15:40:54.198467+00:00",
+  "duration_s": 0.009,
+  "git_commit": "6a2e749",
+  "params_hash": "5a840e55f95b",
+  "inputs": [],
+  "outputs": [
+    {
+      "path": "data\\raw\\weather\\city_weather_daily.parquet",
+      "exists": true,
+      "size_bytes": 256516,
+      "rows": 25470,
+      "columns": [
+        "date",
+        "temperature_2m_mean",
+        "temperature_2m_max",
+        "temperature_2m_min",
+        "relative_humidity_2m_mean",
+        "wind_speed_10m_mean",
+        "wind_direction_10m_dominant",
+        "precipitation_sum",
+        "surface_pressure_mean",
+        "city",
+        "inversion_risk_flag",
+        "fog_risk_flag",
+        "rain_washout_flag"
+      ],
+      "n_columns": 13
+    }
+  ],
+  "frame_stats": {
+    "input": {},
+    "output": {
+      "rows": 25470,
+      "n_columns": 13,
+      "null_pct": {
+        "date": 0.0,
+        "temperature_2m_mean": 0.0,
+        "temperature_2m_max": 0.0,
+        "temperature_2m_min": 0.0,
+        "relative_humidity_2m_mean": 0.0,
+        "wind_speed_10m_mean": 0.0,
+        "wind_direction_10m_dominant": 0.0,
+        "precipitation_sum": 0.0,
+        "surface_pressure_mean": 0.0,
+        "city": 0.0,
+        "inversion_risk_flag": 0.0,
+        "fog_risk_flag": 0.0,
+        "rain_washout_flag": 0.0
+      }
+    }
+  },
+  "drops": [],
+  "total_dropped": 0,
+  "cols_added": [
+    "city",
+    "date",
+    "fog_risk_flag",
+    "inversion_risk_flag",
+    "precipitation_sum",
+    "rain_washout_flag",
+    "relative_humidity_2m_mean",
+    "surface_pressure_mean",
+    "temperature_2m_max",
+    "temperature_2m_mean",
+    "temperature_2m_min",
+    "wind_direction_10m_dominant",
+    "wind_speed_10m_mean"
+  ],
+  "cols_removed": []
+}

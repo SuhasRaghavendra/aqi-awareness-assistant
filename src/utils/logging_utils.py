@@ -88,7 +88,7 @@ _configured_stages: set[str] = set()
 
 
 def setup_logging(
-    stage: str,
+    stage: str = "app",
     *,
     log_dir: Path | None = None,
     console_level: int = logging.INFO,
@@ -142,7 +142,7 @@ def setup_logging(
     logger.addHandler(fh)
 
     _configured_stages.add(stage)
-    logger.debug("Logging initialised for stage '%s' → %s", stage, log_path)
+    logger.debug("Logging initialised for stage '%s' -> %s", stage, log_path)
     return logger
 
 

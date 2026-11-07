@@ -1,29 +1,30 @@
 """
 src/data/download_fires.py
 --------------------------
-Phase 1 – Step B: Download daily fire/burning event data from NASA FIRMS
+Phase 1 - Step B: Download daily fire/burning event data from NASA FIRMS
 (Fire Information for Resource Management System) using the VIIRS 375m
 Standard Processing archive.
 
 Data covers:
-  - Crop stubble burning (Punjab/Haryana, Oct–Nov)
+  - Crop stubble burning (Punjab/Haryana, Oct-Nov)
   - Industrial/waste burning
   - Forest fires
   - All open burning within 500 km radius of each city
 
 API Reference: https://firms.modaps.eosdis.nasa.gov/api/
 Sensor: VIIRS_SNPP_SP (Suomi-NPP VIIRS Standard Processing, 375m)
+        VIIRS_SNPP_NRT (near-real-time for recent dates)
 
 Usage:
     python -m src.data.download_fires [--start 2019-01-01] [--end 2026-09-30]
 
 Environment:
-    FIRMS_MAP_KEY   – free key from https://firms.modaps.eosdis.nasa.gov/api/map_key/
+    FIRMS_MAP_KEY   - free key from https://firms.modaps.eosdis.nasa.gov/api/map_key/
                       (email signup, instant)
 
 Outputs:
     data/raw/fires/india_fires_raw.parquet      (all fire detections, India)
-    data/raw/fires/city_fires_daily.parquet     (city × date aggregated)
+    data/raw/fires/city_fires_daily.parquet     (city x date aggregated)
     reports/metrics/download_fires_stats.json
 """
 
@@ -34,15 +35,17 @@ import json
 import math
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 from io import StringIO
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import requests
 
-from src.config import load_params
+from src.config import load_env, load_params
 from src.utils.logging_utils import get_logger, setup_logging
 from src.utils.stage_stats import track_stage
 
@@ -61,15 +64,19 @@ CITY_COORDS: dict[str, tuple[float, float]] = {
     "Lucknow":   (26.8467, 80.9462),
 }
 
-FIRMS_BASE = "https://firms.modaps.eosdis.nasa.gov/api/country/csv"
-SENSOR = "VIIRS_SNPP_SP"
-COUNTRY = "IND"
+FIRMS_AREA_BASE = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
+INDIA_BBOX = "68,6,98,37"
 
-# Batch size in days to avoid FIRMS API timeouts (max ~10 days per call)
-BATCH_DAYS = 10
+SENSOR_SP  = "VIIRS_SNPP_SP"
+SENSOR_NRT = "VIIRS_SNPP_NRT"
+SP_END_DATE = "2026-07-31"
+
+BATCH_DAYS = 5
+MAX_WORKERS = 8
 
 
 def get_firms_key() -> str:
+    load_env()
     key = os.environ.get("FIRMS_MAP_KEY", "").strip()
     if not key:
         raise EnvironmentError(
@@ -80,8 +87,14 @@ def get_firms_key() -> str:
     return key
 
 
+def get_sensor_for_date(date_str: str) -> str:
+    if date_str > SP_END_DATE:
+        return SENSOR_NRT
+    return SENSOR_SP
+
+
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Great-circle distance in km between two (lat, lon) points."""
+    """Great-circle distance in km between two (lat, lon) points (scalar)."""
     R = 6371.0
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
@@ -90,15 +103,40 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
+def haversine_km_vec(lat1: float, lon1: float, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
+    """Fast vectorized great-circle distance in km using NumPy."""
+    R = 6371.0
+    phi1 = np.radians(lat1)
+    phi2 = np.radians(lats)
+    dphi = np.radians(lats - lat1)
+    dlam = np.radians(lons - lon1)
+    a = np.sin(dphi / 2.0) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlam / 2.0) ** 2
+    return R * 2.0 * np.arctan2(np.sqrt(a), np.sqrt(1.0 - a))
+
+
 def fetch_firms_batch(
     api_key: str,
     start_date: date,
     n_days: int,
+    cache_dir: Path | None = None,
     retries: int = 3,
 ) -> pd.DataFrame:
-    """Fetch FIRMS data for a batch of n_days starting from start_date."""
+    """
+    Fetch FIRMS VIIRS data for a batch of n_days starting from start_date.
+    Checks cache_dir first; caches downloaded batch as parquet.
+    """
     date_str = start_date.strftime("%Y-%m-%d")
-    url = f"{FIRMS_BASE}/{api_key}/{SENSOR}/{COUNTRY}/{n_days}/{date_str}"
+
+    if cache_dir is not None:
+        cache_file = cache_dir / f"{date_str}.parquet"
+        if cache_file.exists():
+            try:
+                return pd.read_parquet(cache_file)
+            except Exception:
+                pass
+
+    sensor = get_sensor_for_date(date_str)
+    url = f"{FIRMS_AREA_BASE}/{api_key}/{sensor}/{INDIA_BBOX}/{n_days}/{date_str}"
 
     for attempt in range(1, retries + 1):
         try:
@@ -106,16 +144,19 @@ def fetch_firms_batch(
             if resp.status_code == 200:
                 text = resp.text.strip()
                 if not text or "latitude" not in text:
-                    return pd.DataFrame()
-                df = pd.read_csv(StringIO(text))
+                    df = pd.DataFrame()
+                else:
+                    df = pd.read_csv(StringIO(text), dtype={"version": str})
+                if cache_dir is not None and not df.empty:
+                    df.to_parquet(cache_dir / f"{date_str}.parquet", index=False)
                 return df
             logger.warning(
                 f"FIRMS batch {date_str}+{n_days}d attempt {attempt}/{retries}: "
-                f"HTTP {resp.status_code}"
+                f"HTTP {resp.status_code} -- {resp.text[:200]}"
             )
         except Exception as exc:
             logger.warning(f"FIRMS batch {date_str}+{n_days}d attempt {attempt}: {exc}")
-        time.sleep(2.0 * attempt)
+        time.sleep(1.5 * attempt)
 
     return pd.DataFrame()
 
@@ -124,30 +165,44 @@ def download_all_fires(
     api_key: str,
     start: str,
     end: str,
+    cache_dir: Path | None = None,
 ) -> pd.DataFrame:
-    """Download all FIRMS VIIRS fire detections for India in batches."""
+    """Download all FIRMS VIIRS fire detections for India in batches using concurrency."""
+    if cache_dir is not None:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
     start_date = datetime.strptime(start, "%Y-%m-%d").date()
     end_date = datetime.strptime(end, "%Y-%m-%d").date()
 
-    frames: list[pd.DataFrame] = []
+    batches: list[tuple[date, int]] = []
     current = start_date
-    total_days = (end_date - start_date).days + 1
-    fetched_days = 0
-
     while current <= end_date:
         remaining = (end_date - current).days + 1
         batch_n = min(BATCH_DAYS, remaining)
-        logger.info(
-            f"Downloading fires: {current} + {batch_n} days "
-            f"({fetched_days}/{total_days} days done)"
-        )
-        batch_df = fetch_firms_batch(api_key, current, batch_n)
-        if not batch_df.empty:
-            frames.append(batch_df)
-            logger.debug(f"  → {len(batch_df):,} fire detections")
+        batches.append((current, batch_n))
         current += timedelta(days=batch_n)
-        fetched_days += batch_n
-        time.sleep(0.3)   # polite throttle
+
+    total_batches = len(batches)
+    logger.info(f"Downloading fires in {total_batches} batches ({start} -> {end}) with {MAX_WORKERS} workers...")
+
+    frames: list[pd.DataFrame] = []
+    completed = 0
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        future_map = {
+            executor.submit(fetch_firms_batch, api_key, b_date, b_n, cache_dir): b_date
+            for b_date, b_n in batches
+        }
+        for future in as_completed(future_map):
+            completed += 1
+            if completed % 50 == 0 or completed == total_batches:
+                logger.info(f"  Fires progress: {completed}/{total_batches} batches completed")
+            try:
+                b_df = future.result()
+                if not b_df.empty:
+                    frames.append(b_df)
+            except Exception as exc:
+                logger.warning(f"Batch failed with error: {exc}")
 
     if not frames:
         raise RuntimeError("No fire data was downloaded from FIRMS. Check FIRMS_MAP_KEY.")
@@ -160,14 +215,15 @@ def download_all_fires(
 def normalise_firms(df: pd.DataFrame) -> pd.DataFrame:
     """Standardise FIRMS column names and types."""
     df = df.copy()
-    # Standard VIIRS columns: latitude, longitude, bright_ti4, scan, track,
-    # acq_date, acq_time, satellite, instrument, confidence, version, bright_ti5,
-    # frp (fire radiative power in MW), daynight, type
     df["date"] = pd.to_datetime(df.get("acq_date", df.get("date", "")), errors="coerce")
     df["latitude"] = pd.to_numeric(df.get("latitude", float("nan")), errors="coerce")
     df["longitude"] = pd.to_numeric(df.get("longitude", float("nan")), errors="coerce")
     df["frp"] = pd.to_numeric(df.get("frp", 0.0), errors="coerce").fillna(0.0)
-    # Confidence: 'l','n','h' or 0-100
+
+    # Cast version to string to avoid mixed int/str type errors in pyarrow
+    if "version" in df.columns:
+        df["version"] = df["version"].astype(str)
+
     if "confidence" in df.columns:
         conf = df["confidence"].astype(str).str.lower()
         conf_map = {"l": 33, "n": 67, "h": 95}
@@ -185,38 +241,30 @@ def aggregate_fires_to_city_day(
     radius_km: float = 500.0,
 ) -> pd.DataFrame:
     """
-    For each city × date, count fires and sum FRP within radius_km.
-    Also compute minimum distance to any fire that day.
+    For each city x date, count fires and sum FRP within radius_km.
+    Uses vectorized NumPy distance calculation for high performance.
     """
-    records: list[dict[str, Any]] = []
+    records: list[pd.DataFrame] = []
 
-    # Pre-compute arrays for speed
-    fire_lats = df_fires["latitude"].values
-    fire_lons = df_fires["longitude"].values
-    fire_frp = df_fires["frp"].values
-    fire_dates = df_fires["date"].dt.date.values
+    fire_lats = df_fires["latitude"].to_numpy(dtype=np.float64)
+    fire_lons = df_fires["longitude"].to_numpy(dtype=np.float64)
 
     for city in cities:
         clat, clon = CITY_COORDS[city]
-        logger.info(f"Computing fire proximity for {city} …")
+        logger.info(f"Computing fire proximity for {city} (vectorized) ...")
 
-        # Distance from city to every fire detection
-        distances = [
-            haversine_km(clat, clon, flat, flon)
-            for flat, flon in zip(fire_lats, fire_lons)
-        ]
-        dist_arr = pd.Series(distances)
-        within_mask = dist_arr <= radius_km
+        # Vectorized great-circle distance
+        distances = haversine_km_vec(clat, clon, fire_lats, fire_lons)
+        within_mask = distances <= radius_km
 
-        df_city = df_fires.copy()
-        df_city["distance_km"] = distances
-        df_city_within = df_city[within_mask].copy()
-
-        if df_city_within.empty:
+        if not np.any(within_mask):
             logger.warning(f"[{city}] No fires within {radius_km} km in dataset")
             continue
 
+        df_city_within = df_fires.iloc[within_mask].copy()
+        df_city_within["distance_km"] = distances[within_mask]
         df_city_within["city"] = city
+
         city_day = (
             df_city_within.groupby(["city", "date"])
             .agg(
@@ -242,7 +290,7 @@ def aggregate_fires_to_city_day(
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="download_fires")
     parser = argparse.ArgumentParser(description="Download NASA FIRMS fire data for India")
     parser.add_argument("--start", default="2019-01-01")
     parser.add_argument("--end",   default="2026-09-30")
@@ -255,22 +303,22 @@ def main() -> None:
 
     api_key = get_firms_key()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = args.output_dir / "cache"
 
-    # Download raw fire detections
-    df_raw = download_all_fires(api_key, args.start, args.end)
+    # Download raw fire detections with caching and 8 workers
+    df_raw = download_all_fires(api_key, args.start, args.end, cache_dir=cache_dir)
     df_raw = normalise_firms(df_raw)
 
     raw_path = args.output_dir / "india_fires_raw.parquet"
     df_raw.to_parquet(raw_path, index=False)
-    logger.info(f"Saved raw fire data → {raw_path} ({len(df_raw):,} records)")
+    logger.info(f"Saved raw fire data -> {raw_path} ({len(df_raw):,} records)")
 
-    # Aggregate to city × day
+    # Fast vectorized aggregation to city x day
     df_city = aggregate_fires_to_city_day(df_raw, cities, radius_km=args.radius_km)
     city_path = args.output_dir / "city_fires_daily.parquet"
     df_city.to_parquet(city_path, index=False)
-    logger.info(f"Saved city-day fire features → {city_path} ({len(df_city):,} rows)")
+    logger.info(f"Saved city-day fire features -> {city_path} ({len(df_city):,} rows)")
 
-    # Stats
     stats: dict[str, Any] = {
         "downloaded_at": datetime.now().isoformat(),
         "start": args.start,

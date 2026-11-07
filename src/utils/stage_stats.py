@@ -39,7 +39,7 @@ from src.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-# Repo root (two levels up from this file: src/utils/ → src/ → repo/)
+# Repo root (two levels up from this file: src/utils/ -> src/ -> repo/)
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _METRICS_DIR = _REPO_ROOT / "reports" / "metrics"
 _CHANGE_LOG = _REPO_ROOT / "docs" / "data_change_log.md"

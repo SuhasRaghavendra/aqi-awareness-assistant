@@ -1,0 +1,19 @@
+{
+  "downloaded_at": "2026-11-03T21:04:13.366590",
+  "start": "2019-01-01",
+  "end": "2026-09-30",
+  "radius_km": 500.0,
+  "total_raw_fire_detections": 6341393,
+  "total_city_day_rows": 19466,
+  "fire_coverage_by_city": {
+    "Ahmedabad": 409625,
+    "Bengaluru": 377139,
+    "Chennai": 340238,
+    "Delhi": 927378,
+    "Hyderabad": 861722,
+    "Kolkata": 786459,
+    "Lucknow": 883973,
+    "Mumbai": 349133,
+    "Pune": 447751
+  }
+}

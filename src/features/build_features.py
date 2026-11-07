@@ -9,7 +9,7 @@ All features use information available at day t to predict day t+1 AQI.
 Feature groups:
   [A] Fire/Burning lags & rolling windows (fire_count, frp)
   [B] Meteorological drivers lags & derived indices (wind, humidity, temp, precip)
-  [C] Vehicle emission proxy (annual → interpolated; fractions)
+  [C] Vehicle emission proxy (annual -> interpolated; fractions)
   [D] Industrial activity (IIP monthly index, power consumption)
   [E] Policy/Governance (GRAP stage, BS-VI, odd-even)
   [F] AQI history lags & rolling means (as context; NOT same-day AQI as feature)
@@ -257,7 +257,7 @@ def split_chronological(
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="features")
     parser = argparse.ArgumentParser(description="Phase 4: Build root-cause features")
     parser.add_argument("--input-file", type=Path, default=Path("data/interim/city_day_clean.parquet"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/processed"))
@@ -333,12 +333,12 @@ def main() -> None:
         part[feature_cols] = part[feature_cols].fillna(train_medians)
 
     # ── Scale ─────────────────────────────────────────────────────────────────
-    args.models_dir.mkdir(parents=True, exist_ok=True)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     scaler = StandardScaler()
     scaler.fit(df_train[feature_cols])
-    scaler_path = args.models_dir / "scaler.joblib"
+    scaler_path = args.output_dir / "scaler.joblib"
     joblib.dump(scaler, scaler_path)
-    logger.info(f"Fitted StandardScaler on train split → {scaler_path}")
+    logger.info(f"Fitted StandardScaler on train split -> {scaler_path}")
 
     # ── Save splits ───────────────────────────────────────────────────────────
     args.output_dir.mkdir(parents=True, exist_ok=True)

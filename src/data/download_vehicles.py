@@ -28,7 +28,7 @@ Fallback:
 
 Outputs:
     data/raw/vehicles/state_vehicles_annual.parquet
-    data/raw/vehicles/city_vehicles_annual.parquet   (state → city mapped)
+    data/raw/vehicles/city_vehicles_annual.parquet   (state -> city mapped)
     reports/metrics/download_vehicles_stats.json
 """
 
@@ -45,12 +45,12 @@ from typing import Any
 import pandas as pd
 import requests
 
-from src.config import load_params
+from src.config import load_env, load_params
 from src.utils.logging_utils import get_logger, setup_logging
 
 logger = get_logger("download_vehicles")
 
-# State → cities mapping (city is in this state)
+# State -> cities mapping (city is in this state)
 CITY_STATE: dict[str, str] = {
     "Delhi":     "Delhi",
     "Mumbai":    "Maharashtra",
@@ -89,6 +89,7 @@ DATAGOV_BASE = "https://api.data.gov.in/resource"
 
 
 def get_datagov_key() -> str | None:
+    load_env()
     key = os.environ.get("DATAGOV_API_KEY", "").strip()
     if not key:
         logger.warning(
@@ -148,7 +149,7 @@ def load_static_reference() -> pd.DataFrame:
     """
     ref_path = Path("configs/vehicle_state_reference.csv")
     if ref_path.exists():
-        df = pd.read_csv(ref_path)
+        df = pd.read_csv(ref_path, comment='#')
         logger.info(f"Loaded static vehicle reference: {len(df)} rows from {ref_path}")
         return df
     else:
@@ -243,7 +244,7 @@ def map_to_cities(df_state: pd.DataFrame, cities: list[str]) -> pd.DataFrame:
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="download_vehicles")
     parser = argparse.ArgumentParser(description="Download vehicle registration data from data.gov.in")
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/vehicles"))
     args = parser.parse_args()
@@ -295,13 +296,13 @@ def main() -> None:
     # Save state-level
     state_path = args.output_dir / "state_vehicles_annual.parquet"
     df_vehicles.to_parquet(state_path, index=False)
-    logger.info(f"Saved state vehicle data → {state_path}")
+    logger.info(f"Saved state vehicle data -> {state_path}")
 
     # Map to cities
     df_city = map_to_cities(df_vehicles, cities)
     city_path = args.output_dir / "city_vehicles_annual.parquet"
     df_city.to_parquet(city_path, index=False)
-    logger.info(f"Saved city vehicle data → {city_path} ({len(df_city)} rows)")
+    logger.info(f"Saved city vehicle data -> {city_path} ({len(df_city)} rows)")
 
     stats: dict[str, Any] = {
         "downloaded_at": datetime.now().isoformat(),

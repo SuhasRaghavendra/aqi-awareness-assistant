@@ -145,7 +145,7 @@ stages:
       - data/processed/val.parquet
       - data/processed/test.parquet
       - data/processed/feature_list.json
-      - models/scaler.joblib
+      - data/processed/scaler.joblib
     metrics:
       - reports/metrics/features_stats.json:
           cache: false

@@ -52,6 +52,6 @@ def get_openaq_api_key() -> str:
     key = os.getenv("OPENAQ_API_KEY", "")
     if not key:
         raise EnvironmentError(
-            "OPENAQ_API_KEY is not set.  Copy .env.example → .env and add your key."
+            "OPENAQ_API_KEY is not set.  Copy .env.example -> .env and add your key."
         )
     return key

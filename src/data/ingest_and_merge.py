@@ -15,12 +15,12 @@ Inputs:
 
 Merge strategy:
     1. AQI panel (city × date) is the left spine.
-    2. Fire features → daily exact join.
-    3. Weather features → daily exact join.
-    4. Vehicle data (annual) → forward-fill after yearly step-up.
-    5. IIP data (monthly) → forward-fill within month.
-    6. Power data (monthly) → forward-fill + state→city mapping.
-    7. Policy/calendar features → date-based flag joins.
+    2. Fire features -> daily exact join.
+    3. Weather features -> daily exact join.
+    4. Vehicle data (annual) -> forward-fill after yearly step-up.
+    5. IIP data (monthly) -> forward-fill within month.
+    6. Power data (monthly) -> forward-fill + state->city mapping.
+    7. Policy/calendar features -> date-based flag joins.
 
 Outputs:
     data/interim/city_day_raw.parquet    (full merged, before cleaning)
@@ -123,7 +123,7 @@ def load_grap_calendar(path: Path = Path("configs/grap_calendar.csv")) -> pd.Dat
             "Create configs/grap_calendar.csv with columns: date, grap_stage, odd_even_active"
         )
         return pd.DataFrame(columns=["date", "grap_stage", "odd_even_active"])
-    df = pd.read_csv(path, parse_dates=["date"])
+    df = pd.read_csv(path, comment="#", parse_dates=["date"])
     df["date"] = df["date"].dt.strftime("%Y-%m-%d")
     return df
 
@@ -172,22 +172,26 @@ def merge_fires(df: pd.DataFrame, fires_path: Path) -> pd.DataFrame:
 
     df_fires = pd.read_parquet(fires_path)
     df_fires["date"] = pd.to_datetime(df_fires["date"]).dt.strftime("%Y-%m-%d")
-    df_fires = df_fires.rename(columns={
-        "fire_count": "fire_count_500km",
-        "fire_frp_sum": "fire_frp_sum_500km",
-        "fire_dist_min_km": "fire_dist_min_km",
-    })
+    if "fire_count_500km" not in df_fires.columns and "fire_count" in df_fires.columns:
+        df_fires = df_fires.rename(columns={"fire_count": "fire_count_500km"})
+    if "fire_frp_sum_500km" not in df_fires.columns and "fire_frp_sum" in df_fires.columns:
+        df_fires = df_fires.rename(columns={"fire_frp_sum": "fire_frp_sum_500km"})
+    df_fires = df_fires.loc[:, ~df_fires.columns.duplicated()]
     fire_cols = ["city", "date", "fire_count_500km", "fire_frp_sum_500km", "fire_dist_min_km"]
     df_fires = df_fires[[c for c in fire_cols if c in df_fires.columns]]
 
     merged = df.merge(df_fires, on=["city", "date"], how="left")
-    # Days with no fires → fill 0
+    merged = merged.loc[:, ~merged.columns.duplicated()]
     for col in ["fire_count_500km", "fire_frp_sum_500km"]:
         if col in merged.columns:
             merged[col] = merged[col].fillna(0.0)
     if "fire_dist_min_km" in merged.columns:
         merged["fire_dist_min_km"] = merged["fire_dist_min_km"].fillna(999.0)
-    logger.info(f"Fires joined: {(merged['fire_count_500km'] > 0).sum():,} city-days with fires")
+    fc = merged["fire_count_500km"]
+    if isinstance(fc, pd.DataFrame):
+        fc = fc.iloc[:, 0]
+    cnt = int((fc > 0).sum())
+    logger.info(f"Fires joined: {cnt:,} city-days with fires")
     return merged
 
 
@@ -207,7 +211,7 @@ def merge_weather(df: pd.DataFrame, weather_path: Path) -> pd.DataFrame:
 
 
 def merge_vehicles(df: pd.DataFrame, vehicles_path: Path) -> pd.DataFrame:
-    """Join vehicle features (annual → forward-fill)."""
+    """Join vehicle features (annual -> forward-fill)."""
     if not vehicles_path.exists():
         logger.warning(f"Vehicle data not found: {vehicles_path}")
         return df
@@ -242,7 +246,7 @@ def merge_vehicles(df: pd.DataFrame, vehicles_path: Path) -> pd.DataFrame:
 
 
 def merge_industrial(df: pd.DataFrame, iip_path: Path, power_path: Path) -> pd.DataFrame:
-    """Join IIP + power features (monthly → forward-fill)."""
+    """Join IIP + power features (monthly -> forward-fill)."""
     df["_year"] = pd.to_datetime(df["date"]).dt.year.astype(int)
     df["_month"] = pd.to_datetime(df["date"]).dt.month.astype(int)
 
@@ -387,7 +391,7 @@ def add_meteorological_derived(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="ingest_and_merge")
     parser = argparse.ArgumentParser(description="Merge all root-cause data into city × day panel")
     parser.add_argument("--start", default="2019-01-01")
     parser.add_argument("--end",   default="2026-09-30")
@@ -402,7 +406,7 @@ def main() -> None:
     # Build complete spine
     logger.info("Building city × date spine …")
     df = build_date_spine(cities, args.start, args.end)
-    logger.info(f"Spine: {len(df):,} city-days ({len(cities)} cities × {args.end}→{args.start})")
+    logger.info(f"Spine: {len(df):,} city-days ({len(cities)} cities × {args.end}->{args.start})")
 
     # Merge all sources
     logger.info("Merging AQI labels …")
@@ -436,7 +440,7 @@ def main() -> None:
     df = df.sort_values(["city", "date"]).reset_index(drop=True)
     output_path = args.output_dir / "city_day_raw.parquet"
     df.to_parquet(output_path, index=False)
-    logger.info(f"Saved merged panel → {output_path}")
+    logger.info(f"Saved merged panel -> {output_path}")
 
     # Stats
     total = len(df)

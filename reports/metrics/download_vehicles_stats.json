@@ -1,0 +1,22 @@
+{
+  "downloaded_at": "2026-11-03T21:05:27.830979",
+  "source": "static_reference",
+  "cities_covered": [
+    "Ahmedabad",
+    "Bengaluru",
+    "Chennai",
+    "Delhi",
+    "Hyderabad",
+    "Kolkata",
+    "Lucknow",
+    "Mumbai",
+    "Pune"
+  ],
+  "years_covered": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ]
+}

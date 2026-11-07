@@ -110,7 +110,7 @@ def interpolate_slow_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def fill_fire_defaults(df: pd.DataFrame) -> pd.DataFrame:
-    """Days with no fire data → 0 fires (not NaN)."""
+    """Days with no fire data -> 0 fires (not NaN)."""
     for col in FIRE_COLS_ZERO_FILL:
         if col in df.columns:
             df[col] = df[col].fillna(0.0)
@@ -177,7 +177,7 @@ def drop_low_aqi_coverage(
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="clean")
     params = load_params()
     clean_cfg = params.get("clean", {})
     split_cfg = params.get("split", {})
@@ -225,7 +225,7 @@ def main() -> None:
 
     output_path = output_dir / "city_day_clean.parquet"
     df.to_parquet(output_path, index=False)
-    logger.info(f"Saved clean panel → {output_path} ({rows_after:,} rows)")
+    logger.info(f"Saved clean panel -> {output_path} ({rows_after:,} rows)")
 
     stats: dict[str, Any] = {
         "cleaned_at": datetime.now().isoformat(),
@@ -252,7 +252,7 @@ def main() -> None:
     print("\n" + "=" * 60)
     print("CLEANING SUMMARY")
     print("=" * 60)
-    print(f"Rows before: {rows_before:,}  →  after: {rows_after:,}")
+    print(f"Rows before: {rows_before:,}  ->  after: {rows_after:,}")
     print(f"AQI valid:   {stats['aqi_valid']:,} ({stats['aqi_coverage_pct']}%)")
     print(f"Columns:     {stats['columns']}")
     print(f"Output:      {output_path}")

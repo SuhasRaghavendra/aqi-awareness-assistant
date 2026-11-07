@@ -73,7 +73,7 @@ def check_city_aqi_coverage(
     df: pd.DataFrame,
     min_days: int = 180,
 ) -> dict[str, int]:
-    """Return city → valid AQI day count; warn if below threshold."""
+    """Return city -> valid AQI day count; warn if below threshold."""
     coverage: dict[str, int] = {}
     for city, grp in df.groupby("city"):
         days = int(grp["aqi"].notna().sum())
@@ -128,7 +128,7 @@ def check_missing_fractions(df: pd.DataFrame) -> dict[str, float]:
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(stage="validate")
     params = load_params()
     expected_cities: list[str] = params["data"]["cities"]
     min_aqi_days: int = params.get("aqi", {}).get("min_valid_days_per_city_year", 180)
