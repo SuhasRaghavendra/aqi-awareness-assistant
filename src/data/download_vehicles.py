@@ -52,37 +52,37 @@ logger = get_logger("download_vehicles")
 
 # State -> cities mapping (city is in this state)
 CITY_STATE: dict[str, str] = {
-    "Delhi":     "Delhi",
-    "Mumbai":    "Maharashtra",
+    "Delhi": "Delhi",
+    "Mumbai": "Maharashtra",
     "Bengaluru": "Karnataka",
-    "Chennai":   "Tamil Nadu",
-    "Kolkata":   "West Bengal",
+    "Chennai": "Tamil Nadu",
+    "Kolkata": "West Bengal",
     "Hyderabad": "Telangana",
-    "Pune":      "Maharashtra",
+    "Pune": "Maharashtra",
     "Ahmedabad": "Gujarat",
-    "Lucknow":   "Uttar Pradesh",
+    "Lucknow": "Uttar Pradesh",
 }
 
 # City population (lakh) from Census 2011 / 2021 provisional
 # Used to normalize vehicle counts per-capita
 CITY_POPULATION_LAKH: dict[str, float] = {
-    "Delhi":     190.8,
-    "Mumbai":    184.1,
+    "Delhi": 190.8,
+    "Mumbai": 184.1,
     "Bengaluru": 121.6,
-    "Chennai":    87.5,
-    "Kolkata":    45.9,
-    "Hyderabad":  97.0,
-    "Pune":       50.5,
-    "Ahmedabad":  72.5,
-    "Lucknow":    29.0,
+    "Chennai": 87.5,
+    "Kolkata": 45.9,
+    "Hyderabad": 97.0,
+    "Pune": 50.5,
+    "Ahmedabad": 72.5,
+    "Lucknow": 29.0,
 }
 
 # data.gov.in resource ID for state-wise vehicle registration by fuel type
 # Resource: "State and Fuel Type-wise Number of Vehicles Registered"
 # Note: resource IDs can change; check data.gov.in if this fails
 DATAGOV_RESOURCE_IDS = [
-    "9ef84268-d588-465a-a308-a864a43d0070",   # Fuel type state-wise (primary)
-    "b4f6f1e4-5fd3-4c71-a5d3-e05f12e4b30b",   # Vehicle category state-wise (backup)
+    "9ef84268-d588-465a-a308-a864a43d0070",  # Fuel type state-wise (primary)
+    "b4f6f1e4-5fd3-4c71-a5d3-e05f12e4b30b",  # Vehicle category state-wise (backup)
 ]
 
 DATAGOV_BASE = "https://api.data.gov.in/resource"
@@ -149,7 +149,7 @@ def load_static_reference() -> pd.DataFrame:
     """
     ref_path = Path("configs/vehicle_state_reference.csv")
     if ref_path.exists():
-        df = pd.read_csv(ref_path, comment='#')
+        df = pd.read_csv(ref_path, comment="#")
         logger.info(f"Loaded static vehicle reference: {len(df)} rows from {ref_path}")
         return df
     else:
@@ -196,8 +196,12 @@ def normalise_vehicle_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
 
     numeric_cols = [
-        "total_vehicles", "diesel_count", "cng_count",
-        "ev_count", "petrol_count", "two_wheeler_count",
+        "total_vehicles",
+        "diesel_count",
+        "cng_count",
+        "ev_count",
+        "petrol_count",
+        "two_wheeler_count",
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -245,7 +249,9 @@ def map_to_cities(df_state: pd.DataFrame, cities: list[str]) -> pd.DataFrame:
 
 def main() -> None:
     setup_logging(stage="download_vehicles")
-    parser = argparse.ArgumentParser(description="Download vehicle registration data from data.gov.in")
+    parser = argparse.ArgumentParser(
+        description="Download vehicle registration data from data.gov.in"
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/vehicles"))
     args = parser.parse_args()
 
@@ -282,10 +288,19 @@ def main() -> None:
             "     configs/vehicle_state_reference.csv"
         )
         # Create empty placeholder
-        df_city = pd.DataFrame(columns=[
-            "city", "year", "state", "total_vehicles", "diesel_frac",
-            "cng_frac", "ev_frac", "two_wheeler_frac", "vehicles_per_lakh",
-        ])
+        df_city = pd.DataFrame(
+            columns=[
+                "city",
+                "year",
+                "state",
+                "total_vehicles",
+                "diesel_frac",
+                "cng_frac",
+                "ev_frac",
+                "two_wheeler_frac",
+                "vehicles_per_lakh",
+            ]
+        )
         city_path = args.output_dir / "city_vehicles_annual.parquet"
         df_city.to_parquet(city_path, index=False)
         return
@@ -308,8 +323,11 @@ def main() -> None:
         "downloaded_at": datetime.now().isoformat(),
         "source": "data.gov.in" if api_key else "static_reference",
         "cities_covered": list(df_city["city"].unique()) if not df_city.empty else [],
-        "years_covered": sorted(df_city["year"].dropna().astype(int).unique().tolist())
-        if not df_city.empty else [],
+        "years_covered": (
+            sorted(df_city["year"].dropna().astype(int).unique().tolist())
+            if not df_city.empty
+            else []
+        ),
     }
     metrics_path = Path("reports/metrics/download_vehicles_stats.json")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,10 +338,13 @@ def main() -> None:
     print("VEHICLE DATA SUMMARY")
     print("=" * 60)
     if not df_city.empty:
-        print(df_city[["city", "year", "total_vehicles", "diesel_frac", "cng_frac"]].to_string(index=False))
+        print(
+            df_city[["city", "year", "total_vehicles", "diesel_frac", "cng_frac"]].to_string(
+                index=False
+            )
+        )
     print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":
     main()
-

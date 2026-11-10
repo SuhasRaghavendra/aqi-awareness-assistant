@@ -31,14 +31,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import joblib
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
@@ -50,10 +48,18 @@ from src.utils.stage_stats import track_stage
 logger = get_logger("build_features")
 
 # ── Columns that are never ML features ───────────────────────────────────────
+# NOTE: 'aqi' (day-t observation) IS now included as a feature (ADR D-019).
+# aqi_lag_1 and aqi_diff_1d cannot reconstruct aqi because of the reindex bug:
+# after grp.reindex(full_date_range), the index is DatetimeIndex but grp_idx
+# holds the original integer positions, so .reindex(grp_idx) returns all-NaN
+# which the median-fill then sets to 0.  Adding raw aqi sidesteps this entirely.
 NON_FEATURE_COLS = {
-    "city", "date", "aqi", "aqi_category",
-    "aqi_median", "station_count",    # raw AQI source cols
-    "year",                           # encoded via calendar
+    "city",
+    "date",
+    "aqi_category",
+    "aqi_median",
+    "station_count",  # raw AQI source cols
+    "year",  # encoded via calendar
 }
 
 
@@ -91,8 +97,12 @@ def add_fire_features(
     """Lag and rolling features for fire events (per city)."""
     fire_cols = ["fire_count_500km", "fire_frp_sum_500km"]
 
-    for city, grp_idx in df.groupby("city").groups.items():
-        grp = df.loc[grp_idx].set_index("date").sort_index()
+    for _city, grp_idx in df.groupby("city").groups.items():
+        # sort grp_idx by date so values align correctly
+        sub = df.loc[grp_idx].sort_values("date")
+        sorted_idx = sub.index  # sorted integer index
+
+        grp = sub.set_index("date")
         full_idx = pd.date_range(grp.index.min(), grp.index.max(), freq="D")
         grp = grp.reindex(full_idx)
 
@@ -100,14 +110,17 @@ def add_fire_features(
             if col not in grp.columns:
                 continue
             for lag in lags:
-                df.loc[grp_idx, f"{col}_lag_{lag}"] = grp[col].shift(lag).reindex(grp_idx).values
+                vals = grp[col].shift(lag).reindex(sub["date"]).values
+                df.loc[sorted_idx, f"{col}_lag_{lag}"] = vals
             for w in rolling_windows:
-                df.loc[grp_idx, f"{col}_roll_mean_{w}d"] = (
-                    grp[col].shift(1).rolling(w, min_periods=1).mean().reindex(grp_idx).values
+                mean_vals = (
+                    grp[col].shift(1).rolling(w, min_periods=1).mean().reindex(sub["date"]).values
                 )
-                df.loc[grp_idx, f"{col}_roll_max_{w}d"] = (
-                    grp[col].shift(1).rolling(w, min_periods=1).max().reindex(grp_idx).values
+                max_vals = (
+                    grp[col].shift(1).rolling(w, min_periods=1).max().reindex(sub["date"]).values
                 )
+                df.loc[sorted_idx, f"{col}_roll_mean_{w}d"] = mean_vals
+                df.loc[sorted_idx, f"{col}_roll_max_{w}d"] = max_vals
 
     # Burning season × fire interaction
     if "burning_season_flag" in df.columns and "fire_count_500km" in df.columns:
@@ -124,9 +137,17 @@ def add_aqi_history_features(
     """
     AQI lag features — these are causal: past AQI gives context about
     the baseline pollution level driven by cumulative sources.
+
+    Fix (ADR D-019): the previous implementation called .reindex(grp_idx) on a
+    DatetimeIndex-indexed Series using integer labels, returning all-NaN.
+    The fix reindexes by the original date values instead.
     """
-    for city, grp_idx in df.groupby("city").groups.items():
-        grp = df.loc[grp_idx].set_index("date").sort_index()
+    for _city, grp_idx in df.groupby("city").groups.items():
+        # sort so values align correctly when written back
+        sub = df.loc[grp_idx].sort_values("date")
+        sorted_idx = sub.index
+
+        grp = sub.set_index("date")
         full_idx = pd.date_range(grp.index.min(), grp.index.max(), freq="D")
         grp = grp.reindex(full_idx)
 
@@ -134,16 +155,16 @@ def add_aqi_history_features(
             continue
 
         for lag in lags:
-            df.loc[grp_idx, f"aqi_lag_{lag}"] = grp["aqi"].shift(lag).reindex(grp_idx).values
+            df.loc[sorted_idx, f"aqi_lag_{lag}"] = grp["aqi"].shift(lag).reindex(sub["date"]).values
         for w in rolling_windows:
-            df.loc[grp_idx, f"aqi_roll_mean_{w}d"] = (
-                grp["aqi"].shift(1).rolling(w, min_periods=1).mean().reindex(grp_idx).values
+            df.loc[sorted_idx, f"aqi_roll_mean_{w}d"] = (
+                grp["aqi"].shift(1).rolling(w, min_periods=1).mean().reindex(sub["date"]).values
             )
-            df.loc[grp_idx, f"aqi_roll_std_{w}d"] = (
-                grp["aqi"].shift(1).rolling(w, min_periods=1).std().reindex(grp_idx).values
+            df.loc[sorted_idx, f"aqi_roll_std_{w}d"] = (
+                grp["aqi"].shift(1).rolling(w, min_periods=1).std().reindex(sub["date"]).values
             )
-        df.loc[grp_idx, "aqi_diff_1d"] = grp["aqi"].diff(1).reindex(grp_idx).values
-        df.loc[grp_idx, "aqi_diff_7d"] = grp["aqi"].diff(7).reindex(grp_idx).values
+        df.loc[sorted_idx, "aqi_diff_1d"] = grp["aqi"].diff(1).reindex(sub["date"]).values
+        df.loc[sorted_idx, "aqi_diff_7d"] = grp["aqi"].diff(7).reindex(sub["date"]).values
 
     return df
 
@@ -151,14 +172,16 @@ def add_aqi_history_features(
 def add_weather_lag_features(df: pd.DataFrame, lags: list[int]) -> pd.DataFrame:
     """Lag yesterday's weather (most impactful meteorological features)."""
     weather_lag_cols = [
-        "temperature_2m_mean", "wind_speed_10m_mean",
-        "relative_humidity_2m_mean", "precipitation_sum",
+        "temperature_2m_mean",
+        "wind_speed_10m_mean",
+        "relative_humidity_2m_mean",
+        "precipitation_sum",
         "inversion_risk_flag",
     ]
     for col in weather_lag_cols:
         if col not in df.columns:
             continue
-        for lag in lags[:2]:   # lag 1 and 3 only for weather
+        for lag in lags[:2]:  # lag 1 and 3 only for weather
             df[f"{col}_lag_{lag}"] = df.groupby("city")[col].shift(lag)
 
     # Rolling 3-day and 7-day wind mean (dispersion context)
@@ -202,11 +225,14 @@ def add_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
         df["diesel_vehicle_intensity"] = df["vehicles_per_lakh"] * df["diesel_frac"]
 
     # Winter stagnation index (cold + high humidity + low wind)
-    if all(c in df.columns for c in ["temperature_2m_mean", "relative_humidity_2m_mean", "wind_speed_10m_mean"]):
+    if all(
+        c in df.columns
+        for c in ["temperature_2m_mean", "relative_humidity_2m_mean", "wind_speed_10m_mean"]
+    ):
         df["winter_stagnation_index"] = (
-            (df["relative_humidity_2m_mean"].clip(0, 100) / 100) *
-            (1 / df["wind_speed_10m_mean"].clip(lower=0.5)) *
-            (df["temperature_2m_mean"] < 15).astype(float)
+            (df["relative_humidity_2m_mean"].clip(0, 100) / 100)
+            * (1 / df["wind_speed_10m_mean"].clip(lower=0.5))
+            * (df["temperature_2m_mean"] < 15).astype(float)
         )
 
     return df
@@ -244,11 +270,11 @@ def split_chronological(
     """Split into train/val/test by date — no data leakage."""
     df["date"] = pd.to_datetime(df["date"])
     train_end_dt = pd.Timestamp(train_end)
-    val_end_dt   = pd.Timestamp(val_end)
+    val_end_dt = pd.Timestamp(val_end)
 
     df_train = df[df["date"] <= train_end_dt].copy()
-    df_val   = df[(df["date"] > train_end_dt) & (df["date"] <= val_end_dt)].copy()
-    df_test  = df[df["date"] > val_end_dt].copy()
+    df_val = df[(df["date"] > train_end_dt) & (df["date"] <= val_end_dt)].copy()
+    df_test = df[df["date"] > val_end_dt].copy()
 
     for part in [df_train, df_val, df_test]:
         part["date"] = part["date"].dt.strftime("%Y-%m-%d")
@@ -259,7 +285,9 @@ def split_chronological(
 def main() -> None:
     setup_logging(stage="features")
     parser = argparse.ArgumentParser(description="Phase 4: Build root-cause features")
-    parser.add_argument("--input-file", type=Path, default=Path("data/interim/city_day_clean.parquet"))
+    parser.add_argument(
+        "--input-file", type=Path, default=Path("data/interim/city_day_clean.parquet")
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("data/processed"))
     parser.add_argument("--models-dir", type=Path, default=Path("models"))
     args = parser.parse_args()
@@ -269,11 +297,11 @@ def main() -> None:
     feat_cfg = params.get("features", {})
     split_cfg = params.get("split", {})
 
-    aqi_lags: list[int]    = feat_cfg.get("aqi_lags", [1, 3, 7, 14])
-    fire_lags: list[int]   = feat_cfg.get("fire_lags", [1, 3, 7])
-    rolling_w: list[int]   = feat_cfg.get("rolling_windows", [7, 14, 30])
-    train_end: str         = split_cfg.get("train_end", "2022-12-31")
-    val_end: str           = split_cfg.get("val_end", "2025-12-31")
+    aqi_lags: list[int] = feat_cfg.get("aqi_lags", [1, 3, 7, 14])
+    fire_lags: list[int] = feat_cfg.get("fire_lags", [1, 3, 7])
+    rolling_w: list[int] = feat_cfg.get("rolling_windows", [7, 14, 30])
+    train_end: str = split_cfg.get("train_end", "2022-12-31")
+    val_end: str = split_cfg.get("val_end", "2025-12-31")
 
     df = pd.read_parquet(args.input_file)
     df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
@@ -310,20 +338,17 @@ def main() -> None:
 
     # ── Split ─────────────────────────────────────────────────────────────────
     df_train, df_val, df_test = split_chronological(df, train_end, val_end)
-    logger.info(
-        f"Split: train={len(df_train):,} | val={len(df_val):,} | test={len(df_test):,}"
-    )
+    logger.info(f"Split: train={len(df_train):,} | val={len(df_val):,} | test={len(df_test):,}")
 
     # ── Feature list ──────────────────────────────────────────────────────────
     # Identify feature columns: numeric, not in NON_FEATURE_COLS
     all_non_feat = NON_FEATURE_COLS | {
-        "target_aqi", "target_category",
-        "season",   # replaced by season_* one-hots
+        "target_aqi",
+        "target_category",
+        "season",  # replaced by season_* one-hots
     }
     feature_cols = [
-        c for c in df.columns
-        if c not in all_non_feat
-        and pd.api.types.is_numeric_dtype(df[c])
+        c for c in df.columns if c not in all_non_feat and pd.api.types.is_numeric_dtype(df[c])
     ]
     logger.info(f"Total engineered features: {len(feature_cols)}")
 
@@ -353,28 +378,73 @@ def main() -> None:
         "target_classification": "target_category",
         "feature_groups": {
             "fire_burning": [c for c in feature_cols if "fire" in c or "burning" in c],
-            "meteorological": [c for c in feature_cols if any(
-                k in c for k in ["temperature", "wind", "humidity", "precip", "pressure", "inversion", "fog", "rain_washout"]
-            )],
-            "vehicle_emissions": [c for c in feature_cols if any(
-                k in c for k in ["diesel", "cng", "ev_", "two_wheel", "vehicles_per", "bsvi", "odd_even"]
-            )],
-            "industrial": [c for c in feature_cols if any(
-                k in c for k in ["iip", "energy_", "stagnation"]
-            )],
-            "policy_governance": [c for c in feature_cols if any(
-                k in c for k in ["grap", "bsvi", "odd_even"]
-            )],
+            "meteorological": [
+                c
+                for c in feature_cols
+                if any(
+                    k in c
+                    for k in [
+                        "temperature",
+                        "wind",
+                        "humidity",
+                        "precip",
+                        "pressure",
+                        "inversion",
+                        "fog",
+                        "rain_washout",
+                    ]
+                )
+            ],
+            "vehicle_emissions": [
+                c
+                for c in feature_cols
+                if any(
+                    k in c
+                    for k in [
+                        "diesel",
+                        "cng",
+                        "ev_",
+                        "two_wheel",
+                        "vehicles_per",
+                        "bsvi",
+                        "odd_even",
+                    ]
+                )
+            ],
+            "industrial": [
+                c for c in feature_cols if any(k in c for k in ["iip", "energy_", "stagnation"])
+            ],
+            "policy_governance": [
+                c for c in feature_cols if any(k in c for k in ["grap", "bsvi", "odd_even"])
+            ],
             "aqi_history": [c for c in feature_cols if c.startswith("aqi_")],
-            "calendar_seasonal": [c for c in feature_cols if any(
-                k in c for k in ["month", "season_", "day_of", "weekend", "festival", "dow_", "month_sin", "month_cos"]
-            )],
-            "spatial": [c for c in feature_cols if any(
-                k in c for k in ["city_", "elevation", "population", "lat", "lon"]
-            )],
-            "interaction": [c for c in feature_cols if any(
-                k in c for k in ["_x_", "intensity", "overlap", "stagnation_index"]
-            )],
+            "calendar_seasonal": [
+                c
+                for c in feature_cols
+                if any(
+                    k in c
+                    for k in [
+                        "month",
+                        "season_",
+                        "day_of",
+                        "weekend",
+                        "festival",
+                        "dow_",
+                        "month_sin",
+                        "month_cos",
+                    ]
+                )
+            ],
+            "spatial": [
+                c
+                for c in feature_cols
+                if any(k in c for k in ["city_", "elevation", "population", "lat", "lon"])
+            ],
+            "interaction": [
+                c
+                for c in feature_cols
+                if any(k in c for k in ["_x_", "intensity", "overlap", "stagnation_index"])
+            ],
         },
         "generated_at": datetime.now().isoformat(),
     }
@@ -382,16 +452,15 @@ def main() -> None:
         json.dump(feat_list, f, indent=2)
 
     # ── Correlation plot ──────────────────────────────────────────────────────
-    corr = df_train[feature_cols].apply(
-        lambda s: s.corr(df_train["target_aqi"])
-    ).dropna()
+    corr = df_train[feature_cols].apply(lambda s: s.corr(df_train["target_aqi"])).dropna()
     top15 = corr.abs().sort_values(ascending=False).head(15)
 
     fig, ax = plt.subplots(figsize=(10, 7))
     top15.sort_values().plot(kind="barh", ax=ax, color="#1a6faf")
     ax.set_title(
         "Top 15 Root-Cause Features by |Correlation| with Next-Day AQI (Train Split)",
-        fontsize=11, pad=10
+        fontsize=11,
+        pad=10,
     )
     ax.set_xlabel("Absolute Pearson |r|")
     fig.tight_layout()
@@ -420,11 +489,15 @@ def main() -> None:
     with open(out_path, "w") as f:
         json.dump(stats, f, indent=2)
 
-    with track_stage("features", inputs=[str(args.input_file)], outputs=[
-        str(args.output_dir / "train.parquet"),
-        str(args.output_dir / "val.parquet"),
-        str(args.output_dir / "test.parquet"),
-    ]) as st:
+    with track_stage(
+        "features",
+        inputs=[str(args.input_file)],
+        outputs=[
+            str(args.output_dir / "train.parquet"),
+            str(args.output_dir / "val.parquet"),
+            str(args.output_dir / "test.parquet"),
+        ],
+    ) as st:
         st.record_input_frame(df)
         st.record_output_frame(df_train)
 
@@ -435,10 +508,11 @@ def main() -> None:
     for grp, cols in feat_list["feature_groups"].items():
         print(f"  {grp:<22} {len(cols):>3} features")
     print(f"\nTrain: {len(df_train):,}  Val: {len(df_val):,}  Test: {len(df_test):,}")
-    print(f"Target AQI range (train): {stats['target_aqi_train']['min']:.0f}–{stats['target_aqi_train']['max']:.0f}")
+    print(
+        f"Target AQI range (train): {stats['target_aqi_train']['min']:.0f}–{stats['target_aqi_train']['max']:.0f}"
+    )
     print("=" * 65 + "\n")
 
 
 if __name__ == "__main__":
     main()
-

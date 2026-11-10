@@ -175,7 +175,7 @@ ax.axvline(70, color="#ef5350", linestyle="--", linewidth=1.2, label="drop thres
 ax.set_xlabel("Missing fraction (%)")
 ax.set_title("Fig 03 — Pollutant Missingness (all station-days)")
 ax.legend()
-for bar, val in zip(bars, miss.values()):
+for bar, val in zip(bars, miss.values(), strict=False):
     ax.text(val + 0.5, bar.get_y() + bar.get_height() / 2, f"{val:.1f}%", va="center", fontsize=9)
 fig.tight_layout()
 save_fig(fig, "fig03_missingness_per_pollutant.png", "missingness per pollutant")
@@ -188,7 +188,9 @@ findings.append(
 # ══════════════════════════════════════════════════════════════════════════════
 print("Fig 04: Station × Month PM2.5 missing heatmap...")
 df["ym"] = df["date"].dt.to_period("M")
-miss_hm = df.pivot_table(index="station_name", columns="year", values="pm25", aggfunc=lambda x: x.isna().mean())
+miss_hm = df.pivot_table(
+    index="station_name", columns="year", values="pm25", aggfunc=lambda x: x.isna().mean()
+)
 miss_hm.index = miss_hm.index.str.split(" - ").str[0].str[:25]
 fig, ax = plt.subplots(figsize=(12, max(5, len(miss_hm) * 0.55)))
 sns.heatmap(
@@ -222,7 +224,13 @@ axes = axes.flatten()
 for i, pol in enumerate(plot_pols):
     data = df[pol].dropna()
     axes[i].hist(data, bins=60, color="#80cbc4", alpha=0.85, edgecolor="none", log=True)
-    axes[i].axvline(data.median(), color="#f06292", linestyle="--", linewidth=1.5, label=f"Median: {data.median():.1f}")
+    axes[i].axvline(
+        data.median(),
+        color="#f06292",
+        linestyle="--",
+        linewidth=1.5,
+        label=f"Median: {data.median():.1f}",
+    )
     axes[i].set_title(f"{pol.upper()} (µg/m³)" if pol != "co" else "CO (mg/m³)")
     axes[i].set_xlabel("Concentration")
     axes[i].set_ylabel("Count (log)")
@@ -248,8 +256,14 @@ axes[0].bar(cat_order, counts_all, color=cat_colors, alpha=0.9, edgecolor="none"
 axes[0].set_title("Overall AQI Category Distribution")
 axes[0].set_ylabel("Station-days")
 axes[0].tick_params(axis="x", rotation=30)
-for bar, cnt in zip(axes[0].patches, counts_all):
-    axes[0].text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 20, f"{cnt:,}", ha="center", fontsize=8)
+for bar, cnt in zip(axes[0].patches, counts_all, strict=False):
+    axes[0].text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + 20,
+        f"{cnt:,}",
+        ha="center",
+        fontsize=8,
+    )
 
 # Per city
 cat_city = df_valid.groupby(["city", "aqi_category"]).size().unstack(fill_value=0)
@@ -272,14 +286,21 @@ findings.append(
 print("Fig 07: AQI time series...")
 cities_ts = ["Bengaluru", "Delhi", "Mumbai", "Chennai", "Kolkata"]
 fig, axes = plt.subplots(len(cities_ts), 1, figsize=(14, 12), sharex=True)
-for ax, city in zip(axes, cities_ts):
+for ax, city in zip(axes, cities_ts, strict=False):
     city_data = df_valid[df_valid["city"] == city].groupby("date")["aqi"].mean().reset_index()
     if city_data.empty:
         ax.text(0.5, 0.5, f"{city}: no data", ha="center", transform=ax.transAxes)
         continue
     city_data = city_data.set_index("date").sort_index()
-    city_data["aqi"].rolling(30).mean().plot(ax=ax, color=CITY_COLORS.get(city, "#aaa"), linewidth=1.2)
-    ax.fill_between(city_data.index, city_data["aqi"].rolling(30).mean(), alpha=0.2, color=CITY_COLORS.get(city, "#aaa"))
+    city_data["aqi"].rolling(30).mean().plot(
+        ax=ax, color=CITY_COLORS.get(city, "#aaa"), linewidth=1.2
+    )
+    ax.fill_between(
+        city_data.index,
+        city_data["aqi"].rolling(30).mean(),
+        alpha=0.2,
+        color=CITY_COLORS.get(city, "#aaa"),
+    )
     ax.set_ylabel(city, rotation=0, ha="right", fontsize=9)
     ax.axhline(100, color="#FFC107", linestyle=":", linewidth=0.8)
     ax.axhline(200, color="#FF9800", linestyle=":", linewidth=0.8)
@@ -300,8 +321,8 @@ findings.append(
 # ══════════════════════════════════════════════════════════════════════════════
 print("Fig 08: Month × City seasonality heatmap...")
 season_hm = df_valid.groupby(["city", "month"])["aqi"].mean().unstack()
-MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-season_hm.columns = [MONTH_LABELS[m-1] for m in season_hm.columns]
+MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+season_hm.columns = [MONTH_LABELS[m - 1] for m in season_hm.columns]
 fig, ax = plt.subplots(figsize=(13, 5))
 sns.heatmap(
     season_hm,
@@ -327,14 +348,21 @@ findings.append(
 # FIG 09 — Day-of-week effect
 # ══════════════════════════════════════════════════════════════════════════════
 print("Fig 09: Day-of-week effect...")
-dow_labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+dow_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 df_valid["dow_name"] = df_valid["dow"].map(dict(enumerate(dow_labels)))
 dow_aqi = df_valid.groupby(["city", "dow"])["aqi"].mean().unstack()
 dow_aqi.columns = [dow_labels[c] for c in dow_aqi.columns]
 
 fig, ax = plt.subplots(figsize=(11, 5))
 for city in dow_aqi.index:
-    ax.plot(dow_labels, dow_aqi.loc[city], marker="o", label=city, color=CITY_COLORS.get(city, "#888"), linewidth=1.5)
+    ax.plot(
+        dow_labels,
+        dow_aqi.loc[city],
+        marker="o",
+        label=city,
+        color=CITY_COLORS.get(city, "#888"),
+        linewidth=1.5,
+    )
 ax.set_xlabel("Day of Week")
 ax.set_ylabel("Mean AQI")
 ax.set_title("Fig 09 — Day-of-Week AQI Effect per City")
@@ -360,7 +388,7 @@ weather_vars = [
     ("relative_humidity_2m_mean", "Relative Humidity (%)"),
     ("temperature_2m_mean", "Temperature (°C)"),
 ]
-for ax, (wvar, wlabel) in zip(axes, weather_vars):
+for ax, (wvar, wlabel) in zip(axes, weather_vars, strict=False):
     if wvar not in df_sd_valid.columns:
         ax.text(0.5, 0.5, f"{wvar}\nnot available", ha="center", transform=ax.transAxes)
         continue
@@ -383,21 +411,49 @@ findings.append(
 # FIG 11 — Pollutant & weather correlation matrix
 # ══════════════════════════════════════════════════════════════════════════════
 print("Fig 11: Correlation matrix...")
-corr_cols = [c for c in ["pm25", "pm10", "no2", "so2", "co", "o3", "aqi",
-                          "temperature_2m_mean", "relative_humidity_2m_mean",
-                          "wind_speed_10m_mean", "precipitation_sum"]
-             if c in df_sd_valid.columns]
+corr_cols = [
+    c
+    for c in [
+        "pm25",
+        "pm10",
+        "no2",
+        "so2",
+        "co",
+        "o3",
+        "aqi",
+        "temperature_2m_mean",
+        "relative_humidity_2m_mean",
+        "wind_speed_10m_mean",
+        "precipitation_sum",
+    ]
+    if c in df_sd_valid.columns
+]
 corr_mat = df_sd_valid[corr_cols].corr()
-col_labels = [c.replace("_mean","").replace("temperature_2m","temp").replace("relative_humidity_2m","humidity").replace("wind_speed_10m","wind").replace("precipitation_sum","precip") for c in corr_cols]
+col_labels = [
+    c.replace("_mean", "")
+    .replace("temperature_2m", "temp")
+    .replace("relative_humidity_2m", "humidity")
+    .replace("wind_speed_10m", "wind")
+    .replace("precipitation_sum", "precip")
+    for c in corr_cols
+]
 corr_mat.index = col_labels
 corr_mat.columns = col_labels
 
 fig, ax = plt.subplots(figsize=(11, 9))
 mask = np.triu(np.ones_like(corr_mat, dtype=bool))
 sns.heatmap(
-    corr_mat, ax=ax, mask=mask, cmap="RdBu_r", center=0,
-    annot=True, fmt=".2f", annot_kws={"size": 8},
-    linewidths=0.5, vmin=-1, vmax=1,
+    corr_mat,
+    ax=ax,
+    mask=mask,
+    cmap="RdBu_r",
+    center=0,
+    annot=True,
+    fmt=".2f",
+    annot_kws={"size": 8},
+    linewidths=0.5,
+    vmin=-1,
+    vmax=1,
     cbar_kws={"label": "Pearson Correlation"},
 )
 ax.set_title("Fig 11 — Pollutant & Weather Correlation Matrix (Pearson)")
@@ -445,16 +501,27 @@ dom_city = dom_df.groupby(["city", "dominant_pollutant"]).size().unstack(fill_va
 dom_city_pct = dom_city.div(dom_city.sum(axis=1), axis=0) * 100
 
 pol_colors = {
-    "pm25": "#ef5350", "pm10": "#ff7043", "no2": "#7e57c2",
-    "so2": "#26a69a", "co": "#ffa726", "o3": "#26c6da", "nh3": "#66bb6a",
+    "pm25": "#ef5350",
+    "pm10": "#ff7043",
+    "no2": "#7e57c2",
+    "so2": "#26a69a",
+    "co": "#ffa726",
+    "o3": "#26c6da",
+    "nh3": "#66bb6a",
 }
 available_pols = [c for c in pol_colors if c in dom_city_pct.columns]
 fig, ax = plt.subplots(figsize=(12, 5))
 bottom = np.zeros(len(dom_city_pct))
 for pol in available_pols:
     if pol in dom_city_pct.columns:
-        ax.bar(dom_city_pct.index, dom_city_pct[pol], bottom=bottom,
-               label=pol.upper(), color=pol_colors[pol], alpha=0.9)
+        ax.bar(
+            dom_city_pct.index,
+            dom_city_pct[pol],
+            bottom=bottom,
+            label=pol.upper(),
+            color=pol_colors[pol],
+            alpha=0.9,
+        )
         bottom += dom_city_pct[pol].values
 ax.set_xlabel("City")
 ax.set_ylabel("Share of AQI-valid days (%)")
@@ -503,7 +570,7 @@ findings.append(
 # ══════════════════════════════════════════════════════════════════════════════
 print("Fig 15: AQI day-over-day change...")
 aqi_change = []
-for (city, loc), grp in df_valid.groupby(["city", "location_id"]):
+for (_city, _loc), grp in df_valid.groupby(["city", "location_id"]):
     grp = grp.set_index("date").sort_index()
     grp["aqi_diff"] = grp["aqi"].diff()
     aqi_change.append(grp[["aqi_diff"]].dropna())
@@ -518,17 +585,30 @@ axes[0].set_title("Distribution of Daily AQI Changes")
 
 pct_over_50 = (aqi_change_df["aqi_diff"].abs() > 50).mean() * 100
 pct_over_100 = (aqi_change_df["aqi_diff"].abs() > 100).mean() * 100
-axes[0].text(0.98, 0.95, f"|Δ|>50: {pct_over_50:.1f}%\n|Δ|>100: {pct_over_100:.1f}%",
-             transform=axes[0].transAxes, ha="right", va="top", fontsize=9,
-             bbox=dict(facecolor="#1a1a2e", alpha=0.8))
+axes[0].text(
+    0.98,
+    0.95,
+    f"|Δ|>50: {pct_over_50:.1f}%\n|Δ|>100: {pct_over_100:.1f}%",
+    transform=axes[0].transAxes,
+    ha="right",
+    va="top",
+    fontsize=9,
+    bbox={"facecolor": "#1a1a2e", "alpha": 0.8},
+)
 
 # Persistence baseline preview
 aqi_vals = df_valid.groupby("date")["aqi"].mean().sort_index()
 persistence_mae = (aqi_vals.diff().abs().dropna()).mean()
-axes[1].text(0.5, 0.5,
-             f"Persistence Baseline Preview\n\nMean |Δ AQI| = {persistence_mae:.1f} AQI units\n(This is the MAE of a pure persistence forecast)\n\n{pct_over_50:.1f}% of days have change >50 AQI\n{pct_over_100:.1f}% of days have change >100 AQI",
-             ha="center", va="center", transform=axes[1].transAxes, fontsize=11,
-             bbox=dict(facecolor="#16213e", alpha=0.9))
+axes[1].text(
+    0.5,
+    0.5,
+    f"Persistence Baseline Preview\n\nMean |Δ AQI| = {persistence_mae:.1f} AQI units\n(This is the MAE of a pure persistence forecast)\n\n{pct_over_50:.1f}% of days have change >50 AQI\n{pct_over_100:.1f}% of days have change >100 AQI",
+    ha="center",
+    va="center",
+    transform=axes[1].transAxes,
+    fontsize=11,
+    bbox={"facecolor": "#16213e", "alpha": 0.9},
+)
 axes[1].axis("off")
 axes[1].set_title("Persistence Difficulty")
 fig.suptitle("Fig 15 — Day-over-Day AQI Change (Task Difficulty)", y=1.01)
@@ -544,8 +624,12 @@ findings.append(
 print("\nWriting docs/eda_summary.md...")
 with open("docs/eda_summary.md", "w", encoding="utf-8") as f:
     f.write("# EDA Summary — Phase 4\n\n")
-    f.write("> Auto-generated by `scripts/run_eda.py`. Each finding includes a decision that affects the feature engineering or modelling pipeline.\n\n")
-    f.write(f"**Data:** `data/interim/pollutants_daily.parquet` — {len(df):,} station-days across 8 cities (12 stations), 2019-01-03 to 2026-09-30.\n\n")
+    f.write(
+        "> Auto-generated by `scripts/run_eda.py`. Each finding includes a decision that affects the feature engineering or modelling pipeline.\n\n"
+    )
+    f.write(
+        f"**Data:** `data/interim/pollutants_daily.parquet` — {len(df):,} station-days across 8 cities (12 stations), 2019-01-03 to 2026-09-30.\n\n"
+    )
     f.write(f"**Valid AQI station-days:** {len(df_valid):,} ({len(df_valid)/len(df)*100:.1f}%)\n\n")
     f.write("---\n\n")
     for i, finding in enumerate(findings, 1):
@@ -556,7 +640,11 @@ with open("docs/eda_summary.md", "w", encoding="utf-8") as f:
     short_findings = [
         ("Fig 01", "12 stations, 8 cities, continuous 2019–2026", "Retain all 12 stations"),
         ("Fig 02", "Data volume stable 2019–2025", "No year exclusion"),
-        ("Fig 03", "NH3/NOx >70% missing; PM2.5 ~38% missing", "Drop high-missing cols; impute PM2.5"),
+        (
+            "Fig 03",
+            "NH3/NOx >70% missing; PM2.5 ~38% missing",
+            "Drop high-missing cols; impute PM2.5",
+        ),
         ("Fig 04", "Ahmedabad missingness 2019–2020", "Retain; cover with imputation"),
         ("Fig 05", "All pollutants right-skewed", "Winsorise at 0.5–99.5th pct on train"),
         ("Fig 06", "Moderate dominates; Good rare", "Use balanced class weights; macro-F1"),
@@ -564,11 +652,19 @@ with open("docs/eda_summary.md", "w", encoding="utf-8") as f:
         ("Fig 08", "Winter peaks Nov–Feb all cities", "Month + season cyclic features"),
         ("Fig 09", "Slight weekend AQI drop in Delhi", "Include weekend_flag"),
         ("Fig 10", "Wind speed down -> PM2.5 up", "Include weather lags and rolling means"),
-        ("Fig 11", "PM2.5 & AQI r~0.85; wind anti-correlated", "Lag AQI, PM2.5, NO2 as key predictors"),
+        (
+            "Fig 11",
+            "PM2.5 & AQI r~0.85; wind anti-correlated",
+            "Lag AQI, PM2.5, NO2 as key predictors",
+        ),
         ("Fig 12", "Significant ACF at lags 1,2,3,7", "Use lags [1,2,3,7]"),
         ("Fig 13", "PM2.5 dominates Delhi; PM10 in Ahmedabad", "PM2.5/PM10 ratio feature"),
         ("Fig 14", "Bengaluru station-level variation", "Station embedding features"),
-        ("Fig 15", f"Mean |ΔAQI| = {persistence_mae:.1f}; {pct_over_50:.1f}% days >50", "Skill score vs persistence"),
+        (
+            "Fig 15",
+            f"Mean |ΔAQI| = {persistence_mae:.1f}; {pct_over_50:.1f}% days >50",
+            "Skill score vs persistence",
+        ),
     ]
     for fig_name, finding_text, decision in short_findings:
         f.write(f"| {fig_name} | {finding_text} | {decision} |\n")
@@ -581,6 +677,6 @@ print("EDA COMPLETE")
 print(f"{'='*60}")
 print(f"  Figures generated: {len(list(FIG_DIR.glob('fig*.png')))}")
 print(f"  Output directory: {FIG_DIR}")
-print(f"  EDA Summary: docs/eda_summary.md")
+print("  EDA Summary: docs/eda_summary.md")
 print(f"  Key findings: {len(findings)}")
 print(f"{'='*60}")

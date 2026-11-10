@@ -29,7 +29,6 @@ Outputs:
 
 from __future__ import annotations
 
-import argparse
 import json
 from datetime import datetime
 from pathlib import Path
@@ -44,15 +43,15 @@ logger = get_logger("download_industrial")
 
 # City -> State mapping for CEA power data
 CITY_STATE: dict[str, str] = {
-    "Delhi":     "Delhi",
-    "Mumbai":    "Maharashtra",
+    "Delhi": "Delhi",
+    "Mumbai": "Maharashtra",
     "Bengaluru": "Karnataka",
-    "Chennai":   "Tamil Nadu",
-    "Kolkata":   "West Bengal",
+    "Chennai": "Tamil Nadu",
+    "Kolkata": "West Bengal",
     "Hyderabad": "Telangana",
-    "Pune":      "Maharashtra",
+    "Pune": "Maharashtra",
     "Ahmedabad": "Gujarat",
-    "Lucknow":   "Uttar Pradesh",
+    "Lucknow": "Uttar Pradesh",
 }
 
 IIP_CSV_PATH = Path("configs/iip_manufacturing.csv")
@@ -84,11 +83,29 @@ def load_iip(path: Path) -> pd.DataFrame:
     # Normalise month: string name -> 1-12
     if "month" in df.columns and df["month"].dtype == object:
         month_map = {
-            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
-            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
-            "january": 1, "february": 2, "march": 3, "april": 4,
-            "june": 6, "july": 7, "august": 8, "september": 9,
-            "october": 10, "november": 11, "december": 12,
+            "jan": 1,
+            "feb": 2,
+            "mar": 3,
+            "apr": 4,
+            "may": 5,
+            "jun": 6,
+            "jul": 7,
+            "aug": 8,
+            "sep": 9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
+            "january": 1,
+            "february": 2,
+            "march": 3,
+            "april": 4,
+            "june": 6,
+            "july": 7,
+            "august": 8,
+            "september": 9,
+            "october": 10,
+            "november": 11,
+            "december": 12,
         }
         df["month"] = df["month"].astype(str).str.strip().str.lower().map(month_map)
 
@@ -128,18 +145,24 @@ def load_state_power(path: Path, cities: list[str]) -> pd.DataFrame:
     # Normalise month
     if "month" in df.columns and df["month"].dtype == object:
         month_map = {
-            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
-            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+            "jan": 1,
+            "feb": 2,
+            "mar": 3,
+            "apr": 4,
+            "may": 5,
+            "jun": 6,
+            "jul": 7,
+            "aug": 8,
+            "sep": 9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
         }
-        df["month"] = (
-            df["month"].astype(str).str.strip().str.lower().str[:3].map(month_map)
-        )
+        df["month"] = df["month"].astype(str).str.strip().str.lower().str[:3].map(month_map)
 
     for col in ["year", "month", "energy_requirement_mu", "energy_availability_mu"]:
         if col in df.columns:
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",", ""), errors="coerce"
-            )
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace(",", ""), errors="coerce")
 
     result = df.dropna(subset=["year", "month"]).reset_index(drop=True)
     return result
@@ -164,7 +187,9 @@ def main() -> None:
         stats["iip_rows"] = len(df_iip)
         stats["iip_years"] = sorted(df_iip["year"].dropna().astype(int).unique().tolist())
     else:
-        pd.DataFrame(columns=["year", "month", "iip_manufacturing_index"]).to_parquet(iip_path, index=False)
+        pd.DataFrame(columns=["year", "month", "iip_manufacturing_index"]).to_parquet(
+            iip_path, index=False
+        )
         stats["iip_rows"] = 0
         logger.warning("IIP data missing -- feature will be NaN until CSV is provided")
 
@@ -175,9 +200,13 @@ def main() -> None:
         df_power.to_parquet(power_path, index=False)
         logger.info(f"Saved CEA power -> {power_path}")
         stats["power_rows"] = len(df_power)
-        stats["power_states"] = list(df_power["state"].unique()) if "state" in df_power.columns else []
+        stats["power_states"] = (
+            list(df_power["state"].unique()) if "state" in df_power.columns else []
+        )
     else:
-        pd.DataFrame(columns=["state", "year", "month", "energy_requirement_mu", "energy_availability_mu"]).to_parquet(power_path, index=False)
+        pd.DataFrame(
+            columns=["state", "year", "month", "energy_requirement_mu", "energy_availability_mu"]
+        ).to_parquet(power_path, index=False)
         stats["power_rows"] = 0
         logger.warning("CEA power data missing -- feature will be NaN until CSV is provided")
 

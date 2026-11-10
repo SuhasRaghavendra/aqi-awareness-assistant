@@ -24,8 +24,7 @@ import argparse
 import json
 import re
 import subprocess
-import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ── repo root ─────────────────────────────────────────────────────────────────
@@ -37,6 +36,7 @@ _CHANGELOG = _REPO_ROOT / "docs" / "CHANGELOG.md"
 
 
 # ── git helpers ───────────────────────────────────────────────────────────────
+
 
 def _run(cmd: list[str], cwd: Path | None = None) -> str:
     """Run a subprocess command and return its stdout (or error message)."""
@@ -88,6 +88,7 @@ def _dvc_diff() -> str:
 
 # ── metrics helpers ────────────────────────────────────────────────────────────
 
+
 def _load_latest_metrics() -> dict[str, dict]:
     """Load all *_stats.json files from reports/metrics/."""
     result: dict[str, dict] = {}
@@ -118,7 +119,12 @@ def _list_changed_files() -> dict[str, list[str]]:
     """Group changed files by type from git status."""
     status = _run(["git", "status", "--porcelain"])
     groups: dict[str, list[str]] = {
-        "code": [], "config": [], "docs": [], "data": [], "tests": [], "other": [],
+        "code": [],
+        "config": [],
+        "docs": [],
+        "data": [],
+        "tests": [],
+        "other": [],
     }
     for line in status.splitlines():
         if len(line) < 4:
@@ -152,6 +158,7 @@ def _changed_files_table(groups: dict[str, list[str]]) -> str:
 
 # ── slug helper ───────────────────────────────────────────────────────────────
 
+
 def _slugify(title: str) -> str:
     s = title.lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)
@@ -159,6 +166,7 @@ def _slugify(title: str) -> str:
 
 
 # ── CHANGELOG helper ──────────────────────────────────────────────────────────
+
 
 def _append_changelog(step: str, title: str, phase: int, entry_path: Path) -> None:
     _CHANGELOG.parent.mkdir(parents=True, exist_ok=True)
@@ -173,7 +181,9 @@ def _append_changelog(step: str, title: str, phase: int, entry_path: Path) -> No
     today = datetime.now().strftime("%Y-%m-%d")
     new_line = f"- **Step {step}** (Phase {phase}): {title} — [{entry_path.name}](logbook/{entry_path.name}) — {today}\n"
     if "## [Unreleased]" in content:
-        content = content.replace("## [Unreleased]\n", f"## [Unreleased]\n\n### Added\n{new_line}", 1)
+        content = content.replace(
+            "## [Unreleased]\n", f"## [Unreleased]\n\n### Added\n{new_line}", 1
+        )
     else:
         content += f"\n## [Unreleased]\n\n### Added\n{new_line}"
     _CHANGELOG.write_text(content, encoding="utf-8")
@@ -181,8 +191,11 @@ def _append_changelog(step: str, title: str, phase: int, entry_path: Path) -> No
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Step-Close Protocol: create logbook entry + step report")
+    parser = argparse.ArgumentParser(
+        description="Step-Close Protocol: create logbook entry + step report"
+    )
     parser.add_argument("--step", required=True, help="Zero-padded step number, e.g. 001")
     parser.add_argument("--title", required=True, help="Short step title")
     parser.add_argument("--phase", type=int, default=2, help="Phase number (1–9)")
@@ -194,7 +207,7 @@ def main() -> None:
     phase = args.phase
     mlflow_run = args.mlflow_run or "N/A"
 
-    now_utc = datetime.now(tz=timezone.utc)
+    now_utc = datetime.now(tz=UTC)
     now_ist = now_utc.strftime("%Y-%m-%dT%H:%M:%S+05:30")
 
     # Gather information

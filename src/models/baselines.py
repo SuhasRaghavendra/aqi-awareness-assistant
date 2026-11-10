@@ -60,7 +60,9 @@ class WeeklySeasonalNaiveBaseline(BaseEstimator, RegressorMixin):
         self.fallback_col = fallback_col
         self.default_value_: float = 100.0
 
-    def fit(self, X: pd.DataFrame, y: np.ndarray | pd.Series | None = None) -> WeeklySeasonalNaiveBaseline:
+    def fit(
+        self, X: pd.DataFrame, y: np.ndarray | pd.Series | None = None
+    ) -> WeeklySeasonalNaiveBaseline:
         if isinstance(X, pd.DataFrame):
             if self.fallback_col in X.columns:
                 self.default_value_ = float(X[self.fallback_col].median())
@@ -109,7 +111,11 @@ class StationMonthMeanBaseline(BaseEstimator, RegressorMixin):
 
         self.global_mean_ = float(df["_target"].mean())
 
-        st_col = self.station_col if self.station_col in df.columns else ("city" if "city" in df.columns else None)
+        st_col = (
+            self.station_col
+            if self.station_col in df.columns
+            else ("city" if "city" in df.columns else None)
+        )
         if st_col and self.month_col in df.columns:
             grouped = df.groupby([st_col, self.month_col])["_target"].mean()
             self.station_month_means_ = {(st, m): float(val) for (st, m), val in grouped.items()}
@@ -123,7 +129,11 @@ class StationMonthMeanBaseline(BaseEstimator, RegressorMixin):
         if self.month_col not in df.columns and self.date_col in df.columns:
             df[self.month_col] = pd.to_datetime(df[self.date_col]).dt.month
 
-        st_col = self.station_col if self.station_col in df.columns else ("city" if "city" in df.columns else None)
+        st_col = (
+            self.station_col
+            if self.station_col in df.columns
+            else ("city" if "city" in df.columns else None)
+        )
         preds = []
         for _, row in df.iterrows():
             st = row.get(st_col, None) if st_col else None
@@ -172,14 +182,16 @@ class RegressThenBucketClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, regressor: BaseEstimator) -> None:
         self.regressor = regressor
-        self.classes_: np.ndarray = np.array([
-            "Good",
-            "Satisfactory",
-            "Moderate",
-            "Poor",
-            "Very Poor",
-            "Severe",
-        ])
+        self.classes_: np.ndarray = np.array(
+            [
+                "Good",
+                "Satisfactory",
+                "Moderate",
+                "Poor",
+                "Very Poor",
+                "Severe",
+            ]
+        )
 
     def fit(self, X: pd.DataFrame, y: np.ndarray | pd.Series) -> RegressThenBucketClassifier:
         return self

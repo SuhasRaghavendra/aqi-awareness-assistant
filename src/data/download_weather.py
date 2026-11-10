@@ -30,7 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -48,18 +48,16 @@ OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 DEFAULT_TIMEZONE = "Asia/Kolkata"
 
 CITY_COORDS: dict[str, tuple[float, float]] = {
-    "Delhi":     (28.6139, 77.2090),
-    "Mumbai":    (19.0760, 72.8777),
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
     "Bengaluru": (12.9716, 77.5946),
-    "Chennai":   (13.0827, 80.2707),
-    "Kolkata":   (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707),
+    "Kolkata": (22.5726, 88.3639),
     "Hyderabad": (17.3850, 78.4867),
-    "Pune":      (18.5204, 73.8567),
+    "Pune": (18.5204, 73.8567),
     "Ahmedabad": (23.0225, 72.5714),
-    "Lucknow":   (26.8467, 80.9462),
+    "Lucknow": (26.8467, 80.9462),
 }
-
-from datetime import timedelta
 
 DAILY_VARIABLES = [
     "temperature_2m_mean",
@@ -97,12 +95,12 @@ def fetch_city_weather(
     max_archive_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
     eff_end = min(end, max_archive_date)
     params: dict[str, Any] = {
-        "latitude":   lat,
-        "longitude":  lon,
+        "latitude": lat,
+        "longitude": lon,
         "start_date": start,
-        "end_date":   eff_end,
-        "daily":      OPEN_METEO_VARS,
-        "timezone":   DEFAULT_TIMEZONE,
+        "end_date": eff_end,
+        "daily": OPEN_METEO_VARS,
+        "timezone": DEFAULT_TIMEZONE,
     }
 
     for attempt in range(1, retries + 1):
@@ -119,7 +117,9 @@ def fetch_city_weather(
             if not daily or "time" not in daily:
                 raise ValueError("Open-Meteo response missing daily.time")
             df = pd.DataFrame(daily)
-            df.rename(columns={"time": "date", "pressure_msl_mean": "surface_pressure_mean"}, inplace=True)
+            df.rename(
+                columns={"time": "date", "pressure_msl_mean": "surface_pressure_mean"}, inplace=True
+            )
             df["city"] = city
             logger.info(f"[{city}] Downloaded {len(df):,} daily weather rows ({start}->{end})")
             return df
@@ -147,19 +147,23 @@ def generate_mock_weather(
     temp_base = 25.0 + (10.0 if lat > 20 else 3.0) * np.cos(2 * np.pi * (day_of_year - 15) / 365)
     humidity_base = 60.0 + 25.0 * np.sin(2 * np.pi * (day_of_year - 180) / 365)
 
-    df = pd.DataFrame({
-        "date": dates.strftime("%Y-%m-%d"),
-        "city": city,
-        "temperature_2m_mean": (temp_base + rng.normal(0, 2, n)).round(1),
-        "temperature_2m_max": (temp_base + 5 + rng.normal(0, 2, n)).round(1),
-        "temperature_2m_min": (temp_base - 5 + rng.normal(0, 2, n)).round(1),
-        "relative_humidity_2m_mean": np.clip(humidity_base + rng.normal(0, 10, n), 15, 97).round(1),
-        "wind_speed_10m_mean": np.clip(rng.exponential(8, n), 0.5, 60).round(1),
-        "wind_direction_10m_dominant": rng.uniform(0, 360, n).round(0),
-        "precipitation_sum": np.where(rng.random(n) > 0.85, rng.exponential(5, n), 0).round(1),
-        "surface_pressure_mean": (1010.0 + rng.normal(0, 5, n)).round(1),
-        "vapour_pressure_deficit_mean": np.clip(rng.exponential(0.8, n), 0, 4).round(2),
-    })
+    df = pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "city": city,
+            "temperature_2m_mean": (temp_base + rng.normal(0, 2, n)).round(1),
+            "temperature_2m_max": (temp_base + 5 + rng.normal(0, 2, n)).round(1),
+            "temperature_2m_min": (temp_base - 5 + rng.normal(0, 2, n)).round(1),
+            "relative_humidity_2m_mean": np.clip(
+                humidity_base + rng.normal(0, 10, n), 15, 97
+            ).round(1),
+            "wind_speed_10m_mean": np.clip(rng.exponential(8, n), 0.5, 60).round(1),
+            "wind_direction_10m_dominant": rng.uniform(0, 360, n).round(0),
+            "precipitation_sum": np.where(rng.random(n) > 0.85, rng.exponential(5, n), 0).round(1),
+            "surface_pressure_mean": (1010.0 + rng.normal(0, 5, n)).round(1),
+            "vapour_pressure_deficit_mean": np.clip(rng.exponential(0.8, n), 0, 4).round(2),
+        }
+    )
     return df
 
 
@@ -179,9 +183,11 @@ def add_derived_weather(df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     setup_logging(stage="download_weather")
-    parser = argparse.ArgumentParser(description="Download Open-Meteo ERA5 daily weather for 9 cities")
+    parser = argparse.ArgumentParser(
+        description="Download Open-Meteo ERA5 daily weather for 9 cities"
+    )
     parser.add_argument("--start", default="2019-01-01")
-    parser.add_argument("--end",   default="2026-09-30")
+    parser.add_argument("--end", default="2026-09-30")
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/weather"))
     parser.add_argument("--mock", action="store_true", help="Generate mock data (no network)")
     args = parser.parse_args()
@@ -198,7 +204,7 @@ def main() -> None:
             df = generate_mock_weather(city, lat, args.start, args.end)
         else:
             df = fetch_city_weather(city, lat, lon, args.start, args.end)
-            time.sleep(0.5)   # polite throttle
+            time.sleep(0.5)  # polite throttle
 
         if not df.empty:
             df = add_derived_weather(df)

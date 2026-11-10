@@ -9,7 +9,6 @@ dvc_data_version as required by Section 4.3 item 9 of the implementation plan.
 
 from __future__ import annotations
 
-import hashlib
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -27,7 +26,9 @@ def _git_commit_full() -> str:
     try:
         r = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, cwd=_REPO_ROOT,
+            capture_output=True,
+            text=True,
+            cwd=_REPO_ROOT,
         )
         return r.stdout.strip() or "unknown"
     except Exception:  # noqa: BLE001

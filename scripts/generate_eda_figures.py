@@ -41,7 +41,9 @@ def generate_all_eda(
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
 
-    plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
+    plt.style.use(
+        "seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default"
+    )
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Arial"]
 
     print(f"[INFO] Loading station-day panel from {data_path}...")
@@ -88,7 +90,14 @@ def generate_all_eda(
     )
     # Truncate station names for readability
     missing_pivot.index = [s[:24] for s in missing_pivot.index]
-    sns.heatmap(missing_pivot, cmap="YlOrRd", vmin=0, vmax=1, cbar_kws={"label": "Missing AQI Fraction"}, ax=ax)
+    sns.heatmap(
+        missing_pivot,
+        cmap="YlOrRd",
+        vmin=0,
+        vmax=1,
+        cbar_kws={"label": "Missing AQI Fraction"},
+        ax=ax,
+    )
     ax.set_title("Station-Month Missingness Fraction (AQI)", fontsize=12, fontweight="bold")
     ax.set_xlabel("Year-Month")
     ax.set_ylabel("")
@@ -103,7 +112,7 @@ def generate_all_eda(
     fig, axes = plt.subplots(2, 3, figsize=(14, 8))
     pollutants = ["pm25", "pm10", "no2", "so2", "co", "o3"]
     colors = ["#d62728", "#ff7f0e", "#1f77b4", "#9467bd", "#8c564b", "#e377c2"]
-    for idx, (p, col) in enumerate(zip(pollutants, colors)):
+    for idx, (p, col) in enumerate(zip(pollutants, colors, strict=False)):
         ax = axes[idx // 3, idx % 3]
         if p in df.columns:
             vals = df[p].dropna()
@@ -144,11 +153,17 @@ def generate_all_eda(
     cat_colors = ["#2ca02c", "#8c564b", "#ff7f0e", "#d62728", "#9467bd", "#7f7f7f"]
     cat_counts = valid_df["aqi_category"].value_counts().reindex(cat_order).fillna(0)
     ax1.bar(cat_counts.index, cat_counts.values, color=cat_colors, edgecolor="black")
-    ax1.set_title("Overall AQI Category Distribution (Class Imbalance)", fontsize=11, fontweight="bold")
+    ax1.set_title(
+        "Overall AQI Category Distribution (Class Imbalance)", fontsize=11, fontweight="bold"
+    )
     ax1.set_ylabel("Number of Station-Days")
     ax1.tick_params(axis="x", rotation=30)
 
-    city_cat = pd.crosstab(valid_df["city"], valid_df["aqi_category"], normalize="index").reindex(columns=cat_order).fillna(0)
+    city_cat = (
+        pd.crosstab(valid_df["city"], valid_df["aqi_category"], normalize="index")
+        .reindex(columns=cat_order)
+        .fillna(0)
+    )
     city_cat.plot(kind="bar", stacked=True, ax=ax2, colormap="viridis", edgecolor="black")
     ax2.set_title("Proportion of AQI Categories per City", fontsize=11, fontweight="bold")
     ax2.set_ylabel("Proportion")
@@ -166,7 +181,9 @@ def generate_all_eda(
         city_sub = valid_df[valid_df["city"] == city].groupby("date")["aqi"].mean()
         city_smooth = city_sub.rolling(window=14, min_periods=3).mean()
         ax.plot(city_smooth.index, city_smooth.values, label=city, linewidth=1.8)
-    ax.set_title("14-Day Rolling Mean AQI Trends Across Selected Cities", fontsize=12, fontweight="bold")
+    ax.set_title(
+        "14-Day Rolling Mean AQI Trends Across Selected Cities", fontsize=12, fontweight="bold"
+    )
     ax.set_ylabel("CPCB AQI")
     ax.legend(title="City", loc="upper right")
     plt.tight_layout()
@@ -178,7 +195,9 @@ def generate_all_eda(
     # -------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 5))
     season_pivot = valid_df.pivot_table(index="city", columns="month", values="aqi", aggfunc="mean")
-    sns.heatmap(season_pivot, annot=True, fmt=".1f", cmap="magma_r", ax=ax, cbar_kws={"label": "Mean AQI"})
+    sns.heatmap(
+        season_pivot, annot=True, fmt=".1f", cmap="magma_r", ax=ax, cbar_kws={"label": "Mean AQI"}
+    )
     ax.set_title("Mean AQI Seasonality Heatmap (City vs Month)", fontsize=12, fontweight="bold")
     ax.set_xlabel("Month (1 = Jan, 12 = Dec)")
     ax.set_ylabel("")
@@ -191,7 +210,11 @@ def generate_all_eda(
     # -------------------------------------------------------------
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
     dow_aqi = valid_df.groupby("day_name")["aqi"].mean().reindex(day_order)
-    dow_pm25 = valid_df.groupby("day_name")["pm25"].mean().reindex(day_order) if "pm25" in valid_df.columns else pd.Series()
+    dow_pm25 = (
+        valid_df.groupby("day_name")["pm25"].mean().reindex(day_order)
+        if "pm25" in valid_df.columns
+        else pd.Series()
+    )
     dow_aqi.plot(kind="bar", ax=ax1, color="#3470a3", edgecolor="black")
     ax1.set_title("Mean AQI by Day of Week", fontsize=11, fontweight="bold")
     ax1.set_ylabel("Mean AQI")
@@ -213,17 +236,38 @@ def generate_all_eda(
     # -------------------------------------------------------------
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 4))
     if "wind_speed_10m_mean" in valid_df.columns and "pm25" in valid_df.columns:
-        sns.scatterplot(data=valid_df.sample(min(1500, len(valid_df))), x="wind_speed_10m_mean", y="pm25", ax=ax1, alpha=0.4, color="#1f77b4")
+        sns.scatterplot(
+            data=valid_df.sample(min(1500, len(valid_df))),
+            x="wind_speed_10m_mean",
+            y="pm25",
+            ax=ax1,
+            alpha=0.4,
+            color="#1f77b4",
+        )
         ax1.set_title("PM2.5 vs Wind Speed (Dispersion)", fontsize=10, fontweight="bold")
         ax1.set_xlabel("Wind Speed 10m (m/s)")
         ax1.set_ylabel("PM2.5 (µg/m³)")
     if "relative_humidity_2m_mean" in valid_df.columns and "pm25" in valid_df.columns:
-        sns.scatterplot(data=valid_df.sample(min(1500, len(valid_df))), x="relative_humidity_2m_mean", y="pm25", ax=ax2, alpha=0.4, color="#2ca02c")
+        sns.scatterplot(
+            data=valid_df.sample(min(1500, len(valid_df))),
+            x="relative_humidity_2m_mean",
+            y="pm25",
+            ax=ax2,
+            alpha=0.4,
+            color="#2ca02c",
+        )
         ax2.set_title("PM2.5 vs Relative Humidity", fontsize=10, fontweight="bold")
         ax2.set_xlabel("Relative Humidity (%)")
         ax2.set_ylabel("PM2.5 (µg/m³)")
     if "precipitation_sum" in valid_df.columns and "pm25" in valid_df.columns:
-        sns.scatterplot(data=valid_df.sample(min(1500, len(valid_df))), x="precipitation_sum", y="pm25", ax=ax3, alpha=0.4, color="#d62728")
+        sns.scatterplot(
+            data=valid_df.sample(min(1500, len(valid_df))),
+            x="precipitation_sum",
+            y="pm25",
+            ax=ax3,
+            alpha=0.4,
+            color="#d62728",
+        )
         ax3.set_title("PM2.5 vs Precipitation (Wet Deposition)", fontsize=10, fontweight="bold")
         ax3.set_xlabel("Precipitation (mm)")
         ax3.set_ylabel("PM2.5 (µg/m³)")
@@ -235,7 +279,23 @@ def generate_all_eda(
     # Fig 10: Correlation Matrix
     # -------------------------------------------------------------
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    corr_vars = [c for c in ["aqi", "pm25", "pm10", "no2", "so2", "co", "o3", "temperature_2m_mean", "relative_humidity_2m_mean", "wind_speed_10m_mean", "precipitation_sum"] if c in valid_df.columns]
+    corr_vars = [
+        c
+        for c in [
+            "aqi",
+            "pm25",
+            "pm10",
+            "no2",
+            "so2",
+            "co",
+            "o3",
+            "temperature_2m_mean",
+            "relative_humidity_2m_mean",
+            "wind_speed_10m_mean",
+            "precipitation_sum",
+        ]
+        if c in valid_df.columns
+    ]
     p_corr = valid_df[corr_vars].corr(method="pearson")
     s_corr = valid_df[corr_vars].corr(method="spearman")
     sns.heatmap(p_corr, annot=True, fmt=".2f", cmap="coolwarm", vmin=-1, vmax=1, ax=ax1, cbar=False)
@@ -253,7 +313,12 @@ def generate_all_eda(
     # -------------------------------------------------------------
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4))
     sample_station = valid_df["location_id"].iloc[0]
-    st_series = valid_df[valid_df["location_id"] == sample_station].sort_values("date").set_index("date")["aqi"].dropna()
+    st_series = (
+        valid_df[valid_df["location_id"] == sample_station]
+        .sort_values("date")
+        .set_index("date")["aqi"]
+        .dropna()
+    )
     lags = list(range(1, 16))
     acf_vals = [st_series.autocorr(lag=lag) for lag in lags]
     ax1.stem(lags, acf_vals)
@@ -283,7 +348,11 @@ def generate_all_eda(
     if "dominant_pollutant" in valid_df.columns:
         dom_share = pd.crosstab(valid_df["city"], valid_df["dominant_pollutant"], normalize="index")
         dom_share.plot(kind="bar", stacked=True, ax=ax, colormap="tab10", edgecolor="black")
-        ax.set_title("Share of Days Setting Overall AQI by Dominant Pollutant", fontsize=12, fontweight="bold")
+        ax.set_title(
+            "Share of Days Setting Overall AQI by Dominant Pollutant",
+            fontsize=12,
+            fontweight="bold",
+        )
         ax.set_ylabel("Share of Days")
         ax.set_xlabel("")
         ax.legend(title="Dominant Pollutant", bbox_to_anchor=(1.02, 1), loc="upper left")
@@ -305,7 +374,11 @@ def generate_all_eda(
     sns.histplot(deltas_arr, bins=50, kde=True, ax=ax, color="#4c72b0")
     ax.axvline(0, color="red", linestyle="--", alpha=0.7)
     mean_mae = np.abs(deltas_arr).mean()
-    ax.set_title(f"Day-over-Day AQI Change (ΔAQI) — Persistence Baseline MAE Preview: {mean_mae:.1f}", fontsize=11, fontweight="bold")
+    ax.set_title(
+        f"Day-over-Day AQI Change (ΔAQI) — Persistence Baseline MAE Preview: {mean_mae:.1f}",
+        fontsize=11,
+        fontweight="bold",
+    )
     ax.set_xlabel("AQI(t) - AQI(t-1)")
     ax.set_ylabel("Count")
     ax.set_xlim(-150, 150)
@@ -325,13 +398,21 @@ def generate_all_eda(
         st_data = b_df[b_df["station_name"] == st_name].sort_values("date")
         st_smooth = st_data.set_index("date")["aqi"].rolling(14, min_periods=3).mean()
         ax1.plot(st_smooth.index, st_smooth.values, label=st_name[:25], linewidth=1.8)
-    ax1.set_title("Bengaluru Spotlight: Intra-City Station Level AQI Profiles (14-Day Rolling)", fontsize=11, fontweight="bold")
+    ax1.set_title(
+        "Bengaluru Spotlight: Intra-City Station Level AQI Profiles (14-Day Rolling)",
+        fontsize=11,
+        fontweight="bold",
+    )
     ax1.set_ylabel("AQI")
     ax1.legend(loc="upper right")
 
     b_monthly = b_df.groupby("month")[["pm25", "pm10", "no2"]].mean()
     b_monthly.plot(kind="bar", ax=ax2, colormap="viridis", edgecolor="black")
-    ax2.set_title("Bengaluru Spotlight: Monthly Pollutant Averages (Winter Peak vs Monsoon Washout)", fontsize=11, fontweight="bold")
+    ax2.set_title(
+        "Bengaluru Spotlight: Monthly Pollutant Averages (Winter Peak vs Monsoon Washout)",
+        fontsize=11,
+        fontweight="bold",
+    )
     ax2.set_xlabel("Month")
     ax2.set_ylabel("Concentration (µg/m³)")
     ax2.tick_params(axis="x", rotation=0)

@@ -4,29 +4,35 @@ scripts/feature_ranking_plot.py
 Generates a feature importance (variance-based ranking) figure for train split.
 Saved to: reports/figures/features/feature_importance_train.png
 """
+
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
 import matplotlib
+from matplotlib.patches import Patch
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
-plt.rcParams.update({
-    "font.family": "DejaVu Sans",
-    "axes.titlesize": 13,
-    "axes.labelsize": 11,
-    "figure.facecolor": "#1a1a2e",
-    "axes.facecolor": "#16213e",
-    "axes.edgecolor": "#e0e0e0",
-    "axes.labelcolor": "#e0e0e0",
-    "xtick.color": "#e0e0e0",
-    "ytick.color": "#e0e0e0",
-    "text.color": "#e0e0e0",
-    "grid.color": "#2a2a4a",
-    "grid.alpha": 0.5,
-})
+plt.rcParams.update(
+    {
+        "font.family": "DejaVu Sans",
+        "axes.titlesize": 13,
+        "axes.labelsize": 11,
+        "figure.facecolor": "#1a1a2e",
+        "axes.facecolor": "#16213e",
+        "axes.edgecolor": "#e0e0e0",
+        "axes.labelcolor": "#e0e0e0",
+        "xtick.color": "#e0e0e0",
+        "ytick.color": "#e0e0e0",
+        "text.color": "#e0e0e0",
+        "grid.color": "#2a2a4a",
+        "grid.alpha": 0.5,
+    }
+)
 
 FIG_DIR = Path("reports/figures/features")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -54,6 +60,7 @@ top_feats = sorted_feats[:top_n]
 names = [f[0] for f in top_feats]
 scores = [f[1] for f in top_feats]
 
+
 # Color by feature group
 def get_color(name: str) -> str:
     if "lag" in name or "rolling" in name or "diff" in name:
@@ -62,12 +69,21 @@ def get_color(name: str) -> str:
         return "#80cbc4"  # teal — weather
     elif "city_" in name or "station" in name:
         return "#ce93d8"  # purple — spatial
-    elif "month" in name or "dow" in name or "season" in name or "weekend" in name or "festival" in name or "sin_" in name or "cos_" in name:
+    elif (
+        "month" in name
+        or "dow" in name
+        or "season" in name
+        or "weekend" in name
+        or "festival" in name
+        or "sin_" in name
+        or "cos_" in name
+    ):
         return "#ffcc02"  # yellow — calendar
     elif "pm25" in name or "pm10" in name or "no2" in name or "aqi" in name:
         return "#ef9a9a"  # red — pollutant
     else:
         return "#a5d6a7"  # green — other
+
 
 colors = [get_color(n) for n in names]
 
@@ -79,7 +95,6 @@ ax.set_xlabel("Coefficient of Variation (training set)")
 ax.set_title(f"Fig — Top {top_n} Features by Variability (Training Set Proxy)")
 
 # Legend
-from matplotlib.patches import Patch
 legend_elements = [
     Patch(facecolor="#ef9a9a", label="Pollutant"),
     Patch(facecolor="#4dd0e1", label="Temporal (lags/rolling)"),

@@ -36,7 +36,6 @@ from typing import Any
 
 import yaml
 
-
 CATEGORY_BANDS = [
     (0.0, 50.0, "Good"),
     (50.0001, 100.0, "Satisfactory"),
@@ -55,9 +54,11 @@ def load_cpcb_breakpoints(
     cfg_file = Path(config_path)
     if not cfg_file.exists():
         # Fallback to root or default location
-        cfg_file = Path(__file__).resolve().parent.parent.parent / "configs" / "cpcb_breakpoints.yaml"
+        cfg_file = (
+            Path(__file__).resolve().parent.parent.parent / "configs" / "cpcb_breakpoints.yaml"
+        )
 
-    with open(cfg_file, "r", encoding="utf-8") as f:
+    with open(cfg_file, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data or {}
 
@@ -107,7 +108,9 @@ def calc_sub_index(
     max_c_low, max_c_high, max_i_low, max_i_high = bp_list[-1]
     if concentration > max_c_high:
         # Extrapolate slope above highest bracket or cap at 500
-        slope = (max_i_high - max_i_low) / (max_c_high - max_c_low) if max_c_high > max_c_low else 1.0
+        slope = (
+            (max_i_high - max_i_low) / (max_c_high - max_c_low) if max_c_high > max_c_low else 1.0
+        )
         extrapolated = max_i_high + slope * (concentration - max_c_high)
         # Cap at 500 per official CPCB AQI cap guideline
         return min(round(extrapolated, 1), 500.0)

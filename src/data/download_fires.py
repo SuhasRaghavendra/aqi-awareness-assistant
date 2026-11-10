@@ -47,27 +47,26 @@ import requests
 
 from src.config import load_env, load_params
 from src.utils.logging_utils import get_logger, setup_logging
-from src.utils.stage_stats import track_stage
 
 logger = get_logger("download_fires")
 
 # City centroids for distance computation
 CITY_COORDS: dict[str, tuple[float, float]] = {
-    "Delhi":     (28.6139, 77.2090),
-    "Mumbai":    (19.0760, 72.8777),
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
     "Bengaluru": (12.9716, 77.5946),
-    "Chennai":   (13.0827, 80.2707),
-    "Kolkata":   (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707),
+    "Kolkata": (22.5726, 88.3639),
     "Hyderabad": (17.3850, 78.4867),
-    "Pune":      (18.5204, 73.8567),
+    "Pune": (18.5204, 73.8567),
     "Ahmedabad": (23.0225, 72.5714),
-    "Lucknow":   (26.8467, 80.9462),
+    "Lucknow": (26.8467, 80.9462),
 }
 
 FIRMS_AREA_BASE = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
 INDIA_BBOX = "68,6,98,37"
 
-SENSOR_SP  = "VIIRS_SNPP_SP"
+SENSOR_SP = "VIIRS_SNPP_SP"
 SENSOR_NRT = "VIIRS_SNPP_NRT"
 SP_END_DATE = "2026-07-31"
 
@@ -79,7 +78,7 @@ def get_firms_key() -> str:
     load_env()
     key = os.environ.get("FIRMS_MAP_KEY", "").strip()
     if not key:
-        raise EnvironmentError(
+        raise OSError(
             "FIRMS_MAP_KEY not set. Get a free key at:\n"
             "  https://firms.modaps.eosdis.nasa.gov/api/map_key/\n"
             "Then add it to your .env file: FIRMS_MAP_KEY=your_key_here"
@@ -183,7 +182,9 @@ def download_all_fires(
         current += timedelta(days=batch_n)
 
     total_batches = len(batches)
-    logger.info(f"Downloading fires in {total_batches} batches ({start} -> {end}) with {MAX_WORKERS} workers...")
+    logger.info(
+        f"Downloading fires in {total_batches} batches ({start} -> {end}) with {MAX_WORKERS} workers..."
+    )
 
     frames: list[pd.DataFrame] = []
     completed = 0
@@ -293,7 +294,7 @@ def main() -> None:
     setup_logging(stage="download_fires")
     parser = argparse.ArgumentParser(description="Download NASA FIRMS fire data for India")
     parser.add_argument("--start", default="2019-01-01")
-    parser.add_argument("--end",   default="2026-09-30")
+    parser.add_argument("--end", default="2026-09-30")
     parser.add_argument("--radius-km", type=float, default=500.0)
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/fires"))
     args = parser.parse_args()
@@ -328,7 +329,8 @@ def main() -> None:
         "total_city_day_rows": int(len(df_city)),
         "fire_coverage_by_city": (
             df_city.groupby("city")["fire_count"].sum().astype(int).to_dict()
-            if not df_city.empty else {}
+            if not df_city.empty
+            else {}
         ),
     }
     metrics_path = Path("reports/metrics/download_fires_stats.json")

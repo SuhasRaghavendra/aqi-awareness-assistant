@@ -5,12 +5,12 @@ stages:
     deps:
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/download_weather.py
       hash: md5
-      md5: 1c43194f4aaa46ccbc8787773ec2e059
-      size: 9086
+      md5: 7365c3bb72e3d0b10718a605004b4dee
+      size: 9174
     params:
       params.yaml:
         data:
@@ -51,12 +51,12 @@ stages:
     deps:
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/download_aqi.py
       hash: md5
-      md5: 361230828495aafc560ecbd9fecbaf95
-      size: 11306
+      md5: 6c355daecc88bde0695dc45d035ad532
+      size: 11137
     params:
       params.yaml:
         aqi:
@@ -94,12 +94,12 @@ stages:
     deps:
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/download_fires.py
       hash: md5
-      md5: 4c2a75b90ecb10f52138f6de63194dcc
-      size: 12444
+      md5: c59da67caae0c7f86515c089694d2e60
+      size: 12394
     params:
       params.yaml:
         data:
@@ -141,12 +141,12 @@ stages:
       size: 3776
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/download_vehicles.py
       hash: md5
-      md5: 8eaa11fb999f006cd1a1b26c065bb73c
-      size: 11877
+      md5: 6c8f05e8cd4322252289abc3a59c3f95
+      size: 12137
     outs:
     - path: data/raw/vehicles/city_vehicles_annual.parquet
       hash: md5
@@ -165,12 +165,12 @@ stages:
     deps:
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/download_industrial.py
       hash: md5
-      md5: 5d81c552de0180a8d1e50b523e0cad0e
-      size: 7340
+      md5: fe192ce978a000200d826e514f156348
+      size: 7656
     outs:
     - path: data/raw/industrial/iip_monthly.parquet
       hash: md5
@@ -221,12 +221,12 @@ stages:
       size: 256516
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/ingest_and_merge.py
       hash: md5
-      md5: 65d2cf080a40d40f3a9a2ce3787f7904
-      size: 18689
+      md5: f5ac35a34f6c461ab99375d37d7747f4
+      size: 18648
     params:
       params.yaml:
         data:
@@ -260,12 +260,12 @@ stages:
       size: 556049
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/validate.py
       hash: md5
-      md5: d6f81cd7d50caad533b0d0d2314daa16
-      size: 8171
+      md5: f3b064e81ff8c9b37b381440a6845a64
+      size: 8012
     params:
       params.yaml:
         aqi:
@@ -286,16 +286,16 @@ stages:
       size: 556049
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/data/clean.py
       hash: md5
-      md5: 554fc71bd7806df385f6abb66eaf5034
-      size: 9759
+      md5: adf649adb0824af25068c0ee9900688e
+      size: 9989
     - path: src/features/aqi_utils.py
       hash: md5
-      md5: 2e71b277b4585a75727682b008f21059
-      size: 5603
+      md5: ab5bae0a77c918edb77bfe1a55f3ab76
+      size: 5645
     params:
       params.yaml:
         aqi:
@@ -309,36 +309,36 @@ stages:
           winsor_upper_q: 0.995
         seed: 42
         split:
-          train_end: '2022-12-31'
-          val_end: '2025-12-31'
+          train_end: '2023-12-31'
+          val_end: '2024-12-31'
     outs:
     - path: data/interim/city_day_clean.parquet
       hash: md5
-      md5: d3e46932c0100cd7ca33af8b6492bdd2
-      size: 537952
+      md5: 1851fbbcadd1384c11e45bfdc0afd1d8
+      size: 536392
     - path: reports/metrics/clean_stats.json
       hash: md5
-      md5: d7dee4104a7d97b37533f5416ea4f8f9
+      md5: 2912301cc161a0a9c36d1d3b144587e1
       size: 5993
   features:
     cmd: python -m src.features.build_features
     deps:
     - path: data/interim/city_day_clean.parquet
       hash: md5
-      md5: d3e46932c0100cd7ca33af8b6492bdd2
-      size: 537952
+      md5: 1851fbbcadd1384c11e45bfdc0afd1d8
+      size: 536392
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/features/aqi_utils.py
       hash: md5
-      md5: 2e71b277b4585a75727682b008f21059
-      size: 5603
+      md5: ab5bae0a77c918edb77bfe1a55f3ab76
+      size: 5645
     - path: src/features/build_features.py
       hash: md5
-      md5: 50f7962010b950b6149e5b7bed8b1256
-      size: 19207
+      md5: e8e9d7dceaa823af810e6f302913dab1
+      size: 21253
     params:
       params.yaml:
         features:
@@ -360,60 +360,68 @@ stages:
           use_city_onehot: true
         seed: 42
         split:
-          train_end: '2022-12-31'
-          val_end: '2025-12-31'
+          train_end: '2023-12-31'
+          val_end: '2024-12-31'
     outs:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: e2414470fd91333fc8587b28f58e1621
-      size: 6619
+      md5: a994715d33a1a3e9cd929d34916dfe99
+      size: 6631
     - path: data/processed/scaler.joblib
       hash: md5
-      md5: 8dc5bce9df3eb5146cd821db35eaff8e
-      size: 5895
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
     - path: data/processed/test.parquet
       hash: md5
-      md5: 390f14003a1fb822e508652871681785
-      size: 79636
+      md5: bd1de9ea97083402bd9ccaceb1072e3c
+      size: 457927
     - path: data/processed/train.parquet
       hash: md5
-      md5: 29d5c45f6236bbe2433d275d0609dd2e
-      size: 643930
+      md5: 49bd4c88748327afa12057c2fe71b0e7
+      size: 2647977
     - path: data/processed/val.parquet
       hash: md5
-      md5: 9f9448b7024c3936a9b04852cba07f97
-      size: 497926
+      md5: 462b7712b4cea342fe36ca80868a29f4
+      size: 717507
     - path: reports/metrics/features_stats.json
       hash: md5
-      md5: 72b4d39e3d754f452726e998a4064842
-      size: 20355
+      md5: 48d615a149613be67d9d64ea5a752df6
+      size: 20326
   train:
-    cmd: python -m src.models.train
+    cmd: python -m src.models.train --scaler data/processed/scaler.joblib
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: e2414470fd91333fc8587b28f58e1621
-      size: 6619
+      md5: a994715d33a1a3e9cd929d34916dfe99
+      size: 6631
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
     - path: data/processed/train.parquet
       hash: md5
-      md5: 29d5c45f6236bbe2433d275d0609dd2e
-      size: 643930
+      md5: 49bd4c88748327afa12057c2fe71b0e7
+      size: 2647977
     - path: data/processed/val.parquet
       hash: md5
-      md5: 9f9448b7024c3936a9b04852cba07f97
-      size: 497926
+      md5: 462b7712b4cea342fe36ca80868a29f4
+      size: 717507
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/models/baselines.py
       hash: md5
-      md5: 070cad1f21a75c526d5a2e6941e62a55
-      size: 7685
+      md5: cd5fc9122ff50d24a1da7179608e1e3f
+      size: 7857
+    - path: src/models/residual.py
+      hash: md5
+      md5: cea66ffdf431e55da7e6c25cbd1119cd
+      size: 2045
     - path: src/models/train.py
       hash: md5
-      md5: 7c011132f8d1962fda53ff3acb031357
-      size: 23803
+      md5: a7daacb1fec4ddeb7227ea81265fe361
+      size: 35121
     params:
       params.yaml:
         seed: 42
@@ -426,48 +434,117 @@ stages:
           - random_forest
           - xgboost
           - lightgbm
+          - residual_ridge
+          - residual_lightgbm
           cv_folds: 4
     outs:
     - path: models/
       hash: md5
-      md5: 2f61e4876d13a243821c83765c5f1281.dir
-      size: 47399984
-      nfiles: 12
+      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
+      size: 46540494
+      nfiles: 15
     - path: reports/metrics/val_metrics.json
       hash: md5
-      md5: b7a04eff26ba2ba380991b29e84006af
-      size: 3010
+      md5: 521eb78296f84b9247b564af16ab3ea3
+      size: 3754
   evaluate:
-    cmd: python -m src.models.evaluate
+    cmd: python -m src.models.evaluate --scaler data/processed/scaler.joblib
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: e2414470fd91333fc8587b28f58e1621
-      size: 6619
+      md5: a994715d33a1a3e9cd929d34916dfe99
+      size: 6631
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
     - path: data/processed/test.parquet
       hash: md5
-      md5: 390f14003a1fb822e508652871681785
-      size: 79636
+      md5: bd1de9ea97083402bd9ccaceb1072e3c
+      size: 457927
     - path: models/
       hash: md5
-      md5: 2f61e4876d13a243821c83765c5f1281.dir
-      size: 47399984
-      nfiles: 12
+      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
+      size: 46540494
+      nfiles: 15
     - path: src/config.py
       hash: md5
-      md5: 7581102a8895b99e933dbc6f8e6944b7
-      size: 1523
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
     - path: src/models/evaluate.py
       hash: md5
-      md5: 242c8849933e363bd27600582fa4f290
-      size: 11809
+      md5: a30ebba4a4c5d634a2c3e88472fd6641
+      size: 17236
+    - path: src/models/residual.py
+      hash: md5
+      md5: cea66ffdf431e55da7e6c25cbd1119cd
+      size: 2045
     outs:
     - path: reports/figures/evaluation/
       hash: md5
-      md5: 5e8d8dc35b3b87f9d8abdbba9df54279.dir
-      size: 402578
+      md5: 239d63bfa1368973e9f65b1ffce8e8e6.dir
+      size: 639667
       nfiles: 4
     - path: reports/metrics/test_metrics.json
       hash: md5
-      md5: 3477a007a2eab204b29f3271a0fbdc06
-      size: 2727
+      md5: 908bb649d9208c6ba3d1b819a1725f8a
+      size: 3402
+    - path: reports/metrics/test_per_city_metrics.json
+      hash: md5
+      md5: a861e46b0cc1764bbf0bd897fac8686d
+      size: 2639
+  model_risk:
+    cmd: python -m src.models.model_risk
+    deps:
+    - path: data/processed/feature_list.json
+      hash: md5
+      md5: a994715d33a1a3e9cd929d34916dfe99
+      size: 6631
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: bd1de9ea97083402bd9ccaceb1072e3c
+      size: 457927
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 49bd4c88748327afa12057c2fe71b0e7
+      size: 2647977
+    - path: data/processed/val.parquet
+      hash: md5
+      md5: 462b7712b4cea342fe36ca80868a29f4
+      size: 717507
+    - path: models/
+      hash: md5
+      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
+      size: 46540494
+      nfiles: 15
+    - path: src/config.py
+      hash: md5
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
+    - path: src/models/model_risk.py
+      hash: md5
+      md5: 945f56378fbace6ad6908bd9225b45ce
+      size: 26301
+    - path: src/models/residual.py
+      hash: md5
+      md5: cea66ffdf431e55da7e6c25cbd1119cd
+      size: 2045
+    params:
+      params.yaml:
+        seed: 42
+        split:
+          train_end: '2023-12-31'
+          val_end: '2024-12-31'
+    outs:
+    - path: reports/metrics/model_risk_card.json
+      hash: md5
+      md5: 95b4056f574c245b3fe411e113f6e88e
+      size: 8223
+    - path: reports/metrics/reference_stats.json
+      hash: md5
+      md5: 8ea0a572c2854d245a57237e98861d3a
+      size: 22680

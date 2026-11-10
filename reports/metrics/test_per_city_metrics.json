@@ -1,0 +1,110 @@
+[
+  {
+    "city": "Ahmedabad",
+    "model": "residual_lightgbm",
+    "n_rows": 154,
+    "mae": 11.713,
+    "rmse": 15.711,
+    "mae_persistence": 12.411,
+    "rmse_persistence": 16.92,
+    "skill_vs_persistence": 0.0715,
+    "skill_ci_lo_95": 0.0279,
+    "skill_ci_hi_95": 0.1108
+  },
+  {
+    "city": "Bengaluru",
+    "model": "residual_lightgbm",
+    "n_rows": 154,
+    "mae": 5.04,
+    "rmse": 6.59,
+    "mae_persistence": 5.24,
+    "rmse_persistence": 6.851,
+    "skill_vs_persistence": 0.038,
+    "skill_ci_lo_95": 0.008,
+    "skill_ci_hi_95": 0.068
+  },
+  {
+    "city": "Chennai",
+    "model": "residual_lightgbm",
+    "n_rows": 243,
+    "mae": 11.354,
+    "rmse": 17.976,
+    "mae_persistence": 11.802,
+    "rmse_persistence": 19.635,
+    "skill_vs_persistence": 0.0845,
+    "skill_ci_lo_95": -0.0457,
+    "skill_ci_hi_95": 0.1582
+  },
+  {
+    "city": "Delhi",
+    "model": "residual_lightgbm",
+    "n_rows": 154,
+    "mae": 21.491,
+    "rmse": 31.461,
+    "mae_persistence": 24.54,
+    "rmse_persistence": 36.518,
+    "skill_vs_persistence": 0.1385,
+    "skill_ci_lo_95": 0.0613,
+    "skill_ci_hi_95": 0.1766
+  },
+  {
+    "city": "Hyderabad",
+    "model": "residual_lightgbm",
+    "n_rows": 419,
+    "mae": 19.089,
+    "rmse": 30.853,
+    "mae_persistence": 19.694,
+    "rmse_persistence": 32.835,
+    "skill_vs_persistence": 0.0604,
+    "skill_ci_lo_95": 0.0183,
+    "skill_ci_hi_95": 0.0941
+  },
+  {
+    "city": "Kolkata",
+    "model": "residual_lightgbm",
+    "n_rows": 205,
+    "mae": 15.041,
+    "rmse": 26.801,
+    "mae_persistence": 13.771,
+    "rmse_persistence": 25.617,
+    "skill_vs_persistence": -0.0462,
+    "skill_ci_lo_95": -0.2568,
+    "skill_ci_hi_95": 0.0355
+  },
+  {
+    "city": "Lucknow",
+    "model": "residual_lightgbm",
+    "n_rows": 154,
+    "mae": 12.699,
+    "rmse": 18.363,
+    "mae_persistence": 14.196,
+    "rmse_persistence": 20.411,
+    "skill_vs_persistence": 0.1003,
+    "skill_ci_lo_95": 0.0421,
+    "skill_ci_hi_95": 0.1485
+  },
+  {
+    "city": "Mumbai",
+    "model": "residual_lightgbm",
+    "n_rows": 215,
+    "mae": 15.352,
+    "rmse": 27.316,
+    "mae_persistence": 16.193,
+    "rmse_persistence": 29.541,
+    "skill_vs_persistence": 0.0753,
+    "skill_ci_lo_95": -0.0474,
+    "skill_ci_hi_95": 0.1358
+  },
+  {
+    "city": "Pune",
+    "model": "residual_lightgbm",
+    "n_rows": 154,
+    "mae": 7.479,
+    "rmse": 10.44,
+    "mae_persistence": 7.495,
+    "rmse_persistence": 10.692,
+    "skill_vs_persistence": 0.0235,
+    "skill_ci_lo_95": -0.0167,
+    "skill_ci_hi_95": 0.0559
+  }
+]

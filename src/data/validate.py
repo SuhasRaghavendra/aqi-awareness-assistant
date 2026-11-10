@@ -22,7 +22,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from src.config import load_params
@@ -32,35 +31,45 @@ logger = get_logger("validate")
 
 # ── Required columns (must exist; NaN allowed up to threshold) ────────────────
 REQUIRED_COLS = [
-    "city", "date", "aqi",
-    "fire_count_500km", "fire_frp_sum_500km",
-    "temperature_2m_mean", "wind_speed_10m_mean",
-    "relative_humidity_2m_mean", "precipitation_sum",
-    "burning_season_flag", "festival_flag", "grap_stage",
-    "bsvi_active", "season", "month", "weekend_flag",
+    "city",
+    "date",
+    "aqi",
+    "fire_count_500km",
+    "fire_frp_sum_500km",
+    "temperature_2m_mean",
+    "wind_speed_10m_mean",
+    "relative_humidity_2m_mean",
+    "precipitation_sum",
+    "burning_season_flag",
+    "festival_flag",
+    "grap_stage",
+    "bsvi_active",
+    "season",
+    "month",
+    "weekend_flag",
 ]
 
 # ── Value range guards ────────────────────────────────────────────────────────
 RANGE_CHECKS: dict[str, tuple[float, float]] = {
-    "aqi":                       (0,   1500),
-    "temperature_2m_mean":       (-5,   55),
-    "relative_humidity_2m_mean": (0,   100),
-    "wind_speed_10m_mean":       (0,   150),
-    "precipitation_sum":         (0,  1000),
-    "fire_count_500km":          (0, 50000),
-    "grap_stage":                (0,     4),
-    "month":                     (1,    12),
+    "aqi": (0, 1500),
+    "temperature_2m_mean": (-5, 55),
+    "relative_humidity_2m_mean": (0, 100),
+    "wind_speed_10m_mean": (0, 150),
+    "precipitation_sum": (0, 1000),
+    "fire_count_500km": (0, 50000),
+    "grap_stage": (0, 4),
+    "month": (1, 12),
 }
 
 # ── Maximum acceptable missing fraction per column ───────────────────────────
 MAX_MISSING_FRAC: dict[str, float] = {
-    "aqi":                       0.45,   # XKDR coverage gaps expected
-    "fire_count_500km":          0.05,
-    "temperature_2m_mean":       0.02,
-    "wind_speed_10m_mean":       0.02,
+    "aqi": 0.45,  # XKDR coverage gaps expected
+    "fire_count_500km": 0.05,
+    "temperature_2m_mean": 0.02,
+    "wind_speed_10m_mean": 0.02,
     "relative_humidity_2m_mean": 0.02,
-    "diesel_frac":               0.30,   # vehicle data might be partial
-    "iip_manufacturing_index":   0.25,
+    "diesel_frac": 0.30,  # vehicle data might be partial
+    "iip_manufacturing_index": 0.25,
 }
 
 
@@ -121,9 +130,7 @@ def check_missing_fractions(df: pd.DataFrame) -> dict[str, float]:
         frac = float(df[col].isna().mean())
         missing_pct[col] = round(frac, 4)
         if frac > thresh:
-            logger.warning(
-                f"[{col}] Missing fraction {frac:.1%} exceeds threshold {thresh:.1%}"
-            )
+            logger.warning(f"[{col}] Missing fraction {frac:.1%} exceeds threshold {thresh:.1%}")
     return missing_pct
 
 
@@ -135,9 +142,7 @@ def main() -> None:
 
     input_path = Path("data/interim/city_day_raw.parquet")
     if not input_path.exists():
-        raise FileNotFoundError(
-            f"{input_path} not found. Run ingest_and_merge.py first."
-        )
+        raise FileNotFoundError(f"{input_path} not found. Run ingest_and_merge.py first.")
 
     df = pd.read_parquet(input_path)
     logger.info(f"Loaded merged panel: {len(df):,} rows, {len(df.columns)} columns")
@@ -170,7 +175,9 @@ def main() -> None:
     range_violations = check_value_ranges(df)
     for col, v in range_violations.items():
         if v["fraction"] > 0.02:
-            errors.append(f"Range violation {col}: {v['fraction']:.1%} rows out of [{v['lo']}, {v['hi']}]")
+            errors.append(
+                f"Range violation {col}: {v['fraction']:.1%} rows out of [{v['lo']}, {v['hi']}]"
+            )
 
     # 6. Missing fractions
     missing_fracs = check_missing_fractions(df)
@@ -218,4 +225,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

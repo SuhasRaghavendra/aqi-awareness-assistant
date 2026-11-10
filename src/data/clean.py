@@ -24,7 +24,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from src.config import load_params
@@ -36,27 +35,51 @@ logger = get_logger("clean")
 
 # Columns that should stay 0 (not NaN) when there are no fires
 FIRE_COLS_ZERO_FILL = [
-    "fire_count_500km", "fire_frp_sum_500km",
+    "fire_count_500km",
+    "fire_frp_sum_500km",
 ]
 FIRE_COLS_999_FILL = ["fire_dist_min_km"]
 
 # Slowly-changing features interpolated within city
 SLOW_INTERP_COLS = [
-    "diesel_frac", "cng_frac", "ev_frac",
-    "two_wheeler_frac", "vehicles_per_lakh",
+    "diesel_frac",
+    "cng_frac",
+    "ev_frac",
+    "two_wheeler_frac",
+    "vehicles_per_lakh",
     "iip_manufacturing_index",
-    "energy_requirement_mu", "energy_availability_mu",
+    "energy_requirement_mu",
+    "energy_availability_mu",
 ]
 
 # Columns never to winsorize (flags, identifiers, targets, ordinal scales)
 NO_WINSOR_COLS = {
-    "city", "date", "aqi", "aqi_category", "month", "year",
-    "day_of_week", "day_of_year", "season", "weekend_flag",
-    "burning_season_flag", "festival_flag", "grap_stage",
-    "bsvi_active", "odd_even_active", "rain_washout_flag",
-    "inversion_risk_flag", "fog_risk_flag",
-    "city_lat", "city_lon", "city_elevation_m", "city_population_lakh",
-    "month_sin", "month_cos", "dow_sin", "dow_cos",
+    "city",
+    "date",
+    "aqi",
+    "aqi_category",
+    "month",
+    "year",
+    "day_of_week",
+    "day_of_year",
+    "season",
+    "weekend_flag",
+    "burning_season_flag",
+    "festival_flag",
+    "grap_stage",
+    "bsvi_active",
+    "odd_even_active",
+    "rain_washout_flag",
+    "inversion_risk_flag",
+    "fog_risk_flag",
+    "city_lat",
+    "city_lon",
+    "city_elevation_m",
+    "city_population_lakh",
+    "month_sin",
+    "month_cos",
+    "dow_sin",
+    "dow_cos",
 }
 
 
@@ -83,8 +106,7 @@ def winsorise(
     Apply bounds to full dataset. Returns clipped DataFrame + bounds dict.
     """
     numeric_cols = [
-        c for c in df_full.select_dtypes(include="number").columns
-        if c not in NO_WINSOR_COLS
+        c for c in df_full.select_dtypes(include="number").columns if c not in NO_WINSOR_COLS
     ]
     bounds: dict[str, dict[str, float]] = {}
     for col in numeric_cols:
@@ -101,9 +123,8 @@ def interpolate_slow_features(df: pd.DataFrame) -> pd.DataFrame:
     for col in SLOW_INTERP_COLS:
         if col not in df.columns:
             continue
-        df[col] = (
-            df.groupby("city")[col]
-            .transform(lambda s: s.interpolate(method="linear").ffill().bfill())
+        df[col] = df.groupby("city")[col].transform(
+            lambda s: s.interpolate(method="linear").ffill().bfill()
         )
     logger.info(f"Interpolated {len(SLOW_INTERP_COLS)} slow-changing feature columns")
     return df
@@ -123,12 +144,23 @@ def fill_fire_defaults(df: pd.DataFrame) -> pd.DataFrame:
 def forward_fill_weather(df: pd.DataFrame, limit: int = 3) -> pd.DataFrame:
     """Short forward-fill for weather gaps (API outages etc.) within city."""
     weather_cols = [
-        c for c in df.columns
-        if any(c.startswith(p) for p in [
-            "temperature_2m", "relative_humidity", "wind_speed",
-            "wind_direction", "precipitation", "surface_pressure",
-            "vapour_pressure", "inversion_risk", "fog_risk", "rain_washout",
-        ])
+        c
+        for c in df.columns
+        if any(
+            c.startswith(p)
+            for p in [
+                "temperature_2m",
+                "relative_humidity",
+                "wind_speed",
+                "wind_direction",
+                "precipitation",
+                "surface_pressure",
+                "vapour_pressure",
+                "inversion_risk",
+                "fog_risk",
+                "rain_washout",
+            ]
+        )
     ]
     for col in weather_cols:
         if col in df.columns:
@@ -141,9 +173,7 @@ def forward_fill_weather(df: pd.DataFrame, limit: int = 3) -> pd.DataFrame:
 def add_aqi_category(df: pd.DataFrame) -> pd.DataFrame:
     """Compute CPCB AQI category from continuous AQI value."""
     if "aqi" in df.columns:
-        df["aqi_category"] = df["aqi"].apply(
-            lambda v: aqi_to_category(v) if pd.notna(v) else None
-        )
+        df["aqi_category"] = df["aqi"].apply(lambda v: aqi_to_category(v) if pd.notna(v) else None)
     return df
 
 
@@ -261,4 +291,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

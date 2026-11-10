@@ -27,11 +27,12 @@ import hashlib
 import json
 import subprocess
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 import pandas as pd
 
@@ -241,15 +242,17 @@ def track_stage(
     )
     st.git_commit = _git_commit()
     st.params_hash = _params_hash()
-    st.start_time = datetime.now(tz=timezone.utc).isoformat()
+    st.start_time = datetime.now(tz=UTC).isoformat()
     t0 = time.perf_counter()
 
-    logger.info("Stage '%s' started (commit=%s, params_hash=%s)", stage, st.git_commit, st.params_hash)
+    logger.info(
+        "Stage '%s' started (commit=%s, params_hash=%s)", stage, st.git_commit, st.params_hash
+    )
 
     try:
         yield st
     finally:
-        st.end_time = datetime.now(tz=timezone.utc).isoformat()
+        st.end_time = datetime.now(tz=UTC).isoformat()
         st.duration_s = time.perf_counter() - t0
         logger.info(
             "Stage '%s' finished in %.1fs  rows: %d -> %d  dropped: %d",
@@ -274,9 +277,9 @@ def track_stage(
 def _append_change_log(st: StageStats) -> None:
     """Append a Markdown section to docs/data_change_log.md."""
     _CHANGE_LOG.parent.mkdir(parents=True, exist_ok=True)
-    drop_lines = "\n".join(
-        f"  - `{d['reason']}`: {d['n']:,} rows" for d in st._drops
-    ) or "  - (none)"
+    drop_lines = (
+        "\n".join(f"  - `{d['reason']}`: {d['n']:,} rows" for d in st._drops) or "  - (none)"
+    )
 
     section = f"""
 ## {st.stage} — {st.end_time[:10]}

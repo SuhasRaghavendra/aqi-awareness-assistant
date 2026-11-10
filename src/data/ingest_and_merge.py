@@ -35,69 +35,67 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import yaml
 
 from src.config import load_params
 from src.utils.logging_utils import get_logger, setup_logging
-from src.utils.stage_stats import track_stage
 
 logger = get_logger("ingest_and_merge")
 
 CITY_STATE: dict[str, str] = {
-    "Delhi":     "Delhi",
-    "Mumbai":    "Maharashtra",
+    "Delhi": "Delhi",
+    "Mumbai": "Maharashtra",
     "Bengaluru": "Karnataka",
-    "Chennai":   "Tamil Nadu",
-    "Kolkata":   "West Bengal",
+    "Chennai": "Tamil Nadu",
+    "Kolkata": "West Bengal",
     "Hyderabad": "Telangana",
-    "Pune":      "Maharashtra",
+    "Pune": "Maharashtra",
     "Ahmedabad": "Gujarat",
-    "Lucknow":   "Uttar Pradesh",
+    "Lucknow": "Uttar Pradesh",
 }
 
 CITY_COORDS: dict[str, tuple[float, float]] = {
-    "Delhi":     (28.6139, 77.2090),
-    "Mumbai":    (19.0760, 72.8777),
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
     "Bengaluru": (12.9716, 77.5946),
-    "Chennai":   (13.0827, 80.2707),
-    "Kolkata":   (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707),
+    "Kolkata": (22.5726, 88.3639),
     "Hyderabad": (17.3850, 78.4867),
-    "Pune":      (18.5204, 73.8567),
+    "Pune": (18.5204, 73.8567),
     "Ahmedabad": (23.0225, 72.5714),
-    "Lucknow":   (26.8467, 80.9462),
+    "Lucknow": (26.8467, 80.9462),
 }
 
 CITY_ELEVATION_M: dict[str, float] = {
-    "Delhi":     216.0,
-    "Mumbai":     14.0,
+    "Delhi": 216.0,
+    "Mumbai": 14.0,
     "Bengaluru": 920.0,
-    "Chennai":     6.0,
-    "Kolkata":     9.0,
+    "Chennai": 6.0,
+    "Kolkata": 9.0,
     "Hyderabad": 536.0,
-    "Pune":      560.0,
-    "Ahmedabad":  53.0,
-    "Lucknow":   120.0,
+    "Pune": 560.0,
+    "Ahmedabad": 53.0,
+    "Lucknow": 120.0,
 }
 
 CITY_POPULATION_LAKH: dict[str, float] = {
-    "Delhi":     190.8,
-    "Mumbai":    184.1,
+    "Delhi": 190.8,
+    "Mumbai": 184.1,
     "Bengaluru": 121.6,
-    "Chennai":    87.5,
-    "Kolkata":    45.9,
-    "Hyderabad":  97.0,
-    "Pune":       50.5,
-    "Ahmedabad":  72.5,
-    "Lucknow":    29.0,
+    "Chennai": 87.5,
+    "Kolkata": 45.9,
+    "Hyderabad": 97.0,
+    "Pune": 50.5,
+    "Ahmedabad": 72.5,
+    "Lucknow": 29.0,
 }
 
 
 def load_festival_dates(path: Path = Path("configs/festival_dates.yaml")) -> set[str]:
     if not path.exists():
         return set()
-    with open(path, "r") as f:
+    with open(path) as f:
         data = yaml.safe_load(f) or {}
     days: set[str] = set()
     for period in data.get("diwali_periods", []):
@@ -206,7 +204,9 @@ def merge_weather(df: pd.DataFrame, weather_path: Path) -> pd.DataFrame:
     # Drop city-id-type cols that might conflict
     merge_cols = [c for c in df_w.columns if c not in ["city_id", "station_id"]]
     merged = df.merge(df_w[merge_cols], on=["city", "date"], how="left")
-    logger.info(f"Weather joined: {merged['temperature_2m_mean'].notna().sum():,} rows with temperature")
+    logger.info(
+        f"Weather joined: {merged['temperature_2m_mean'].notna().sum():,} rows with temperature"
+    )
     return merged
 
 
@@ -223,8 +223,13 @@ def merge_vehicles(df: pd.DataFrame, vehicles_path: Path) -> pd.DataFrame:
     df["_year"] = pd.to_datetime(df["date"]).dt.year.astype(int)
 
     vehicle_feat_cols = [
-        "city", "year", "diesel_frac", "cng_frac", "ev_frac",
-        "two_wheeler_frac", "vehicles_per_lakh",
+        "city",
+        "year",
+        "diesel_frac",
+        "cng_frac",
+        "ev_frac",
+        "two_wheeler_frac",
+        "vehicles_per_lakh",
     ]
     df_v_slim = df_v[[c for c in vehicle_feat_cols if c in df_v.columns]].drop_duplicates(
         subset=["city", "year"]
@@ -241,7 +246,9 @@ def merge_vehicles(df: pd.DataFrame, vehicles_path: Path) -> pd.DataFrame:
                 lambda s: s.interpolate(method="linear").ffill().bfill()
             )
 
-    logger.info(f"Vehicles joined: {merged['diesel_frac'].notna().sum():,} rows with vehicle features")
+    logger.info(
+        f"Vehicles joined: {merged['diesel_frac'].notna().sum():,} rows with vehicle features"
+    )
     return merged
 
 
@@ -258,7 +265,9 @@ def merge_industrial(df: pd.DataFrame, iip_path: Path, power_path: Path) -> pd.D
         df_iip = df_iip[["year", "month", "iip_manufacturing_index"]].drop_duplicates()
         df = df.merge(df_iip, left_on=["_year", "_month"], right_on=["year", "month"], how="left")
         df.drop(columns=["year", "month"], errors="ignore", inplace=True)
-        df["iip_manufacturing_index"] = df["iip_manufacturing_index"].interpolate(method="linear").ffill().bfill()
+        df["iip_manufacturing_index"] = (
+            df["iip_manufacturing_index"].interpolate(method="linear").ffill().bfill()
+        )
         logger.info(f"IIP joined: {df['iip_manufacturing_index'].notna().sum():,} rows")
 
     # State power (per city via state mapping)
@@ -271,7 +280,9 @@ def merge_industrial(df: pd.DataFrame, iip_path: Path, power_path: Path) -> pd.D
         for city in df["city"].unique():
             state = CITY_STATE.get(city, "")
             if "state" in df_power.columns:
-                df_state = df_power[df_power["state"].str.contains(state, case=False, na=False)].copy()
+                df_state = df_power[
+                    df_power["state"].str.contains(state, case=False, na=False)
+                ].copy()
             else:
                 df_state = pd.DataFrame()
             if df_state.empty:
@@ -282,7 +293,8 @@ def merge_industrial(df: pd.DataFrame, iip_path: Path, power_path: Path) -> pd.D
         if power_records:
             df_power_city = pd.concat(power_records, ignore_index=True)
             power_cols = ["city", "year", "month"] + [
-                c for c in ["energy_requirement_mu", "energy_availability_mu"]
+                c
+                for c in ["energy_requirement_mu", "energy_availability_mu"]
                 if c in df_power_city.columns
             ]
             df = df.merge(
@@ -331,14 +343,13 @@ def add_policy_features(
 def add_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add date-derived calendar features."""
     dt = pd.to_datetime(df["date"])
-    df["day_of_week"] = dt.dt.dayofweek          # 0=Monday, 6=Sunday
+    df["day_of_week"] = dt.dt.dayofweek  # 0=Monday, 6=Sunday
     df["month"] = dt.dt.month
     df["day_of_year"] = dt.dt.dayofyear
     df["year"] = dt.dt.year
     df["weekend_flag"] = (dt.dt.dayofweek >= 5).astype(int)
     df["burning_season_flag"] = (
-        (dt.dt.month == 10) & (dt.dt.day >= 15) |
-        (dt.dt.month == 11)
+        (dt.dt.month == 10) & (dt.dt.day >= 15) | (dt.dt.month == 11)
     ).astype(int)
 
     # Indian meteorological seasons
@@ -356,6 +367,7 @@ def add_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Cyclical encodings
     import math
+
     df["month_sin"] = df["month"].map(lambda m: math.sin(2 * math.pi * m / 12))
     df["month_cos"] = df["month"].map(lambda m: math.cos(2 * math.pi * m / 12))
     df["dow_sin"] = df["day_of_week"].map(lambda d: math.sin(2 * math.pi * d / 7))
@@ -394,7 +406,7 @@ def main() -> None:
     setup_logging(stage="ingest_and_merge")
     parser = argparse.ArgumentParser(description="Merge all root-cause data into city × day panel")
     parser.add_argument("--start", default="2019-01-01")
-    parser.add_argument("--end",   default="2026-09-30")
+    parser.add_argument("--end", default="2026-09-30")
     parser.add_argument("--output-dir", type=Path, default=Path("data/interim"))
     args = parser.parse_args()
 
@@ -453,9 +465,7 @@ def main() -> None:
         "columns": list(df.columns),
         "cities": cities,
         "missing_pct_by_col": {
-            col: round(df[col].isna().mean() * 100, 1)
-            for col in df.columns
-            if df[col].isna().any()
+            col: round(df[col].isna().mean() * 100, 1) for col in df.columns if df[col].isna().any()
         },
     }
     metrics_path = Path("reports/metrics/merge_stats.json")
@@ -475,4 +485,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

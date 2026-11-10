@@ -38,11 +38,8 @@ datagovindia>=1.0.0
 # OpenStreetMap land-use proximity (optional industrial zone features)
 # osmnx>=1.9.3                # install if needed: pip install osmnx
 
-# Quality
-pytest==8.2.1
-ruff==0.4.4
-black==24.4.2
-pre-commit==3.7.1
+# Quality tooling (pytest, pytest-cov, httpx, ruff, black, pre-commit) lives in
+# requirements-dev.txt so training images do not install it.
 
 # Utilities
 python-dotenv==1.0.1

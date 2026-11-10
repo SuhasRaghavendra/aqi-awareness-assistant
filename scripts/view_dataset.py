@@ -18,7 +18,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 SPLIT_PATHS = {
     "train": Path("data/processed/train.parquet"),
     "val": Path("data/processed/val.parquet"),
@@ -68,9 +67,9 @@ def main() -> None:
         print(f"[ERROR] Target file does not exist: {target_path}")
         return
 
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"LOADING DATASET: {target_path}")
-    print(f"=======================================================")
+    print("=======================================================")
 
     df = pd.read_parquet(target_path)
 
@@ -80,13 +79,29 @@ def main() -> None:
     if "city" in df.columns:
         print(f"Cities:            {list(df['city'].unique())}")
     if "target_aqi" in df.columns:
-        print(f"Target AQI Range:  {df['target_aqi'].min():.1f} - {df['target_aqi'].max():.1f} (Mean: {df['target_aqi'].mean():.1f})")
+        print(
+            f"Target AQI Range:  {df['target_aqi'].min():.1f} - {df['target_aqi'].max():.1f} (Mean: {df['target_aqi'].mean():.1f})"
+        )
     if "target_category" in df.columns:
         print(f"Target Categories: {df['target_category'].value_counts().to_dict()}")
 
     print("\n--- SAMPLE COLUMNS & FIRST FEW ROWS ---")
     # Show key columns first if present
-    key_cols = [c for c in ["date", "city", "station_name", "location_id", "aqi", "target_aqi", "target_category", "pm25", "temperature_2m_mean"] if c in df.columns]
+    key_cols = [
+        c
+        for c in [
+            "date",
+            "city",
+            "station_name",
+            "location_id",
+            "aqi",
+            "target_aqi",
+            "target_category",
+            "pm25",
+            "temperature_2m_mean",
+        ]
+        if c in df.columns
+    ]
     remaining = [c for c in df.columns if c not in key_cols]
     display_cols = key_cols + remaining[:5]
     print(df[display_cols].head(args.head).to_string())

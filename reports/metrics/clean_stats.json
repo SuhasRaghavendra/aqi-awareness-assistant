@@ -1,10 +1,10 @@
 {
   "stage": "clean",
-  "start_time": "2026-11-07T10:27:16.984932+00:00",
-  "end_time": "2026-11-07T10:27:17.007876+00:00",
-  "duration_s": 0.017,
-  "git_commit": "6a2e749",
-  "params_hash": "5a840e55f95b",
+  "start_time": "2026-11-10T13:01:56.185396+00:00",
+  "end_time": "2026-11-10T13:01:56.206774+00:00",
+  "duration_s": 0.021,
+  "git_commit": "d988c89",
+  "params_hash": "d9c9a709c3f4",
   "inputs": [
     {
       "path": "data\\interim\\city_day_raw.parquet",
@@ -63,7 +63,7 @@
     {
       "path": "data\\interim\\city_day_clean.parquet",
       "exists": true,
-      "size_bytes": 537952,
+      "size_bytes": 536392,
       "rows": 24739,
       "columns": [
         "date",

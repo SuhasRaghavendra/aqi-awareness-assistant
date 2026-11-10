@@ -27,11 +27,11 @@ help:
 setup:
 	python -m venv .venv
 	.venv/Scripts/pip install --upgrade pip
-	.venv/Scripts/pip install -r requirements.txt
+	.venv/Scripts/pip install -r requirements.txt -r requirements-dev.txt
 	@echo "✅  Virtual environment ready. Activate with: .venv\\Scripts\\activate"
 
 install:
-	pip install -r requirements.txt
+	pip install -r requirements.txt -r requirements-dev.txt
 
 # ── quality ───────────────────────────────────────────────────────────────────
 test:

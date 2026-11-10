@@ -1,16 +1,16 @@
 {
   "stage": "evaluate",
-  "start_time": "2026-11-07T10:29:24.283864+00:00",
-  "end_time": "2026-11-07T10:29:24.300607+00:00",
-  "duration_s": 0.012,
-  "git_commit": "6a2e749",
-  "params_hash": "5a840e55f95b",
+  "start_time": "2026-11-10T14:03:52.649221+00:00",
+  "end_time": "2026-11-10T14:03:52.665293+00:00",
+  "duration_s": 0.006,
+  "git_commit": "d988c89",
+  "params_hash": "d2497f4f5008",
   "inputs": [
     {
       "path": "data\\processed\\test.parquet",
       "exists": true,
-      "size_bytes": 79636,
-      "rows": 83,
+      "size_bytes": 457927,
+      "rows": 1852,
       "columns": [
         "date",
         "city",
@@ -136,38 +136,38 @@
     {
       "path": "reports\\metrics\\test_metrics.json",
       "exists": true,
-      "size_bytes": 2727
+      "size_bytes": 3402
     },
     {
       "path": "reports\\figures\\evaluation\\predicted_vs_actual.png",
       "exists": true,
-      "size_bytes": 159536
+      "size_bytes": 356906
     },
     {
       "path": "reports\\figures\\evaluation\\residual_histogram.png",
       "exists": true,
-      "size_bytes": 93669
+      "size_bytes": 95014
     },
     {
       "path": "reports\\figures\\evaluation\\confusion_matrix.png",
       "exists": true,
-      "size_bytes": 97489
+      "size_bytes": 112045
     },
     {
       "path": "reports\\figures\\evaluation\\city_error_breakdown.png",
       "exists": true,
-      "size_bytes": 51884
+      "size_bytes": 75702
     }
   ],
   "frame_stats": {
     "input": {
-      "rows": 83,
+      "rows": 1852,
       "n_columns": 111,
       "null_pct": {
         "date": 0.0,
         "city": 0.0,
-        "aqi": 1.2,
-        "station_count": 1.2,
+        "aqi": 0.0,
+        "station_count": 0.65,
         "fire_count_500km": 0.0,
         "fire_frp_sum_500km": 0.0,
         "fire_dist_min_km": 0.0,
@@ -207,7 +207,7 @@
         "city_lon": 0.0,
         "city_elevation_m": 0.0,
         "city_population_lakh": 0.0,
-        "aqi_category": 1.2,
+        "aqi_category": 0.65,
         "target_aqi": 0.0,
         "target_category": 0.0,
         "fire_count_500km_lag_1": 0.0,

@@ -15,7 +15,7 @@
 | **1:30 – 2:15** | **3. Data Versioning Demo** | Suhas | Run `dvc diff data-v1 data-v2` | "We demonstrate genuine dataset versioning: data-v1 captures the 24-station baseline snapshot; data-v2 captures network expansion with zero data leakage." |
 | **2:15 – 3:15** | **4. MLflow Experiment Tracking** | Srijan | Open MLflow UI (`mlflow ui`) & `reports/metrics/run_comparison.csv` | "We tracked 22 experiment runs across SQLite. Every run captures all parameters, metrics, model artifacts, and signatures with zero manual intervention." |
 | **3:15 – 4:15** | **5. Evaluation & Beating Persistence** | Srijan | Open `reports/figures/evaluation/predicted_vs_actual.png` & leaderboard | "Next-day air quality is heavily autocorrelated. On the unseen 2026 test set, Ridge Regression beats Persistence with an RMSE of 44.05 vs 47.22 (+6.72% skill score). For Task B, Random Forest Classifier achieves 71.30% Accuracy and 96.35% within-one-category accuracy." |
-| **4:15 – 5:00** | **6. Feature Ablation Insight & Close** | Srijan | Open `reports/figures/evaluation/ablation_study.png` | "Our feature ablations prove two vital conclusions: (1) dropping past lags causes a +10.5% RMSE failure (worse than persistence); (2) dropping ERA5 weather causes a +3.3% RMSE degradation, proving weather enrichment provides real physical value." |
+| **4:15 – 5:00** | **6. Feature Ablation Insight & Close** | Srijan | Open `reports/figures/ablations/ablation_study.png` | "Our feature ablations prove two vital conclusions: (1) dropping past lags causes a +10.5% RMSE failure (worse than persistence); (2) dropping ERA5 weather causes a +3.3% RMSE degradation, proving weather enrichment provides real physical value." |
 
 ---
 

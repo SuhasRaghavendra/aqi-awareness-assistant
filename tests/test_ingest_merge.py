@@ -3,24 +3,23 @@ tests/test_ingest_merge.py
 ---------------------------
 Tests for the root-cause data merging pipeline.
 """
+
 import sys
 from pathlib import Path
+
 import pandas as pd
-import pytest
-import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data.ingest_and_merge import (
-    build_date_spine,
-    add_policy_features,
-    add_calendar_features,
-    add_static_city_features,
-    add_meteorological_derived,
     CITY_COORDS,
     CITY_STATE,
+    add_calendar_features,
+    add_meteorological_derived,
+    add_policy_features,
+    add_static_city_features,
+    build_date_spine,
 )
-
 
 CITIES = ["Delhi", "Mumbai", "Bengaluru"]
 
@@ -83,11 +82,13 @@ def test_grap_only_delhi():
     """GRAP and odd-even features must be 0 for non-Delhi cities."""
     df = build_date_spine(["Delhi", "Mumbai", "Bengaluru"], "2022-10-05", "2022-11-15")
     # Create minimal GRAP calendar
-    grap_df = pd.DataFrame({
-        "date": ["2022-10-05", "2022-11-03"],
-        "grap_stage": [1, 4],
-        "odd_even_active": [0, 0],
-    })
+    grap_df = pd.DataFrame(
+        {
+            "date": ["2022-10-05", "2022-11-03"],
+            "grap_stage": [1, 4],
+            "odd_even_active": [0, 0],
+        }
+    )
     df = add_policy_features(df, grap_df, festival_days=set())
     non_delhi = df[df["city"] != "Delhi"]
     assert (non_delhi["grap_stage"] == 0).all(), "GRAP stage must be 0 for non-Delhi cities"
@@ -97,7 +98,9 @@ def test_grap_only_delhi():
 def test_bsvi_flag():
     """BS-VI flag must be 1 on/after April 1, 2020."""
     df = build_date_spine(["Delhi"], "2020-03-25", "2020-04-10")
-    df = add_policy_features(df, pd.DataFrame(columns=["date","grap_stage","odd_even_active"]), set())
+    df = add_policy_features(
+        df, pd.DataFrame(columns=["date", "grap_stage", "odd_even_active"]), set()
+    )
     before = df[df["date"] < "2020-04-01"]
     after = df[df["date"] >= "2020-04-01"]
     assert (before["bsvi_active"] == 0).all()
@@ -106,11 +109,13 @@ def test_bsvi_flag():
 
 def test_meteorological_derived():
     """Derived met flags must be binary."""
-    df = pd.DataFrame({
-        "wind_speed_10m_mean": [2.0, 15.0, 1.5, 20.0],
-        "relative_humidity_2m_mean": [85.0, 50.0, 90.0, 30.0],
-        "precipitation_sum": [0.0, 0.0, 10.0, 0.0],
-    })
+    df = pd.DataFrame(
+        {
+            "wind_speed_10m_mean": [2.0, 15.0, 1.5, 20.0],
+            "relative_humidity_2m_mean": [85.0, 50.0, 90.0, 30.0],
+            "precipitation_sum": [0.0, 0.0, 10.0, 0.0],
+        }
+    )
     df = add_meteorological_derived(df)
     for col in ["inversion_risk_flag", "fog_risk_flag", "rain_washout_flag"]:
         assert col in df.columns
@@ -119,9 +124,17 @@ def test_meteorological_derived():
 
 def test_city_state_mapping_complete():
     """All 9 cities must have state mappings."""
-    expected = ["Delhi", "Mumbai", "Bengaluru", "Chennai", "Kolkata",
-                "Hyderabad", "Pune", "Ahmedabad", "Lucknow"]
+    expected = [
+        "Delhi",
+        "Mumbai",
+        "Bengaluru",
+        "Chennai",
+        "Kolkata",
+        "Hyderabad",
+        "Pune",
+        "Ahmedabad",
+        "Lucknow",
+    ]
     for city in expected:
         assert city in CITY_STATE, f"No state mapping for {city}"
         assert city in CITY_COORDS, f"No coordinates for {city}"
-

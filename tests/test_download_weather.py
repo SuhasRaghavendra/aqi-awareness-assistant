@@ -3,11 +3,11 @@ tests/test_download_weather.py
 -------------------------------
 Tests for the new city-based Open-Meteo weather downloader.
 """
-import json
+
 import sys
 from pathlib import Path
+
 import pandas as pd
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -22,6 +22,7 @@ from src.data.download_weather import (
 def test_city_coords_complete():
     """All 9 target cities must have coordinates."""
     from src.config import load_params
+
     params = load_params()
     for city in params["data"]["cities"]:
         assert city in CITY_COORDS, f"No coordinates for city: {city}"
@@ -69,16 +70,16 @@ def test_add_derived_weather():
 
 def test_derived_inversion_logic():
     """Inversion risk should be 1 when wind < 5 and humidity > 70."""
-    import pandas as pd
-    df = pd.DataFrame({
-        "wind_speed_10m_mean": [2.0, 10.0, 3.0, 8.0],
-        "relative_humidity_2m_mean": [80.0, 80.0, 60.0, 60.0],
-        "precipitation_sum": [0.0, 0.0, 0.0, 0.0],
-    })
+    df = pd.DataFrame(
+        {
+            "wind_speed_10m_mean": [2.0, 10.0, 3.0, 8.0],
+            "relative_humidity_2m_mean": [80.0, 80.0, 60.0, 60.0],
+            "precipitation_sum": [0.0, 0.0, 0.0, 0.0],
+        }
+    )
     df = add_derived_weather(df)
     # Row 0: wind=2 < 5, hum=80 > 70 → 1
     # Row 1: wind=10 >= 5 → 0
     # Row 2: hum=60 <= 70 → 0
     # Row 3: both fail → 0
     assert df["inversion_risk_flag"].tolist() == [1, 0, 0, 0]
-

@@ -152,14 +152,16 @@ stages:
 
   # ── Step 10: Model training (unchanged model families) ───────────────────
   train:
-    cmd: python -m src.models.train
+    cmd: python -m src.models.train --scaler data/processed/scaler.joblib
     deps:
       - src/models/train.py
       - src/models/baselines.py
+      - src/models/residual.py
       - src/config.py
       - data/processed/train.parquet
       - data/processed/val.parquet
       - data/processed/feature_list.json
+      - data/processed/scaler.joblib
     params:
       - train
       - seed
@@ -171,15 +173,41 @@ stages:
 
   # ── Step 11: Holdout evaluation ───────────────────────────────────────────
   evaluate:
-    cmd: python -m src.models.evaluate
+    cmd: python -m src.models.evaluate --scaler data/processed/scaler.joblib
     deps:
       - src/models/evaluate.py
+      - src/models/residual.py
       - src/config.py
       - models/
       - data/processed/test.parquet
       - data/processed/feature_list.json
+      - data/processed/scaler.joblib
     outs:
       - reports/figures/evaluation/
     metrics:
       - reports/metrics/test_metrics.json:
+          cache: false
+      - reports/metrics/test_per_city_metrics.json:
+          cache: false
+
+  # ── Step 12: Model risk / quality audit (Phase 1) ─────────────────────────
+  model_risk:
+    cmd: python -m src.models.model_risk
+    deps:
+      - src/models/model_risk.py
+      - src/models/residual.py
+      - src/config.py
+      - data/processed/train.parquet
+      - data/processed/val.parquet
+      - data/processed/test.parquet
+      - data/processed/feature_list.json
+      - data/processed/scaler.joblib
+      - models/
+    params:
+      - split
+      - seed
+    metrics:
+      - reports/metrics/reference_stats.json:
+          cache: false
+      - reports/metrics/model_risk_card.json:
           cache: false

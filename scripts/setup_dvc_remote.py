@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import argparse
 import configparser
-import os
-import sys
 from pathlib import Path
 
 
@@ -99,7 +97,7 @@ def main() -> None:
     print(f"Remote Name:    {args.name}")
     print(f"Storage Path:   {remote_path}")
     print("\nEquivalent manual DVC CLI commands:")
-    print(f"  mkdir -p \"{args.path}\"")
+    print(f'  mkdir -p "{args.path}"')
     print(f"  dvc remote add -d {args.name} {args.path}")
     print("=" * 60 + "\n")
 

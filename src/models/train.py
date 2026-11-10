@@ -28,10 +28,6 @@ Usage:
 
 from __future__ import annotations
 
-# On Windows, lightgbm MUST be imported before pandas/pyarrow to avoid OpenMP C-runtime conflict
-import lightgbm as lgb
-from lightgbm import LGBMClassifier, LGBMRegressor
-
 import argparse
 import json
 import time
@@ -39,9 +35,12 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+
+# On Windows, lightgbm MUST be imported before pandas/pyarrow to avoid OpenMP C-runtime conflict
 import mlflow
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, RidgeCV
 from sklearn.metrics import (
@@ -58,7 +57,6 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
 from src.config import load_params
-from src.features.aqi_utils import aqi_to_category
 from src.models.baselines import (
     MajorityClassBaseline,
     PersistenceBaseline,
@@ -66,6 +64,7 @@ from src.models.baselines import (
     StationMonthMeanBaseline,
     WeeklySeasonalNaiveBaseline,
 )
+from src.models.residual import ResidualRegressor
 from src.utils.logging_utils import get_logger, setup_logging
 from src.utils.mlflow_utils import log_params_yaml, setup_experiment, start_run
 from src.utils.stage_stats import track_stage
@@ -111,10 +110,10 @@ def calc_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[
     # Within-one-category accuracy: |idx_pred - idx_true| <= 1
     true_indices = [CAT_TO_IDX.get(cat, -99) for cat in y_true]
     pred_indices = [CAT_TO_IDX.get(cat, -99) for cat in y_pred]
-    valid_mask = [(t != -99 and p != -99) for t, p in zip(true_indices, pred_indices)]
+    valid_mask = [(t != -99 and p != -99) for t, p in zip(true_indices, pred_indices, strict=False)]
     if any(valid_mask):
-        t_arr = np.array([t for t, v in zip(true_indices, valid_mask) if v])
-        p_arr = np.array([p for p, v in zip(pred_indices, valid_mask) if v])
+        t_arr = np.array([t for t, v in zip(true_indices, valid_mask, strict=False) if v])
+        p_arr = np.array([p for p, v in zip(pred_indices, valid_mask, strict=False) if v])
         within_one = float(np.mean(np.abs(t_arr - p_arr) <= 1))
     else:
         within_one = acc
@@ -128,13 +127,39 @@ def calc_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[
     }
 
 
+def _residual_cv_rmse(
+    config: dict[str, float | int],
+    X: pd.DataFrame,
+    y: np.ndarray,
+    aqi: np.ndarray,
+    seed: int,
+    n_splits: int = 4,
+) -> float:
+    """Mean TimeSeriesSplit RMSE for a residual LightGBM configuration (train only)."""
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    rmses = []
+    for train_idx, test_idx in tscv.split(X):
+        model = ResidualRegressor(
+            LGBMRegressor(**config, random_state=seed, verbosity=-1, n_jobs=1)
+        )
+        model.fit(X.iloc[train_idx], y[train_idx], aqi[train_idx])
+        preds = model.predict(X.iloc[test_idx], aqi[test_idx])
+        rmses.append(float(root_mean_squared_error(y[test_idx], preds)))
+    return float(np.mean(rmses))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 6: Train Baseline Models & MLflow Tracking")
     parser.add_argument("--train-data", type=Path, default=Path("data/processed/train.parquet"))
     parser.add_argument("--val-data", type=Path, default=Path("data/processed/val.parquet"))
-    parser.add_argument("--feature-list", type=Path, default=Path("data/processed/feature_list.json"))
+    parser.add_argument(
+        "--feature-list", type=Path, default=Path("data/processed/feature_list.json")
+    )
+    parser.add_argument("--scaler", type=Path, default=Path("data/processed/scaler.joblib"))
     parser.add_argument("--models-dir", type=Path, default=Path("models"))
-    parser.add_argument("--output-metrics", type=Path, default=Path("reports/metrics/val_metrics.json"))
+    parser.add_argument(
+        "--output-metrics", type=Path, default=Path("reports/metrics/val_metrics.json")
+    )
     parser.add_argument("--tracking-uri", type=str, default="sqlite:///mlflow.db")
     args = parser.parse_args()
 
@@ -148,7 +173,7 @@ def main() -> None:
     # 1. Load Data
     df_train = pd.read_parquet(args.train_data)
     df_val = pd.read_parquet(args.val_data)
-    with open(args.feature_list, "r", encoding="utf-8") as f:
+    with open(args.feature_list, encoding="utf-8") as f:
         feature_manifest = json.load(f)
     feature_names = feature_manifest["feature_names"]
 
@@ -167,8 +192,10 @@ def main() -> None:
     y_val_clf = df_val["target_category"].to_numpy()
 
     # Pre-scale features for linear models
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(df_train[feature_names])
+    # Load the single scaler fitted in build_features.py (Step 0.3: one scaler only)
+    scaler: StandardScaler = joblib.load(args.scaler)
+    logger.info(f"Loaded scaler from {args.scaler} (mean_[0]={scaler.mean_[0]:.4f})")
+    X_train_scaled = scaler.transform(df_train[feature_names])
     X_val_scaled = scaler.transform(df_val[feature_names])
 
     # Scaled DataFrame with columns preserved for tree models/tabular indexing
@@ -205,14 +232,28 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="persistence",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "heuristic", "stage": "baseline", "author": "Srijan Kumar G S"},
-    ) as run:
-        mlflow.log_params({"model_type": "PersistenceBaseline", "seed": seed, "n_features": len(feature_names)})
+        tags={
+            "task": "regression",
+            "model_family": "heuristic",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
+    ):
+        mlflow.log_params(
+            {"model_type": "PersistenceBaseline", "seed": seed, "n_features": len(feature_names)}
+        )
         mlflow.log_metrics({**m_persist, "train_time_sec": round(time_persist, 3)})
         mlflow.log_artifact(str(args.models_dir / "persistence.joblib"))
         log_params_yaml()
 
-    leaderboard.append({"task": "regression", "model": "persistence", **m_persist, "time_sec": round(time_persist, 2)})
+    leaderboard.append(
+        {
+            "task": "regression",
+            "model": "persistence",
+            **m_persist,
+            "time_sec": round(time_persist, 2),
+        }
+    )
 
     # 2. Weekly Seasonal Naive
     t0 = time.time()
@@ -230,13 +271,20 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="seasonal_naive",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "heuristic", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "heuristic",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
         mlflow.log_params({"model_type": "WeeklySeasonalNaiveBaseline", "seed": seed})
         mlflow.log_metrics({**m_sn, "train_time_sec": round(time_sn, 3)})
         mlflow.log_artifact(str(args.models_dir / "seasonal_naive.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "seasonal_naive", **m_sn, "time_sec": round(time_sn, 2)})
+    leaderboard.append(
+        {"task": "regression", "model": "seasonal_naive", **m_sn, "time_sec": round(time_sn, 2)}
+    )
 
     # 3. Station-Month Mean Baseline
     t0 = time.time()
@@ -255,13 +303,25 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="station_month_mean",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "heuristic", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "heuristic",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
         mlflow.log_params({"model_type": "StationMonthMeanBaseline", "seed": seed})
         mlflow.log_metrics({**m_smm, "train_time_sec": round(time_smm, 3)})
         mlflow.log_artifact(str(args.models_dir / "station_month_mean.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "station_month_mean", **m_smm, "time_sec": round(time_smm, 2)})
+    leaderboard.append(
+        {
+            "task": "regression",
+            "model": "station_month_mean",
+            **m_smm,
+            "time_sec": round(time_smm, 2),
+        }
+    )
 
     # 4. Ridge Regression (TimeSeriesSplit Cross-Validation)
     t0 = time.time()
@@ -281,13 +341,27 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="ridge",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "linear", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "linear",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "RidgeCV", "best_alpha": float(ridge.alpha_), "cv_folds": 4, "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "RidgeCV",
+                "best_alpha": float(ridge.alpha_),
+                "cv_folds": 4,
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_ridge, "train_time_sec": round(time_ridge, 3)})
         mlflow.log_artifact(str(args.models_dir / "ridge.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "ridge", **m_ridge, "time_sec": round(time_ridge, 2)})
+    leaderboard.append(
+        {"task": "regression", "model": "ridge", **m_ridge, "time_sec": round(time_ridge, 2)}
+    )
 
     # 5. Random Forest Regressor
     t0 = time.time()
@@ -305,17 +379,33 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="random_forest_reg",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "tree_ensemble", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "tree_ensemble",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "RandomForestRegressor", "n_estimators": 100, "max_depth": 12, "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "RandomForestRegressor",
+                "n_estimators": 100,
+                "max_depth": 12,
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_rf, "train_time_sec": round(time_rf, 3)})
         mlflow.log_artifact(str(args.models_dir / "random_forest_reg.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "random_forest_reg", **m_rf, "time_sec": round(time_rf, 2)})
+    leaderboard.append(
+        {"task": "regression", "model": "random_forest_reg", **m_rf, "time_sec": round(time_rf, 2)}
+    )
 
     # 6. XGBoost Regressor
     t0 = time.time()
-    xgb_reg = XGBRegressor(n_estimators=100, learning_rate=0.05, max_depth=6, random_state=seed, n_jobs=-1)
+    xgb_reg = XGBRegressor(
+        n_estimators=100, learning_rate=0.05, max_depth=6, random_state=seed, n_jobs=-1
+    )
     xgb_reg.fit(X_train_df, y_train_reg)
     preds_val_xgb = xgb_reg.predict(X_val_df)
     time_xgb = time.time() - t0
@@ -329,17 +419,34 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="xgboost_reg",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "gradient_boosting", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "gradient_boosting",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "XGBRegressor", "n_estimators": 100, "learning_rate": 0.05, "max_depth": 6, "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "XGBRegressor",
+                "n_estimators": 100,
+                "learning_rate": 0.05,
+                "max_depth": 6,
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_xgb, "train_time_sec": round(time_xgb, 3)})
         mlflow.log_artifact(str(args.models_dir / "xgboost_reg.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "xgboost_reg", **m_xgb, "time_sec": round(time_xgb, 2)})
+    leaderboard.append(
+        {"task": "regression", "model": "xgboost_reg", **m_xgb, "time_sec": round(time_xgb, 2)}
+    )
 
     # 7. LightGBM Regressor
     t0 = time.time()
-    lgbm_reg = LGBMRegressor(n_estimators=100, learning_rate=0.05, max_depth=6, random_state=seed, verbosity=-1)
+    lgbm_reg = LGBMRegressor(
+        n_estimators=100, learning_rate=0.05, max_depth=6, random_state=seed, verbosity=-1
+    )
     lgbm_reg.fit(X_train_df, y_train_reg)
     preds_val_lgbm = lgbm_reg.predict(X_val_df)
     time_lgbm = time.time() - t0
@@ -353,17 +460,172 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="lightgbm_reg",
         experiment_id=reg_exp_id,
-        tags={"task": "regression", "model_family": "gradient_boosting", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "regression",
+            "model_family": "gradient_boosting",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "LGBMRegressor", "n_estimators": 100, "learning_rate": 0.05, "max_depth": 6, "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "LGBMRegressor",
+                "n_estimators": 100,
+                "learning_rate": 0.05,
+                "max_depth": 6,
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_lgbm, "train_time_sec": round(time_lgbm, 3)})
         mlflow.log_artifact(str(args.models_dir / "lightgbm_reg.joblib"))
 
-    leaderboard.append({"task": "regression", "model": "lightgbm_reg", **m_lgbm, "time_sec": round(time_lgbm, 2)})
+    leaderboard.append(
+        {"task": "regression", "model": "lightgbm_reg", **m_lgbm, "time_sec": round(time_lgbm, 2)}
+    )
 
-    # Identify best regressor for downstream "regress-then-bucket"
+    # =========================================================================
+    # PHASE 0.4: RESIDUAL (PERSISTENCE-ANCHORED) CANDIDATES
+    # target = target_aqi - aqi_t ; prediction = aqi_t + model output
+    # Selection uses TimeSeriesSplit CV on train and a single val check only.
+    # =========================================================================
+    aqi_train = df_train["aqi"].to_numpy(dtype=float)
+    aqi_val = df_val["aqi"].to_numpy(dtype=float)
+    time_order = np.argsort(pd.to_datetime(df_train["date"]).to_numpy(), kind="stable")
+
+    # 8. Residual Ridge (alpha selected by TimeSeriesSplit CV on train only)
+    t0 = time.time()
+    ridge_res = RidgeCV(alphas=alphas, cv=TimeSeriesSplit(n_splits=4))
+    residual_ridge = ResidualRegressor(ridge_res)
+    residual_ridge.fit(
+        X_train_scaled[time_order],
+        y_train_reg[time_order],
+        aqi_train[time_order],
+    )
+    preds_val_res_ridge = residual_ridge.predict(X_val_scaled, aqi_val)
+    time_res_ridge = time.time() - t0
+    m_res_ridge = calc_regression_metrics(
+        y_val_reg, preds_val_res_ridge, persistence_rmse=persist_rmse
+    )
+
+    joblib.dump(residual_ridge, args.models_dir / "residual_ridge.joblib")
+    saved_model_paths.append(str(args.models_dir / "residual_ridge.joblib"))
+
+    with start_run(
+        step_id="008",
+        logbook_entry="008-baseline-models.md",
+        run_name="residual_ridge",
+        experiment_id=reg_exp_id,
+        tags={
+            "task": "regression",
+            "model_family": "linear_residual",
+            "stage": "candidate",
+            "residual": "true",
+            "author": "Srijan Kumar G S",
+        },
+    ):
+        mlflow.log_params(
+            {
+                "model_type": "ResidualRegressor(RidgeCV)",
+                "best_alpha": float(ridge_res.alpha_),
+                "cv_folds": 4,
+                "residual": True,
+                "seed": seed,
+            }
+        )
+        mlflow.log_metrics({**m_res_ridge, "train_time_sec": round(time_res_ridge, 3)})
+        mlflow.log_artifact(str(args.models_dir / "residual_ridge.joblib"))
+
+    leaderboard.append(
+        {
+            "task": "regression",
+            "model": "residual_ridge",
+            **m_res_ridge,
+            "time_sec": round(time_res_ridge, 2),
+        }
+    )
+
+    # 9. Residual LightGBM (config selected by TimeSeriesSplit CV on train only)
+    lgbm_res_configs: list[dict[str, float | int]] = [
+        {"n_estimators": 100, "learning_rate": 0.05, "max_depth": 6},
+        {"n_estimators": 200, "learning_rate": 0.03, "max_depth": 6},
+        {"n_estimators": 100, "learning_rate": 0.05, "max_depth": 4},
+    ]
+    cv_scores = []
+    for config in lgbm_res_configs:
+        score = _residual_cv_rmse(
+            config,
+            X_train_df.iloc[time_order],
+            y_train_reg[time_order],
+            aqi_train[time_order],
+            seed=seed,
+        )
+        cv_scores.append(score)
+        logger.info(f"Residual LightGBM CV RMSE {config}: {score:.3f}")
+    best_lgbm_res_idx = int(np.argmin(cv_scores))
+    best_lgbm_res_cfg = lgbm_res_configs[best_lgbm_res_idx]
+    best_lgbm_res_cv = cv_scores[best_lgbm_res_idx]
+
+    t0 = time.time()
+    residual_lgbm = ResidualRegressor(
+        LGBMRegressor(**best_lgbm_res_cfg, random_state=seed, verbosity=-1, n_jobs=-1)
+    )
+    residual_lgbm.fit(X_train_df, y_train_reg, aqi_train)
+    preds_val_res_lgbm = residual_lgbm.predict(X_val_df, aqi_val)
+    time_res_lgbm = time.time() - t0
+    m_res_lgbm = calc_regression_metrics(
+        y_val_reg, preds_val_res_lgbm, persistence_rmse=persist_rmse
+    )
+
+    joblib.dump(residual_lgbm, args.models_dir / "residual_lightgbm.joblib")
+    saved_model_paths.append(str(args.models_dir / "residual_lightgbm.joblib"))
+
+    with start_run(
+        step_id="008",
+        logbook_entry="008-baseline-models.md",
+        run_name="residual_lightgbm",
+        experiment_id=reg_exp_id,
+        tags={
+            "task": "regression",
+            "model_family": "gradient_boosting_residual",
+            "stage": "candidate",
+            "residual": "true",
+            "author": "Srijan Kumar G S",
+        },
+    ):
+        mlflow.log_params(
+            {
+                "model_type": "ResidualRegressor(LGBMRegressor)",
+                "n_estimators": int(best_lgbm_res_cfg["n_estimators"]),
+                "learning_rate": float(best_lgbm_res_cfg["learning_rate"]),
+                "max_depth": int(best_lgbm_res_cfg["max_depth"]),
+                "cv_rmse": round(best_lgbm_res_cv, 3),
+                "cv_folds": 4,
+                "residual": True,
+                "seed": seed,
+            }
+        )
+        mlflow.log_metrics({**m_res_lgbm, "train_time_sec": round(time_res_lgbm, 3)})
+        mlflow.log_artifact(str(args.models_dir / "residual_lightgbm.joblib"))
+
+    leaderboard.append(
+        {
+            "task": "regression",
+            "model": "residual_lightgbm",
+            **m_res_lgbm,
+            "time_sec": round(time_res_lgbm, 2),
+        }
+    )
+
+    # Identify best *direct* learned regressor for downstream "regress-then-bucket".
+    # Residual models are level candidates and need today's AQI, so they are not
+    # used as the base of the categorical wrapper.
+    direct_reg_names = {"ridge", "random_forest_reg", "xgboost_reg", "lightgbm_reg"}
     best_reg_entry = min(
-        [entry for entry in leaderboard if entry["task"] == "regression"],
+        [
+            entry
+            for entry in leaderboard
+            if entry["task"] == "regression" and entry["model"] in direct_reg_names
+        ],
         key=lambda x: x["rmse"],
     )
     best_reg_name = best_reg_entry["model"]
@@ -391,13 +653,27 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="majority_class",
         experiment_id=clf_exp_id,
-        tags={"task": "classification", "model_family": "heuristic", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "classification",
+            "model_family": "heuristic",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "MajorityClassBaseline", "majority_class": majority.majority_class_})
+        mlflow.log_params(
+            {"model_type": "MajorityClassBaseline", "majority_class": majority.majority_class_}
+        )
         mlflow.log_metrics({**m_maj, "train_time_sec": round(time_maj, 3)})
         mlflow.log_artifact(str(args.models_dir / "majority_class.joblib"))
 
-    leaderboard.append({"task": "classification", "model": "majority_class", **m_maj, "time_sec": round(time_maj, 2)})
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": "majority_class",
+            **m_maj,
+            "time_sec": round(time_maj, 2),
+        }
+    )
 
     # 2. Regress-Then-Bucket (from best regressor)
     t0 = time.time()
@@ -414,13 +690,27 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="regress_then_bucket",
         experiment_id=clf_exp_id,
-        tags={"task": "classification", "model_family": "hybrid", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "classification",
+            "model_family": "hybrid",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "RegressThenBucketClassifier", "base_regressor": best_reg_name})
+        mlflow.log_params(
+            {"model_type": "RegressThenBucketClassifier", "base_regressor": best_reg_name}
+        )
         mlflow.log_metrics({**m_rb, "train_time_sec": round(time_rb, 3)})
         mlflow.log_artifact(str(args.models_dir / "regress_then_bucket.joblib"))
 
-    leaderboard.append({"task": "classification", "model": f"regress_then_bucket_{best_reg_name}", **m_rb, "time_sec": round(time_rb, 2)})
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": f"regress_then_bucket_{best_reg_name}",
+            **m_rb,
+            "time_sec": round(time_rb, 2),
+        }
+    )
 
     # 3. Logistic Regression (balanced)
     t0 = time.time()
@@ -438,17 +728,42 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="logistic_regression",
         experiment_id=clf_exp_id,
-        tags={"task": "classification", "model_family": "linear", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "classification",
+            "model_family": "linear",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "LogisticRegression", "class_weight": "balanced", "max_iter": 1000, "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "LogisticRegression",
+                "class_weight": "balanced",
+                "max_iter": 1000,
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_lr, "train_time_sec": round(time_lr, 3)})
         mlflow.log_artifact(str(args.models_dir / "logistic_regression.joblib"))
 
-    leaderboard.append({"task": "classification", "model": "logistic_regression", **m_lr, "time_sec": round(time_lr, 2)})
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": "logistic_regression",
+            **m_lr,
+            "time_sec": round(time_lr, 2),
+        }
+    )
 
     # 4. Random Forest Classifier
     t0 = time.time()
-    rf_clf = RandomForestClassifier(n_estimators=100, class_weight="balanced_subsample", max_depth=12, random_state=seed, n_jobs=-1)
+    rf_clf = RandomForestClassifier(
+        n_estimators=100,
+        class_weight="balanced_subsample",
+        max_depth=12,
+        random_state=seed,
+        n_jobs=-1,
+    )
     rf_clf.fit(X_train_df, y_train_clf)
     preds_val_rfc = rf_clf.predict(X_val_df)
     time_rfc = time.time() - t0
@@ -462,17 +777,38 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="random_forest_clf",
         experiment_id=clf_exp_id,
-        tags={"task": "classification", "model_family": "tree_ensemble", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "classification",
+            "model_family": "tree_ensemble",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "RandomForestClassifier", "n_estimators": 100, "class_weight": "balanced_subsample", "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "RandomForestClassifier",
+                "n_estimators": 100,
+                "class_weight": "balanced_subsample",
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_rfc, "train_time_sec": round(time_rfc, 3)})
         mlflow.log_artifact(str(args.models_dir / "random_forest_clf.joblib"))
 
-    leaderboard.append({"task": "classification", "model": "random_forest_clf", **m_rfc, "time_sec": round(time_rfc, 2)})
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": "random_forest_clf",
+            **m_rfc,
+            "time_sec": round(time_rfc, 2),
+        }
+    )
 
     # 5. LightGBM Classifier
     t0 = time.time()
-    lgbm_clf = LGBMClassifier(n_estimators=100, class_weight="balanced", max_depth=6, random_state=seed, verbosity=-1)
+    lgbm_clf = LGBMClassifier(
+        n_estimators=100, class_weight="balanced", max_depth=6, random_state=seed, verbosity=-1
+    )
     lgbm_clf.fit(X_train_df, y_train_clf)
     preds_val_lgbmc = lgbm_clf.predict(X_val_df)
     time_lgbmc = time.time() - t0
@@ -486,13 +822,94 @@ def main() -> None:
         logbook_entry="008-baseline-models.md",
         run_name="lightgbm_clf",
         experiment_id=clf_exp_id,
-        tags={"task": "classification", "model_family": "gradient_boosting", "stage": "baseline", "author": "Srijan Kumar G S"},
+        tags={
+            "task": "classification",
+            "model_family": "gradient_boosting",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
     ):
-        mlflow.log_params({"model_type": "LGBMClassifier", "n_estimators": 100, "class_weight": "balanced", "seed": seed})
+        mlflow.log_params(
+            {
+                "model_type": "LGBMClassifier",
+                "n_estimators": 100,
+                "class_weight": "balanced",
+                "seed": seed,
+            }
+        )
         mlflow.log_metrics({**m_lgbmc, "train_time_sec": round(time_lgbmc, 3)})
         mlflow.log_artifact(str(args.models_dir / "lightgbm_clf.joblib"))
 
-    leaderboard.append({"task": "classification", "model": "lightgbm_clf", **m_lgbmc, "time_sec": round(time_lgbmc, 2)})
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": "lightgbm_clf",
+            **m_lgbmc,
+            "time_sec": round(time_lgbmc, 2),
+        }
+    )
+
+    # 6. XGBoost Classifier (Step 0.5: was listed in docstring but had no saved model)
+    # XGBClassifier requires integer class labels; encode string categories first
+    from sklearn.preprocessing import LabelEncoder
+
+    le_xgb = LabelEncoder()
+    le_xgb.fit(CATEGORY_ORDER)  # fit on canonical order so indices are stable
+    y_train_clf_enc = le_xgb.transform(y_train_clf)
+    le_xgb.transform(y_val_clf)
+
+    t0 = time.time()
+    xgb_clf = XGBClassifier(
+        n_estimators=100,
+        learning_rate=0.05,
+        max_depth=6,
+        random_state=seed,
+        n_jobs=-1,
+        eval_metric="mlogloss",
+        verbosity=0,
+    )
+    xgb_clf.fit(X_train_df, y_train_clf_enc)
+    preds_val_xgbc_enc = xgb_clf.predict(X_val_df)
+    preds_val_xgbc = le_xgb.inverse_transform(preds_val_xgbc_enc)
+    time_xgbc = time.time() - t0
+    m_xgbc = calc_classification_metrics(y_val_clf, preds_val_xgbc)
+
+    # Save both encoder and model together so evaluate.py can decode
+    joblib.dump({"model": xgb_clf, "label_encoder": le_xgb}, args.models_dir / "xgboost_clf.joblib")
+    saved_model_paths.append(str(args.models_dir / "xgboost_clf.joblib"))
+
+    with start_run(
+        step_id="008",
+        logbook_entry="008-baseline-models.md",
+        run_name="xgboost_clf",
+        experiment_id=clf_exp_id,
+        tags={
+            "task": "classification",
+            "model_family": "gradient_boosting",
+            "stage": "baseline",
+            "author": "Srijan Kumar G S",
+        },
+    ):
+        mlflow.log_params(
+            {
+                "model_type": "XGBClassifier",
+                "n_estimators": 100,
+                "learning_rate": 0.05,
+                "max_depth": 6,
+                "seed": seed,
+            }
+        )
+        mlflow.log_metrics({**m_xgbc, "train_time_sec": round(time_xgbc, 3)})
+        mlflow.log_artifact(str(args.models_dir / "xgboost_clf.joblib"))
+
+    leaderboard.append(
+        {
+            "task": "classification",
+            "model": "xgboost_clf",
+            **m_xgbc,
+            "time_sec": round(time_xgbc, 2),
+        }
+    )
 
     # Write output metrics JSON
     with open(args.output_metrics, "w", encoding="utf-8") as f:
@@ -510,13 +927,29 @@ def main() -> None:
     print("PHASE 6: VALIDATION LEADERBOARD (TASK A: REGRESSION)")
     print("=" * 80)
     reg_df = pd.DataFrame([e for e in leaderboard if e["task"] == "regression"])
-    print(reg_df[["model", "mae", "rmse", "r2", "within_20_rate", "skill_score_vs_persistence", "time_sec"]].to_string(index=False))
+    print(
+        reg_df[
+            [
+                "model",
+                "mae",
+                "rmse",
+                "r2",
+                "within_20_rate",
+                "skill_score_vs_persistence",
+                "time_sec",
+            ]
+        ].to_string(index=False)
+    )
 
     print("\n" + "=" * 80)
     print("PHASE 6: VALIDATION LEADERBOARD (TASK B: CLASSIFICATION)")
     print("=" * 80)
     clf_df = pd.DataFrame([e for e in leaderboard if e["task"] == "classification"])
-    print(clf_df[["model", "accuracy", "macro_f1", "weighted_f1", "within_one_category_rate", "time_sec"]].to_string(index=False))
+    print(
+        clf_df[
+            ["model", "accuracy", "macro_f1", "weighted_f1", "within_one_category_rate", "time_sec"]
+        ].to_string(index=False)
+    )
     print("=" * 80 + "\n")
 
 

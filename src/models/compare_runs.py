@@ -21,7 +21,9 @@ logger = get_logger(__name__)
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 7: Compare MLflow Runs")
     parser.add_argument("--tracking-uri", type=str, default="sqlite:///mlflow.db")
-    parser.add_argument("--output-csv", type=Path, default=Path("reports/metrics/run_comparison.csv"))
+    parser.add_argument(
+        "--output-csv", type=Path, default=Path("reports/metrics/run_comparison.csv")
+    )
     args = parser.parse_args()
 
     setup_logging(stage="compare_runs")
@@ -68,7 +70,9 @@ def main() -> None:
         return
 
     df_runs = pd.DataFrame(all_runs)
-    df_runs = df_runs.sort_values(by=["experiment_name", "val_rmse", "val_macro_f1"], ascending=[True, True, False])
+    df_runs = df_runs.sort_values(
+        by=["experiment_name", "val_rmse", "val_macro_f1"], ascending=[True, True, False]
+    )
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
     df_runs.to_csv(args.output_csv, index=False)
@@ -77,7 +81,16 @@ def main() -> None:
     print("\n" + "=" * 90)
     print("MLFLOW RUN COMPARISON TABLE")
     print("=" * 90)
-    cols_to_print = ["experiment_name", "run_name", "model_family", "val_rmse", "val_r2", "val_accuracy", "val_macro_f1", "train_time_sec"]
+    cols_to_print = [
+        "experiment_name",
+        "run_name",
+        "model_family",
+        "val_rmse",
+        "val_r2",
+        "val_accuracy",
+        "val_macro_f1",
+        "train_time_sec",
+    ]
     print(df_runs[cols_to_print].to_string(index=False))
     print("=" * 90 + "\n")
 

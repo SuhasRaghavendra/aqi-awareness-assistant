@@ -32,7 +32,7 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -43,34 +43,33 @@ import requests
 from src.config import load_env, load_params
 from src.features.aqi_utils import calc_sub_index
 from src.utils.logging_utils import get_logger, setup_logging
-from src.utils.stage_stats import track_stage
 
 logger = get_logger("download_aqi")
 
 # City name -> approximate lat/lon centroid
 CITY_COORDS: dict[str, tuple[float, float]] = {
-    "Delhi":     (28.6139, 77.2090),
-    "Mumbai":    (19.0760, 72.8777),
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
     "Bengaluru": (12.9716, 77.5946),
-    "Chennai":   (13.0827, 80.2707),
-    "Kolkata":   (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707),
+    "Kolkata": (22.5726, 88.3639),
     "Hyderabad": (17.3850, 78.4867),
-    "Pune":      (18.5204, 73.8567),
+    "Pune": (18.5204, 73.8567),
     "Ahmedabad": (23.0225, 72.5714),
-    "Lucknow":   (26.8467, 80.9462),
+    "Lucknow": (26.8467, 80.9462),
 }
 
 # XKDR city name mapping
 XKDR_CITY_MAP: dict[str, str] = {
-    "Delhi":     "Delhi",
-    "Mumbai":    "Mumbai",
+    "Delhi": "Delhi",
+    "Mumbai": "Mumbai",
     "Bengaluru": "Bengaluru",
-    "Chennai":   "Chennai",
-    "Kolkata":   "Kolkata",
+    "Chennai": "Chennai",
+    "Kolkata": "Kolkata",
     "Hyderabad": "Hyderabad",
-    "Pune":      "Pune",
+    "Pune": "Pune",
     "Ahmedabad": "Ahmedabad",
-    "Lucknow":   "Lucknow",
+    "Lucknow": "Lucknow",
 }
 
 XKDR_BASE = "https://airquality.xkdr.org"
@@ -168,17 +167,14 @@ def download_city_aqi(
     Download and convert PM2.5 (and PM10) data to AQI for a city using a thread pool.
     """
     tasks = [
-        (year, param)
-        for year in range(start_year, end_year + 1)
-        for param in POLLUTANT_PARAMS
+        (year, param) for year in range(start_year, end_year + 1) for param in POLLUTANT_PARAMS
     ]
 
     all_frames: list[pd.DataFrame] = []
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         future_map = {
-            executor.submit(fetch_xkdr_year, city, yr, p, api_key): (yr, p)
-            for yr, p in tasks
+            executor.submit(fetch_xkdr_year, city, yr, p, api_key): (yr, p) for yr, p in tasks
         }
         for future in as_completed(future_map):
             yr, p = future_map[future]
@@ -230,9 +226,7 @@ def download_city_aqi(
         return df_all, pd.DataFrame()
 
     city_day = (
-        df_valid.groupby("date")["aqi_sub"]
-        .agg(aqi="mean", station_count="count")
-        .reset_index()
+        df_valid.groupby("date")["aqi_sub"].agg(aqi="mean", station_count="count").reset_index()
     )
     city_day["aqi"] = city_day["aqi"].round(1)
     city_day["city"] = city
@@ -249,7 +243,7 @@ def main() -> None:
     setup_logging(stage="download_aqi")
     parser = argparse.ArgumentParser(description="Download daily city AQI labels from XKDR")
     parser.add_argument("--start", default="2019-01-01")
-    parser.add_argument("--end",   default="2026-09-30")
+    parser.add_argument("--end", default="2026-09-30")
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/aqi"))
     args = parser.parse_args()
 
@@ -275,9 +269,7 @@ def main() -> None:
             all_city_day_frames.append(city_day_df)
 
     if not all_city_day_frames:
-        raise RuntimeError(
-            "No AQI data was computed. Check XKDR_API_KEY and network access."
-        )
+        raise RuntimeError("No AQI data was computed. Check XKDR_API_KEY and network access.")
 
     # Save station-level backup
     if all_station_frames:

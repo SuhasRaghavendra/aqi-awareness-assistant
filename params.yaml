@@ -59,9 +59,10 @@ features:
   use_city_onehot: true
 
 # --- Chronological split ---
+# ADR D-018: restored to D-004 documented split (train<=2023, val 2024, test 2025+)
 split:
-  train_end: "2022-12-31"
-  val_end:   "2025-12-31"
+  train_end: "2023-12-31"
+  val_end:   "2024-12-31"
 
 # --- Cleaning ---
 clean:
@@ -80,4 +81,6 @@ train:
     - random_forest
     - xgboost
     - lightgbm
+    - residual_ridge       # Phase 0.4: persistence-anchored Ridge (TimeSeriesSplit CV)
+    - residual_lightgbm    # Phase 0.4: persistence-anchored LightGBM (TimeSeriesSplit CV)
   cv_folds: 4

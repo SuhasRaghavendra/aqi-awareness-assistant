@@ -14,18 +14,17 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 # ── ANSI colour codes for console output ──────────────────────────────────────
 _COLOURS = {
-    "DEBUG": "\033[36m",    # cyan
-    "INFO": "\033[32m",     # green
+    "DEBUG": "\033[36m",  # cyan
+    "INFO": "\033[32m",  # green
     "WARNING": "\033[33m",  # yellow
-    "ERROR": "\033[31m",    # red
-    "CRITICAL": "\033[35m", # magenta
+    "ERROR": "\033[31m",  # red
+    "CRITICAL": "\033[35m",  # magenta
     "RESET": "\033[0m",
 }
 
@@ -55,7 +54,7 @@ class _JsonlHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         payload: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "stage": self._stage,
             "level": record.levelname,
             "logger": record.name,
@@ -135,7 +134,7 @@ def setup_logging(
     logger.addHandler(ch)
 
     # JSONL file handler
-    ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
     log_path = (log_dir or _LOG_DIR) / f"{stage}_{ts}.jsonl"
     fh = _JsonlHandler(log_path, stage=stage, extra=extra)
     fh.setLevel(file_level)

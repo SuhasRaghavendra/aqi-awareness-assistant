@@ -9,6 +9,9 @@ and include the step number, e.g. `feat(step-008): baseline models and MLflow tr
 
 ## [Unreleased]
 
+### Added
+- **Step 011** (Phase 2): Phase 0 baseline fixes — [011-phase-0-baseline-fixes.md](logbook/011-phase-0-baseline-fixes.md) — 2026-11-10
+
 <!-- Future steps for Milestone 2 will be appended here automatically -->
 
 ---

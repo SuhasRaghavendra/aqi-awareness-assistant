@@ -21,11 +21,10 @@ import gzip
 import hashlib
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
-
 
 BACKUP_DIR_NAME = ".dvc_v1_backup"
 
@@ -69,7 +68,9 @@ def apply_data_v2(project_root: Path) -> None:
         df_stations.loc[target_idx, "exclusion_reason"] = "Restored in data-v2 network refresh"
         added_station_name = df_stations.loc[target_idx, "name"]
         target_loc_id = int(df_stations.loc[target_idx, "location_id"])
-        print(f"[OK] Activated additional station in catalog: ID {target_loc_id} ({added_station_name})")
+        print(
+            f"[OK] Activated additional station in catalog: ID {target_loc_id} ({added_station_name})"
+        )
     else:
         print("[INFO] All stations were already selected; updating date span and records.")
 
@@ -85,26 +86,30 @@ def apply_data_v2(project_root: Path) -> None:
     dates = pd.date_range("2026-10-01", "2026-10-07 23:00:00", freq="h", tz="Asia/Kolkata")
     records = []
     for dt in dates:
-        records.append({
-            "locationId": target_loc_id,
-            "location": added_station_name,
-            "parameter": "pm25",
-            "value": 48.5,
-            "unit": "\u00b5g/m\u00b3",
-            "datetime": dt.isoformat(),
-            "latitude": 12.97,
-            "longitude": 77.59,
-        })
-        records.append({
-            "locationId": target_loc_id,
-            "location": added_station_name,
-            "parameter": "pm10",
-            "value": 92.0,
-            "unit": "\u00b5g/m\u00b3",
-            "datetime": dt.isoformat(),
-            "latitude": 12.97,
-            "longitude": 77.59,
-        })
+        records.append(
+            {
+                "locationId": target_loc_id,
+                "location": added_station_name,
+                "parameter": "pm25",
+                "value": 48.5,
+                "unit": "\u00b5g/m\u00b3",
+                "datetime": dt.isoformat(),
+                "latitude": 12.97,
+                "longitude": 77.59,
+            }
+        )
+        records.append(
+            {
+                "locationId": target_loc_id,
+                "location": added_station_name,
+                "parameter": "pm10",
+                "value": 92.0,
+                "unit": "\u00b5g/m\u00b3",
+                "datetime": dt.isoformat(),
+                "latitude": 12.97,
+                "longitude": 77.59,
+            }
+        )
 
     df_records = pd.DataFrame(records)
     with gzip.open(simulated_file, "wt", encoding="utf-8") as f:
@@ -112,18 +117,24 @@ def apply_data_v2(project_root: Path) -> None:
 
     file_size = simulated_file.stat().st_size
     file_sha = compute_sha256(simulated_file)
-    print(f"[OK] Generated data-v2 partition at {simulated_file.relative_to(project_root)} ({file_size} bytes)")
+    print(
+        f"[OK] Generated data-v2 partition at {simulated_file.relative_to(project_root)} ({file_size} bytes)"
+    )
 
     # 4. Append to manifest if present
     if manifest_csv.exists():
         manifest_df = pd.read_csv(manifest_csv)
-        new_manifest_row = pd.DataFrame([{
-            "path": str(simulated_file.relative_to(project_root)).replace("\\", "/"),
-            "size_bytes": file_size,
-            "sha256": file_sha,
-            "download_time": datetime.now(timezone.utc).isoformat(),
-            "location_id": target_loc_id,
-        }])
+        new_manifest_row = pd.DataFrame(
+            [
+                {
+                    "path": str(simulated_file.relative_to(project_root)).replace("\\", "/"),
+                    "size_bytes": file_size,
+                    "sha256": file_sha,
+                    "download_time": datetime.now(UTC).isoformat(),
+                    "location_id": target_loc_id,
+                }
+            ]
+        )
         manifest_df = pd.concat([manifest_df, new_manifest_row], ignore_index=True)
         manifest_df.to_csv(manifest_csv, index=False)
         print(f"[OK] Appended partition checksum to {manifest_csv.relative_to(project_root)}")
@@ -137,7 +148,9 @@ def apply_data_v2(project_root: Path) -> None:
     print("\nNext manual steps to demonstrate genuine DVC versioning:")
     print("  1. dvc add data/raw/openaq configs/stations_selected.csv")
     print("  2. git add data/raw/openaq.dvc configs/stations_selected.csv")
-    print('  3. git commit -m "feat(step-005): update raw dataset to data-v2 (added station partition)"')
+    print(
+        '  3. git commit -m "feat(step-005): update raw dataset to data-v2 (added station partition)"'
+    )
     print('  4. git tag -a data-v2 -m "data-v2: station network refresh with expanded coverage"')
     print("  5. dvc push")
     print("  6. dvc diff data-v1 data-v2")

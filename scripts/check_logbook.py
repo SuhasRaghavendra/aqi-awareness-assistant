@@ -39,7 +39,11 @@ _TRACKED_PREFIXES = (
 def _run(cmd: list[str]) -> str:
     try:
         r = subprocess.run(
-            cmd, capture_output=True, text=True, cwd=_REPO_ROOT, timeout=30,
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=_REPO_ROOT,
+            timeout=30,
         )
         return r.stdout.strip()
     except Exception:  # noqa: BLE001
@@ -82,13 +86,21 @@ def main() -> None:
     tracked_changed = [f for f in changed if _is_tracked(f)]
 
     if not tracked_changed:
-        print(f"[OK] Logbook check passed - {n_entries} entries; no tracked files changed since last entry.")
+        print(
+            f"[OK] Logbook check passed - {n_entries} entries; no tracked files changed since last entry."
+        )
         sys.exit(0)
 
     if last_commit:
         new_entries_out = _run(
-            ["git", "log", "--pretty=%H", f"{last_commit}..HEAD",
-             "--", "docs/logbook/[0-9][0-9][0-9]-*.md"]
+            [
+                "git",
+                "log",
+                "--pretty=%H",
+                f"{last_commit}..HEAD",
+                "--",
+                "docs/logbook/[0-9][0-9][0-9]-*.md",
+            ]
         )
         new_entries = [line for line in new_entries_out.splitlines() if line.strip()]
     else:

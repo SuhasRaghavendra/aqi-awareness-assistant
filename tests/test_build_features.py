@@ -3,35 +3,43 @@ tests/test_build_features.py
 ------------------------------
 Tests for the root-cause feature engineering pipeline.
 """
+
 import sys
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.data.ingest_and_merge import build_date_spine, add_calendar_features, add_static_city_features
-from src.features.build_features import (
-    make_target,
-    add_fire_features,
-    add_aqi_history_features,
-    add_interaction_features,
-    add_city_onehot,
-    add_season_onehot,
-    split_chronological,
-    NON_FEATURE_COLS,
+from src.data.ingest_and_merge import (
+    add_calendar_features,
+    add_static_city_features,
+    build_date_spine,
 )
 from src.features.aqi_utils import aqi_to_category
-
+from src.features.build_features import (
+    add_city_onehot,
+    add_fire_features,
+    add_interaction_features,
+    add_season_onehot,
+    make_target,
+    split_chronological,
+)
 
 CITIES = ["Delhi", "Mumbai"]
+
+TRAIN_PARQUET = Path("data/processed/train.parquet")
+SCALER_PATH = Path("data/processed/scaler.joblib")
+FEATURE_LIST = Path("data/processed/feature_list.json")
 
 
 def _make_sample_df(n_days: int = 100) -> pd.DataFrame:
     """Build a minimal sample merged dataframe for feature tests."""
-    df = build_date_spine(CITIES, "2022-01-01",
-                          pd.Timestamp("2022-01-01") + pd.Timedelta(days=n_days - 1))
+    df = build_date_spine(
+        CITIES, "2022-01-01", pd.Timestamp("2022-01-01") + pd.Timedelta(days=n_days - 1)
+    )
     df = add_calendar_features(df)
     df = add_static_city_features(df)
     df["aqi"] = np.random.default_rng(42).uniform(50, 300, len(df))
@@ -42,7 +50,9 @@ def _make_sample_df(n_days: int = 100) -> pd.DataFrame:
     df["temperature_2m_mean"] = np.random.default_rng(46).uniform(10, 45, len(df))
     df["precipitation_sum"] = np.random.default_rng(47).uniform(0, 20, len(df))
     df["inversion_risk_flag"] = np.random.default_rng(48).integers(0, 2, len(df))
-    df["burning_season_flag"] = df["burning_season_flag"] if "burning_season_flag" in df.columns else 0
+    df["burning_season_flag"] = (
+        df["burning_season_flag"] if "burning_season_flag" in df.columns else 0
+    )
     df["festival_flag"] = 0
     df["grap_stage"] = 0
     df["diesel_frac"] = 0.35
@@ -58,12 +68,17 @@ def test_make_target_no_leakage():
     df = _make_sample_df()
     df_with_target = make_target(df)
     for city in CITIES:
-        city_df = df_with_target[df_with_target["city"] == city].sort_values("date").reset_index(drop=True)
+        city_df = (
+            df_with_target[df_with_target["city"] == city]
+            .sort_values("date")
+            .reset_index(drop=True)
+        )
         # For any row i, target_aqi[i] should equal aqi[i+1]
         for i in range(len(city_df) - 1):
-            if pd.notna(city_df.loc[i, "target_aqi"]) and pd.notna(city_df.loc[i+1, "aqi"]):
-                assert abs(city_df.loc[i, "target_aqi"] - city_df.loc[i+1, "aqi"]) < 0.01, \
-                    f"Target leakage at row {i}"
+            if pd.notna(city_df.loc[i, "target_aqi"]) and pd.notna(city_df.loc[i + 1, "aqi"]):
+                assert (
+                    abs(city_df.loc[i, "target_aqi"] - city_df.loc[i + 1, "aqi"]) < 0.01
+                ), f"Target leakage at row {i}"
 
 
 def test_make_target_category():
@@ -73,8 +88,9 @@ def test_make_target_category():
     valid = df_with_target.dropna(subset=["target_aqi", "target_category"])
     for _, row in valid.head(50).iterrows():
         expected = aqi_to_category(row["target_aqi"])
-        assert row["target_category"] == expected, \
-            f"Category mismatch: AQI={row['target_aqi']}, expected={expected}, got={row['target_category']}"
+        assert (
+            row["target_category"] == expected
+        ), f"Category mismatch: AQI={row['target_aqi']}, expected={expected}, got={row['target_category']}"
 
 
 def test_fire_features_no_future_leakage():
@@ -86,11 +102,10 @@ def test_fire_features_no_future_leakage():
     for city in CITIES:
         city_df = df[df["city"] == city].sort_values("date").reset_index(drop=True)
         for i in range(1, min(10, len(city_df))):
-            expected_lag1 = city_df.loc[i-1, "fire_count_500km"]
+            expected_lag1 = city_df.loc[i - 1, "fire_count_500km"]
             actual_lag1 = city_df.loc[i, "fire_count_500km_lag_1"]
             if pd.notna(expected_lag1) and pd.notna(actual_lag1):
-                assert abs(expected_lag1 - actual_lag1) < 0.01, \
-                    f"Fire lag_1 mismatch at row {i}"
+                assert abs(expected_lag1 - actual_lag1) < 0.01, f"Fire lag_1 mismatch at row {i}"
 
 
 def test_city_onehot():
@@ -139,3 +154,40 @@ def test_interaction_features_exist():
     assert "diesel_vehicle_intensity" in df.columns
     assert (df["diesel_vehicle_intensity"] >= 0).all()
 
+
+@pytest.mark.skipif(
+    not SCALER_PATH.exists(), reason="scaler.joblib not yet built; run dvc repro first"
+)
+def test_scaler_matches_train_split():
+    """
+    Step 0.3: The saved scaler's mean_ and scale_ must match what a fresh
+    StandardScaler fitted on train.parquet would produce (within 1e-6).
+    This confirms that train.py and evaluate.py load — not refit — the scaler.
+    """
+    import json
+
+    import joblib
+    from sklearn.preprocessing import StandardScaler
+
+    df_train = pd.read_parquet(TRAIN_PARQUET)
+    with open(FEATURE_LIST) as f:
+        manifest = json.load(f)
+    feature_names = manifest["feature_names"]
+
+    saved_scaler: StandardScaler = joblib.load(SCALER_PATH)
+
+    fresh_scaler = StandardScaler()
+    fresh_scaler.fit(df_train[feature_names])
+
+    np.testing.assert_allclose(
+        saved_scaler.mean_,
+        fresh_scaler.mean_,
+        rtol=1e-6,
+        err_msg="Saved scaler mean_ does not match train split mean",
+    )
+    np.testing.assert_allclose(
+        saved_scaler.scale_,
+        fresh_scaler.scale_,
+        rtol=1e-6,
+        err_msg="Saved scaler scale_ does not match train split std",
+    )

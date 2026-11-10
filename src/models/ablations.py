@@ -9,13 +9,10 @@ Evaluates the impact and incremental value of:
 
 Logs each ablation experiment to MLflow and saves:
   - reports/metrics/ablation_results.json
-  - reports/figures/evaluation/ablation_study.png
+  - reports/figures/ablations/ablation_study.png
 """
 
 from __future__ import annotations
-
-# On Windows, lightgbm MUST be imported before pandas/pyarrow to avoid OpenMP C-runtime conflict
-import lightgbm as lgb
 
 import argparse
 import json
@@ -23,6 +20,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+# On Windows, lightgbm MUST be imported before pandas/pyarrow to avoid OpenMP C-runtime conflict
 import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
@@ -70,9 +68,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 7: Feature Ablation Studies")
     parser.add_argument("--train-data", type=Path, default=Path("data/processed/train.parquet"))
     parser.add_argument("--val-data", type=Path, default=Path("data/processed/val.parquet"))
-    parser.add_argument("--feature-list", type=Path, default=Path("data/processed/feature_list.json"))
-    parser.add_argument("--output-json", type=Path, default=Path("reports/metrics/ablation_results.json"))
-    parser.add_argument("--output-fig", type=Path, default=Path("reports/figures/evaluation/ablation_study.png"))
+    parser.add_argument(
+        "--feature-list", type=Path, default=Path("data/processed/feature_list.json")
+    )
+    parser.add_argument(
+        "--output-json", type=Path, default=Path("reports/metrics/ablation_results.json")
+    )
+    parser.add_argument(
+        "--output-fig", type=Path, default=Path("reports/figures/ablations/ablation_study.png")
+    )
     parser.add_argument("--tracking-uri", type=str, default="sqlite:///mlflow.db")
     args = parser.parse_args()
 
@@ -82,7 +86,7 @@ def main() -> None:
     df_train = pd.read_parquet(args.train_data)
     df_val = pd.read_parquet(args.val_data)
 
-    with open(args.feature_list, "r", encoding="utf-8") as f:
+    with open(args.feature_list, encoding="utf-8") as f:
         feature_manifest = json.load(f)
     all_features = feature_manifest["feature_names"]
 
@@ -90,9 +94,15 @@ def main() -> None:
     y_val = df_val["target_aqi"].to_numpy(dtype=float)
 
     # Categorize feature subsets
-    weather_cols = [c for c in all_features if any(w in c for w in ["temp", "humidity", "pressure", "precipitation", "wind"])]
-    lag_cols = [c for c in all_features if any(l in c for l in ["lag", "rolling", "diff1"])]
-    spatial_cols = [c for c in all_features if any(s in c for s in ["city", "latitude", "longitude"])]
+    weather_cols = [
+        c
+        for c in all_features
+        if any(w in c for w in ["temp", "humidity", "pressure", "precipitation", "wind"])
+    ]
+    lag_cols = [c for c in all_features if any(_lk in c for _lk in ["lag", "rolling", "diff1"])]
+    spatial_cols = [
+        c for c in all_features if any(s in c for s in ["city", "latitude", "longitude"])
+    ]
 
     ablation_definitions = {
         "Full Feature Set (All)": all_features,
@@ -151,19 +161,23 @@ def main() -> None:
                 "author": "Srijan Kumar G S",
             },
         ):
-            mlflow.log_params({
-                "ablation_name": name,
-                "n_features": len(subset),
-                "best_alpha": metrics["best_alpha"],
-            })
-            mlflow.log_metrics({
-                "mae": metrics["mae"],
-                "rmse": metrics["rmse"],
-                "r2": metrics["r2"],
-                "delta_rmse_vs_full": delta_rmse,
-                "pct_degradation": pct_degradation,
-                "train_time_sec": train_time,
-            })
+            mlflow.log_params(
+                {
+                    "ablation_name": name,
+                    "n_features": len(subset),
+                    "best_alpha": metrics["best_alpha"],
+                }
+            )
+            mlflow.log_metrics(
+                {
+                    "mae": metrics["mae"],
+                    "rmse": metrics["rmse"],
+                    "r2": metrics["r2"],
+                    "delta_rmse_vs_full": delta_rmse,
+                    "pct_degradation": pct_degradation,
+                    "train_time_sec": train_time,
+                }
+            )
 
     # Save results JSON
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
@@ -195,7 +209,9 @@ def main() -> None:
     ax2.grid(True, axis="x", linestyle=":", alpha=0.6)
     for bar in bars2:
         w = bar.get_width()
-        ax2.text(w + 0.2, bar.get_y() + bar.get_height() / 2, f"+{w:.1f}%", va="center", fontsize=10)
+        ax2.text(
+            w + 0.2, bar.get_y() + bar.get_height() / 2, f"+{w:.1f}%", va="center", fontsize=10
+        )
 
     plt.tight_layout()
     plt.savefig(args.output_fig, dpi=200)
@@ -212,7 +228,11 @@ def main() -> None:
     print("PHASE 7: FEATURE ABLATION STUDY RESULTS")
     print("=" * 90)
     df_res = pd.DataFrame(results)
-    print(df_res[["ablation", "n_features", "rmse", "r2", "delta_rmse_vs_full", "pct_degradation"]].to_string(index=False))
+    print(
+        df_res[
+            ["ablation", "n_features", "rmse", "r2", "delta_rmse_vs_full", "pct_degradation"]
+        ].to_string(index=False)
+    )
     print("=" * 90 + "\n")
 
 
