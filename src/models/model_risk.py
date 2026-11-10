@@ -22,7 +22,6 @@ import json
 import subprocess
 import time
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +40,7 @@ from src.features.build_features import (
     add_season_onehot,
     add_weather_lag_features,
 )
+from src.utils.reproducibility import build_timestamp
 
 CATEGORY_ORDER = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poor", "Severe"]
 POOR_PLUS = {"Poor", "Very Poor", "Severe"}
@@ -119,6 +119,7 @@ def build_reference_stats(
     train_df: pd.DataFrame,
     feature_names: list[str],
     params: dict[str, Any],
+    root: Path | None = None,
 ) -> dict[str, Any]:
     """Compute train-split reference statistics used for range checks."""
     features: dict[str, dict[str, float]] = {}
@@ -136,7 +137,7 @@ def build_reference_stats(
     split = params.get("split", {})
     return {
         "schema_version": "1.0",
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": build_timestamp(root or repo_root()),
         "n_features": len(feature_names),
         "feature_names": list(feature_names),
         "train_rows": int(len(train_df)),
@@ -280,21 +281,43 @@ def predict_regression(
     return np.clip(np.asarray(preds, dtype=float), 0.0, float(aqi_max))
 
 
-def select_classifier(test_metrics: list[dict[str, Any]]) -> dict[str, Any]:
-    """Select the best classifier by within-one-category rate, then macro F1."""
+def select_classifier(validation_metrics: list[dict[str, Any]]) -> dict[str, Any]:
+    """Select the classifier on validation: best within-one rate, then macro F1.
+
+    Test metrics are never used to choose the classifier; the selected artifact
+    is only evaluated on the holdout test split afterwards (gate G4).
+    """
     candidates = [
         entry
-        for entry in test_metrics
+        for entry in validation_metrics
         if entry.get("task") == "classification" and entry.get("model") != "majority_class"
     ]
     if not candidates:
-        raise ValueError("No classification candidates found in test_metrics.json")
+        raise ValueError("No classification candidates found in reports/metrics/val_metrics.json")
     return max(
         candidates,
         key=lambda entry: (
             float(entry.get("within_one_category_rate", 0.0)),
             float(entry.get("macro_f1", 0.0)),
         ),
+    )
+
+
+def resolve_classifier_artifact(base: Path, leaderboard_name: str) -> tuple[str, Path]:
+    """Map a validation leaderboard entry to its trained classifier artifact.
+
+    ``train.py`` records the hybrid model as ``regress_then_bucket_<regressor>``
+    while the artifact is always ``models/regress_then_bucket.joblib``.
+    """
+    candidates = [leaderboard_name]
+    if leaderboard_name.startswith("regress_then_bucket_"):
+        candidates.append("regress_then_bucket")
+    for name in candidates:
+        path = base / "models" / f"{name}.joblib"
+        if path.exists():
+            return name, path
+    raise FileNotFoundError(
+        f"Classifier artifact for {leaderboard_name!r} is missing under {base / 'models'}"
     )
 
 
@@ -482,15 +505,13 @@ def build_risk_card(
         test_df["date"].to_numpy(),
     )
 
-    test_metrics_list = read_json(base / "reports/metrics/test_metrics.json")
-    classifier_entry = select_classifier(test_metrics_list)
-    classifier_path = base / "models" / f"{classifier_entry['model']}.joblib"
-    if not classifier_path.exists():
-        raise FileNotFoundError(f"Classifier artifact is missing: {classifier_path}")
-    classifier = joblib.load(classifier_path)
-    category_pred = predict_classifier(
-        str(classifier_entry["model"]), classifier, test_df, scaler, feature_names
+    val_metrics_list = read_json(base / "reports/metrics/val_metrics.json")
+    classifier_entry = select_classifier(val_metrics_list)
+    classifier_name, classifier_path = resolve_classifier_artifact(
+        base, str(classifier_entry["model"])
     )
+    classifier = joblib.load(classifier_path)
+    category_pred = predict_classifier(classifier_name, classifier, test_df, scaler, feature_names)
     true_categories = test_df["target_category"].to_numpy()
     within_one = float(
         np.mean(
@@ -560,7 +581,15 @@ def build_risk_card(
             "threshold": GATE_THRESHOLDS["G4"],
             "value": {
                 "within_one_category_rate": round(within_one, 4),
-                "classifier": classifier_entry["model"],
+                "classifier": classifier_name,
+                "classifier_selection": {
+                    "selected_on": "validation",
+                    "leaderboard_entry": classifier_entry["model"],
+                    "val_within_one_category_rate": round(
+                        float(classifier_entry.get("within_one_category_rate", 0.0)), 4
+                    ),
+                    "val_macro_f1": round(float(classifier_entry.get("macro_f1", 0.0)), 4),
+                },
                 "poor_plus_recall_per_city": {
                     row["city"]: row.get("poor_plus_recall") for row in per_city
                 },
@@ -590,7 +619,7 @@ def build_risk_card(
     commit = git_commit(base)
     return {
         "schema_version": "1.0",
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": build_timestamp(base),
         "model": {
             "id": f"aqi-champion-{commit[:8]}-{champion.name}",
             "name": champion.name,
@@ -670,7 +699,7 @@ def main() -> None:
     manifest = load_manifest(base / "data/processed/feature_list.json")
     train_df = pd.read_parquet(base / "data/processed/train.parquet")
 
-    reference_stats = build_reference_stats(train_df, manifest["feature_names"], params)
+    reference_stats = build_reference_stats(train_df, manifest["feature_names"], params, root=base)
     stats_path = (
         args.reference_stats if args.reference_stats.is_absolute() else base / args.reference_stats
     )

@@ -1,2 +1,6 @@
 *.sh text eol=lf
 
+# The champion bundle is hash-pinned: MANIFEST.json records SHA-256 digests of
+# the bundle payload and MANIFEST.sha256 covers MANIFEST.json itself. Git must
+# never rewrite line endings here, or the digests break on a fresh checkout.
+artifacts/champion/** -text

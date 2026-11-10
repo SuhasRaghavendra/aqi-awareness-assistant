@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-11-10T19:54:33.579496",
+  "generated_at": "2026-11-10T22:53:52+05:30",
   "model": {
-    "id": "aqi-champion-d988c890-residual_lightgbm",
+    "id": "aqi-champion-a5876327-residual_lightgbm",
     "name": "residual_lightgbm",
     "path": "models/residual_lightgbm.joblib",
     "artifact_md5": "033819888bd9a79319a382071efd0e4e",
@@ -46,7 +46,7 @@
       "test_cities": 9
     }
   },
-  "git_commit": "d988c890945117e83c366b72bfe7d041b796d4ec",
+  "git_commit": "a58763273a3d86e664994002809500b7d9389879",
   "gates": {
     "G1": {
       "name": "Skill vs persistence > 0 on val and test",
@@ -85,6 +85,12 @@
       "value": {
         "within_one_category_rate": 0.9951,
         "classifier": "regress_then_bucket",
+        "classifier_selection": {
+          "selected_on": "validation",
+          "leaderboard_entry": "regress_then_bucket_lightgbm_reg",
+          "val_within_one_category_rate": 0.9991,
+          "val_macro_f1": 0.649
+        },
         "poor_plus_recall_per_city": {
           "Ahmedabad": null,
           "Bengaluru": null,
@@ -103,9 +109,9 @@
       "name": "Single-row latency",
       "threshold": "p95 single-row latency < 50 ms on the selected artifact",
       "value": {
-        "p50_ms": 7.9727,
-        "p95_ms": 8.7475,
-        "p99_ms": 9.1683,
+        "p50_ms": 6.0595,
+        "p95_ms": 7.5444,
+        "p99_ms": 7.8509,
         "iterations": 200,
         "champion": "residual_lightgbm",
         "random_forest_excluded_as_champion": true
@@ -247,9 +253,9 @@
     "dates": 447
   },
   "latency": {
-    "p50_ms": 7.9727,
-    "p95_ms": 8.7475,
-    "p99_ms": 9.1683,
+    "p50_ms": 6.0595,
+    "p95_ms": 7.5444,
+    "p99_ms": 7.8509,
     "iterations": 200,
     "threshold_ms": 50.0
   },

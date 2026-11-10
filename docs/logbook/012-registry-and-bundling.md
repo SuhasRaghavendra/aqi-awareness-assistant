@@ -56,6 +56,10 @@ black --check src/ scripts/ tests/
 - Registry parity: loading `models:/Indian-AQI-Predictor@champion` reproduced
   the bundle predictions on the 423-row fixture with **max diff 0.000e+00**
   (limit 1e-6).
+- Superseded by [Step 013](013-bundle-byte-stability.md): the bundle is now
+  811,362 bytes with LF-only text artifacts, MANIFEST SHA-256
+  `f765a61da001da89b646d5bf7989827494ce99a4580e8bfd0b3f79898532fac1`, and the
+  promoted version is **7**.
 
 ## 5. Decisions and rationale
 
@@ -73,9 +77,10 @@ black --check src/ scripts/ tests/
 
 ## 6. Problems encountered and fixes
 
-- The repo pins MLflow 2.13 in `requirements.txt`, but the working environment
-  has MLflow 3.17. `mlflow.pyfunc.log_model` moved from `artifact_path` to
-  `name`; the registration helper now selects the supported keyword at runtime.
+- The repo pinned MLflow 2.13 in `requirements.txt` at the time, but the working
+  environment has MLflow 3.17. `mlflow.pyfunc.log_model` moved from
+  `artifact_path` to `name`; the registration helper now selects the supported
+  keyword at runtime. The pins were aligned with the runtime in ADR D-024.
 - `artifacts/.gitignore` hid the champion bundle. It was changed so
   `artifacts/champion/` is visible to Git, as required for the CI gate.
 

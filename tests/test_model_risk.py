@@ -338,6 +338,51 @@ def test_gate_g4_category_quality(risk_card: dict) -> None:
     assert any(value is not None for value in recalls.values())
 
 
+def test_gate_g4_selects_the_classifier_on_validation(repo_root: Path, risk_card: dict) -> None:
+    """G4 must pick the classifier from validation metrics, never from test."""
+    value = risk_card["gates"]["G4"]["value"]
+    selection = value["classifier_selection"]
+    assert selection["selected_on"] == "validation"
+    expected = mr.select_classifier(mr.read_json(repo_root / "reports/metrics/val_metrics.json"))[
+        "model"
+    ]
+    assert selection["leaderboard_entry"] == expected
+    assert (repo_root / "models" / f"{value['classifier']}.joblib").exists()
+
+
+def test_select_classifier_uses_the_scores_it_is_given() -> None:
+    validation = [
+        {"task": "classification", "model": "best_val", "within_one_category_rate": 0.999},
+        {"task": "classification", "model": "highest_f1", "within_one_category_rate": 0.99},
+        {"task": "classification", "model": "majority_class", "within_one_category_rate": 1.0},
+    ]
+    higher_f1 = [
+        {"task": "classification", "model": "best_val", "within_one_category_rate": 0.98},
+        {"task": "classification", "model": "highest_f1", "within_one_category_rate": 0.99},
+    ]
+    assert mr.select_classifier(validation)["model"] == "best_val"
+    assert mr.select_classifier(higher_f1)["model"] == "highest_f1"
+
+
+def test_resolve_classifier_artifact_maps_the_hybrid_entry(repo_root: Path) -> None:
+    name, path = mr.resolve_classifier_artifact(repo_root, "regress_then_bucket_lightgbm_reg")
+    assert name == "regress_then_bucket"
+    assert path == repo_root / "models/regress_then_bucket.joblib"
+
+
+def test_reference_stats_timestamp_is_reproducible(
+    repo_root: Path, test_df: pd.DataFrame, feature_manifest: dict, params: dict
+) -> None:
+    first = mr.build_reference_stats(
+        test_df, feature_manifest["feature_names"], params, root=repo_root
+    )
+    second = mr.build_reference_stats(
+        test_df, feature_manifest["feature_names"], params, root=repo_root
+    )
+    assert first["generated_at"] == second["generated_at"]
+    assert first["generated_at"] == mr.build_timestamp(repo_root)
+
+
 def test_gate_g5_latency(risk_card: dict) -> None:
     gate = risk_card["gates"]["G5"]
     assert gate["threshold"] == mr.GATE_THRESHOLDS["G5"]

@@ -45,6 +45,29 @@ def test_payload_hashes_match_manifest(bundle_dir: Path, manifest: dict) -> None
     assert manifest["history_seed_sha"] == sha256_file(bundle_dir / "history_seed.parquet")
 
 
+def test_text_artifacts_use_lf_bytes(bundle_dir: Path) -> None:
+    """Manifest digests are byte-exact, so no text artifact may contain CRLF."""
+    for name in ("MANIFEST.json", "MANIFEST.sha256", "reference_stats.json"):
+        data = (bundle_dir / name).read_bytes()
+        assert b"\r\n" not in data, f"{name} contains CRLF; digests break on a fresh checkout"
+
+
+def test_git_never_rewrites_bundle_line_endings(repo_root: Path) -> None:
+    rules = [
+        line.split("#", 1)[0].strip()
+        for line in (repo_root / ".gitattributes").read_text(encoding="utf-8").splitlines()
+    ]
+    assert "artifacts/champion/** -text" in rules
+
+
+def test_bundle_load_accepts_a_string_path(
+    bundle_dir: Path, val_sample: pd.DataFrame, bundle: AqiBundle
+) -> None:
+    loaded = AqiBundle.load(str(bundle_dir))
+    assert loaded.feature_names == bundle.feature_names
+    np.testing.assert_allclose(loaded.predict(val_sample), bundle.predict(val_sample))
+
+
 def test_feature_count_is_not_hard_coded(
     bundle: AqiBundle, manifest: dict, feature_manifest: dict
 ) -> None:

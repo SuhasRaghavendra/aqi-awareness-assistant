@@ -527,8 +527,8 @@ stages:
       size: 1490
     - path: src/models/model_risk.py
       hash: md5
-      md5: 945f56378fbace6ad6908bd9225b45ce
-      size: 26301
+      md5: 2ce3d7f5fca560457234a814de20a027
+      size: 27608
     - path: src/models/residual.py
       hash: md5
       md5: cea66ffdf431e55da7e6c25cbd1119cd
@@ -542,12 +542,12 @@ stages:
     outs:
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: 95b4056f574c245b3fe411e113f6e88e
-      size: 8223
+      md5: 506eb18518d735b076ac13f8ff2d9831
+      size: 8461
     - path: reports/metrics/reference_stats.json
       hash: md5
-      md5: 8ea0a572c2854d245a57237e98861d3a
-      size: 22680
+      md5: 8d038b8182e5ecb394ce8beedd4d2813
+      size: 22679
   register:
     cmd: python -m src.models.register_model --build
     deps:
@@ -570,12 +570,12 @@ stages:
       nfiles: 15
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: 95b4056f574c245b3fe411e113f6e88e
-      size: 8223
+      md5: 506eb18518d735b076ac13f8ff2d9831
+      size: 8461
     - path: reports/metrics/reference_stats.json
       hash: md5
-      md5: 8ea0a572c2854d245a57237e98861d3a
-      size: 22680
+      md5: 8d038b8182e5ecb394ce8beedd4d2813
+      size: 22679
     - path: reports/metrics/val_metrics.json
       hash: md5
       md5: 521eb78296f84b9247b564af16ab3ea3
@@ -586,12 +586,12 @@ stages:
       size: 1490
     - path: src/models/model_risk.py
       hash: md5
-      md5: 945f56378fbace6ad6908bd9225b45ce
-      size: 26301
+      md5: 2ce3d7f5fca560457234a814de20a027
+      size: 27608
     - path: src/models/package_model.py
       hash: md5
-      md5: 2df6fe7d42e85a1f0fb40ec7314ba065
-      size: 10906
+      md5: 514a04ae8d5c7e74a8a850f607e01d5a
+      size: 11022
     - path: src/models/register_model.py
       hash: md5
       md5: 25f1bacf4da8c5e0766620426283e76a
@@ -602,8 +602,8 @@ stages:
       size: 54
     - path: src/serving/bundle.py
       hash: md5
-      md5: 4669a4f0b0cd3f0cf3c47394533f58af
-      size: 6129
+      md5: ced6f555f2c088c6c125c0b6be6a6ab5
+      size: 6405
     - path: src/utils/mlflow_utils.py
       hash: md5
       md5: f6ae3351d7152d9b86d3d312eb08ebe0
@@ -647,6 +647,6 @@ stages:
     outs:
     - path: artifacts/champion/
       hash: md5
-      md5: 0e823a756ec41b4c1afb543f1d72ecae.dir
-      size: 812212
+      md5: 7b48318d302c4d962b4adfab08aa6413.dir
+      size: 811359
       nfiles: 5

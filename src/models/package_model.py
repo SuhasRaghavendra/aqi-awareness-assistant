@@ -8,7 +8,6 @@ import json
 import platform
 import shutil
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +24,7 @@ from src.serving.bundle import (
     AqiBundle,
     sha256_file,
 )
+from src.utils.reproducibility import build_timestamp
 
 GATE_WAIVERS = {
     "G3": (
@@ -196,7 +196,8 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
         shutil.rmtree(bundle_dir)
     bundle_dir.mkdir(parents=True, exist_ok=True)
     seed.to_parquet(bundle_dir / HISTORY_SEED_FILENAME, index=False)
-    with (bundle_dir / REFERENCE_STATS_FILENAME).open("w", encoding="utf-8") as fh:
+    # LF on every platform: MANIFEST.reference_stats_sha hashes these exact bytes.
+    with (bundle_dir / REFERENCE_STATS_FILENAME).open("w", encoding="utf-8", newline="\n") as fh:
         json.dump(reference_stats, fh, indent=2)
 
     dvc_data_md5 = read_dvc_data_md5(base, DVC_DATA_PATH)
@@ -207,7 +208,7 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
     feature_names_sha = hashlib.sha256("\n".join(feature_names).encode("utf-8")).hexdigest()
     manifest = {
         "bundle_version": "1.0",
-        "created_at": datetime.now().isoformat(),
+        "created_at": build_timestamp(base),
         "model": {
             "name": champion.name,
             "path": str(champion.path.relative_to(base)).replace("\\", "/"),

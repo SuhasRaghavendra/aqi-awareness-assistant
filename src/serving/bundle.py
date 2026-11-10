@@ -113,23 +113,29 @@ class AqiBundle:
         preds = self.fallback_model.predict(frame)
         return np.clip(np.asarray(preds, dtype=float), 0.0, self.aqi_max)
 
-    def save(self, path: Path, include_payload: bool = True) -> None:
-        """Persist the bundle, MANIFEST.json and MANIFEST.sha256."""
+    def save(self, path: str | Path, include_payload: bool = True) -> None:
+        """Persist the bundle, MANIFEST.json and MANIFEST.sha256.
+
+        Text artifacts are written with LF line endings on every platform so the
+        SHA-256 digests in MANIFEST.json describe the same bytes in every
+        checkout (Windows, Linux, CI).
+        """
+        path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
         if include_payload:
             self.history_seed.to_parquet(path / HISTORY_SEED_FILENAME, index=False)
-            with (path / REFERENCE_STATS_FILENAME).open("w", encoding="utf-8") as fh:
+            with (path / REFERENCE_STATS_FILENAME).open("w", encoding="utf-8", newline="\n") as fh:
                 json.dump(self.reference_stats, fh, indent=2)
         joblib.dump(self, path / BUNDLE_FILENAME)
         manifest_bytes = json.dumps(self.manifest, indent=2).encode("utf-8")
         (path / MANIFEST_FILENAME).write_bytes(manifest_bytes)
         digest = hashlib.sha256(manifest_bytes).hexdigest()
-        (path / MANIFEST_SHA_FILENAME).write_text(f"{digest}\n", encoding="utf-8")
+        (path / MANIFEST_SHA_FILENAME).write_text(f"{digest}\n", encoding="utf-8", newline="\n")
 
     @classmethod
-    def load(cls, path: Path) -> AqiBundle:
+    def load(cls, path: str | Path) -> AqiBundle:
         """Load a bundle directory, raising when the artifact is missing."""
-        bundle_path = path / BUNDLE_FILENAME
+        bundle_path = Path(path) / BUNDLE_FILENAME
         if not bundle_path.exists():
             raise FileNotFoundError(f"Bundle artifact is missing: {bundle_path}")
         bundle = joblib.load(bundle_path)

@@ -16,3 +16,5 @@
 | 010 | 2026-10-15 | Milestone 1 synthesis report and release tagging | 9 | Srijan Kumar G S | `2a5d1dd` | [010-milestone-1-synthesis-report-and-release-tagging.md](010-milestone-1-synthesis-report-and-release-tagging.md) |
 | 011 | 2026-11-10 | Phase 0 baseline fixes | 0 | <student-A> | `d988c8909451` | [011-phase-0-baseline-fixes.md](011-phase-0-baseline-fixes.md) |
 | 012 | 2026-11-10 | Registry and bundling | 2 | <student-A> | `4b9146c71d66` | [012-registry-and-bundling.md](012-registry-and-bundling.md) |
+| 013 | 2026-11-10 | Byte-stable champion bundle | 2 | <student-A> | `a58763273a3d` | [013-bundle-byte-stability.md](013-bundle-byte-stability.md) |
+| 014 | 2026-11-10 | Validation-selected G4 and deterministic manifest | 1 | <student-A> | `a58763273a3d` | [014-validation-g4-and-deterministic-manifest.md](014-validation-g4-and-deterministic-manifest.md) |
