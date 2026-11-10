@@ -1,0 +1,124 @@
+{
+  "bundle_version": "1.0",
+  "created_at": "2026-11-10T21:42:31.315185",
+  "model": {
+    "name": "residual_lightgbm",
+    "path": "models/residual_lightgbm.joblib",
+    "artifact_md5": "033819888bd9a79319a382071efd0e4e",
+    "artifact_size_bytes": 278997,
+    "input_kind": "residual_scaled_df",
+    "residual_mode": true,
+    "val_metrics": {
+      "task": "regression",
+      "model": "residual_lightgbm",
+      "mae": 12.955,
+      "rmse": 20.099,
+      "r2": 0.9027,
+      "median_ae": 7.957,
+      "within_20_rate": 0.7999,
+      "skill_score_vs_persistence": 0.11,
+      "time_sec": 0.23
+    },
+    "test_metrics": {
+      "mae": 14.114,
+      "rmse": 23.821,
+      "r2": 0.8779
+    }
+  },
+  "fallback": {
+    "name": "persistence",
+    "path": "models/persistence.joblib",
+    "artifact_md5": "6b089e8b81b30ef7910825eb75e2ba6c"
+  },
+  "features_count": 103,
+  "feature_names_sha256": "d3cec166e3db1cfd4194dfa4477c73d077580e913eaf036dd65dfe340206216f",
+  "git_commit": "4b9146c71d6611c02ccc0db060ba326d7135b1bb",
+  "dvc_data_path": "data/processed/train.parquet",
+  "dvc_data_md5": "49bd4c88748327afa12057c2fe71b0e7",
+  "dvc_data_version": "49bd4c88748327afa12057c2fe71b0e7",
+  "params_sha256": "d2497f4f50083b7ea68ee0f4be28eadb1e40ba27db7f7d768317863f7a74f178",
+  "risk_card_sha": "36f99565ea0ca88626dec953856a67242cdd98df4effecb487cbe8462a8febf5",
+  "reference_stats_sha": "fa4fcc1e83d0a75777dff6e2ebcf713f0722e5a31a244c8af2f05184e658059d",
+  "history_seed_sha": "737494820b84a88e3786cdb256cb2c5c53758eb75098665c841e746ba2406189",
+  "history_seed_rows": 405,
+  "history_seed_days": 45,
+  "split": {
+    "train_end": "2023-12-31",
+    "val_end": "2024-12-31",
+    "test_start": "2025-01-01",
+    "test_end": "2026-03-26"
+  },
+  "gate_status": {
+    "G1": "pass",
+    "G2": "pass",
+    "G3": "fail",
+    "G4": "pass",
+    "G5": "pass"
+  },
+  "gate_waivers": {
+    "G3": "Accepted red gate per ADR D-023: Kolkata fails the +5% per-city MAE rule; the threshold is unchanged and the failure stays visible in the risk card."
+  },
+  "promotion_policy": "Registration sets the challenger alias; champion is set only after MANIFEST sha and gate validation.",
+  "residual_quantiles": {
+    "__global__": {
+      "q10": -20.3131,
+      "q50": -1.3297,
+      "q90": 19.3371
+    },
+    "Ahmedabad": {
+      "q10": -22.2762,
+      "q50": -0.561,
+      "q90": 24.8963
+    },
+    "Bengaluru": {
+      "q10": -13.0174,
+      "q50": -1.4177,
+      "q90": 12.1222
+    },
+    "Chennai": {
+      "q10": -15.7542,
+      "q50": -1.5671,
+      "q90": 12.9937
+    },
+    "Delhi": {
+      "q10": -41.6325,
+      "q50": 0.3247,
+      "q90": 45.2348
+    },
+    "Hyderabad": {
+      "q10": -10.3302,
+      "q50": -0.7093,
+      "q90": 7.3643
+    },
+    "Kolkata": {
+      "q10": -23.7828,
+      "q50": -1.0744,
+      "q90": 22.4867
+    },
+    "Lucknow": {
+      "q10": -29.8844,
+      "q50": -1.7851,
+      "q90": 26.9645
+    },
+    "Mumbai": {
+      "q10": -18.3365,
+      "q50": -1.9744,
+      "q90": 13.3709
+    },
+    "Pune": {
+      "q10": -16.2705,
+      "q50": -1.5416,
+      "q90": 13.3257
+    }
+  },
+  "python_version": "3.12.7",
+  "package_versions": {
+    "pandas": "2.3.3",
+    "numpy": "1.26.4",
+    "scikit-learn": "1.5.1",
+    "lightgbm": "4.6.0",
+    "joblib": "1.4.2",
+    "pyarrow": "22.0.0",
+    "mlflow": "3.17.1"
+  }
+}

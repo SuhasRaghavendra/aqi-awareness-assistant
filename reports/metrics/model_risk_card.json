@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-11-10T20:00:41.974959",
+  "generated_at": "2026-11-10T19:54:33.579496",
   "model": {
     "id": "aqi-champion-d988c890-residual_lightgbm",
     "name": "residual_lightgbm",
@@ -103,9 +103,9 @@
       "name": "Single-row latency",
       "threshold": "p95 single-row latency < 50 ms on the selected artifact",
       "value": {
-        "p50_ms": 7.3151,
-        "p95_ms": 7.8755,
-        "p99_ms": 8.2526,
+        "p50_ms": 7.9727,
+        "p95_ms": 8.7475,
+        "p99_ms": 9.1683,
         "iterations": 200,
         "champion": "residual_lightgbm",
         "random_forest_excluded_as_champion": true
@@ -247,9 +247,9 @@
     "dates": 447
   },
   "latency": {
-    "p50_ms": 7.3151,
-    "p95_ms": 7.8755,
-    "p99_ms": 8.2526,
+    "p50_ms": 7.9727,
+    "p95_ms": 8.7475,
+    "p99_ms": 9.1683,
     "iterations": 200,
     "threshold_ms": 50.0
   },

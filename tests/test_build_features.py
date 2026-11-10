@@ -9,7 +9,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -155,9 +154,6 @@ def test_interaction_features_exist():
     assert (df["diesel_vehicle_intensity"] >= 0).all()
 
 
-@pytest.mark.skipif(
-    not SCALER_PATH.exists(), reason="scaler.joblib not yet built; run dvc repro first"
-)
 def test_scaler_matches_train_split():
     """
     Step 0.3: The saved scaler's mean_ and scale_ must match what a fresh
@@ -168,6 +164,10 @@ def test_scaler_matches_train_split():
 
     import joblib
     from sklearn.preprocessing import StandardScaler
+
+    for required in (TRAIN_PARQUET, FEATURE_LIST, SCALER_PATH):
+        if not required.exists():
+            raise FileNotFoundError(f"Required Phase 0 artifact is missing: {required}")
 
     df_train = pd.read_parquet(TRAIN_PARQUET)
     with open(FEATURE_LIST) as f:

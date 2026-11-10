@@ -548,3 +548,105 @@ stages:
       hash: md5
       md5: 8ea0a572c2854d245a57237e98861d3a
       size: 22680
+  register:
+    cmd: python -m src.models.register_model --build
+    deps:
+    - path: data/processed/feature_list.json
+      hash: md5
+      md5: a994715d33a1a3e9cd929d34916dfe99
+      size: 6631
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
+    - path: data/processed/val.parquet
+      hash: md5
+      md5: 462b7712b4cea342fe36ca80868a29f4
+      size: 717507
+    - path: models/
+      hash: md5
+      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
+      size: 46540494
+      nfiles: 15
+    - path: reports/metrics/model_risk_card.json
+      hash: md5
+      md5: 95b4056f574c245b3fe411e113f6e88e
+      size: 8223
+    - path: reports/metrics/reference_stats.json
+      hash: md5
+      md5: 8ea0a572c2854d245a57237e98861d3a
+      size: 22680
+    - path: reports/metrics/val_metrics.json
+      hash: md5
+      md5: 521eb78296f84b9247b564af16ab3ea3
+      size: 3754
+    - path: src/config.py
+      hash: md5
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
+    - path: src/models/model_risk.py
+      hash: md5
+      md5: 945f56378fbace6ad6908bd9225b45ce
+      size: 26301
+    - path: src/models/package_model.py
+      hash: md5
+      md5: 2df6fe7d42e85a1f0fb40ec7314ba065
+      size: 10906
+    - path: src/models/register_model.py
+      hash: md5
+      md5: 25f1bacf4da8c5e0766620426283e76a
+      size: 11740
+    - path: src/serving/__init__.py
+      hash: md5
+      md5: c6b132785d42719da1e5a9b4dd6de2c7
+      size: 54
+    - path: src/serving/bundle.py
+      hash: md5
+      md5: 4669a4f0b0cd3f0cf3c47394533f58af
+      size: 6129
+    - path: src/utils/mlflow_utils.py
+      hash: md5
+      md5: f6ae3351d7152d9b86d3d312eb08ebe0
+      size: 2686
+    params:
+      params.yaml:
+        data:
+          window_start: '2019-01-01'
+          snapshot_end: '2026-09-30'
+          cities:
+          - Delhi
+          - Mumbai
+          - Bengaluru
+          - Chennai
+          - Kolkata
+          - Hyderabad
+          - Pune
+          - Ahmedabad
+          - Lucknow
+        features:
+          horizon_days: 1
+          aqi_lags:
+          - 1
+          - 3
+          - 7
+          - 14
+          fire_lags:
+          - 1
+          - 3
+          - 7
+          rolling_windows:
+          - 7
+          - 14
+          - 30
+          use_calendar: true
+          use_city_onehot: true
+        seed: 42
+        split:
+          train_end: '2023-12-31'
+          val_end: '2024-12-31'
+    outs:
+    - path: artifacts/champion/
+      hash: md5
+      md5: 0e823a756ec41b4c1afb543f1d72ecae.dir
+      size: 812212
+      nfiles: 5

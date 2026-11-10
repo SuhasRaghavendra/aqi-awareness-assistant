@@ -211,3 +211,30 @@ stages:
           cache: false
       - reports/metrics/model_risk_card.json:
           cache: false
+
+  # ---- Step 13: Package champion + MLflow registry (Phase 2) ----
+  register:
+    cmd: python -m src.models.register_model --build
+    deps:
+      - src/models/package_model.py
+      - src/models/register_model.py
+      - src/models/model_risk.py
+      - src/serving/bundle.py
+      - src/serving/__init__.py
+      - src/utils/mlflow_utils.py
+      - src/config.py
+      - data/processed/val.parquet
+      - data/processed/feature_list.json
+      - data/processed/scaler.joblib
+      - reports/metrics/model_risk_card.json
+      - reports/metrics/reference_stats.json
+      - reports/metrics/val_metrics.json
+      - models/
+    params:
+      - features
+      - data
+      - split
+      - seed
+    outs:
+      - artifacts/champion/:
+          cache: false

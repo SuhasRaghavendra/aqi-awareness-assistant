@@ -1,0 +1,850 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-10T19:54:22.517786",
+  "n_features": 103,
+  "feature_names": [
+    "aqi",
+    "fire_count_500km",
+    "fire_frp_sum_500km",
+    "fire_dist_min_km",
+    "temperature_2m_mean",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "relative_humidity_2m_mean",
+    "wind_speed_10m_mean",
+    "wind_direction_10m_dominant",
+    "precipitation_sum",
+    "surface_pressure_mean",
+    "inversion_risk_flag",
+    "fog_risk_flag",
+    "rain_washout_flag",
+    "diesel_frac",
+    "cng_frac",
+    "ev_frac",
+    "two_wheeler_frac",
+    "vehicles_per_lakh",
+    "iip_manufacturing_index",
+    "grap_stage",
+    "odd_even_active",
+    "bsvi_active",
+    "festival_flag",
+    "day_of_week",
+    "month",
+    "day_of_year",
+    "weekend_flag",
+    "burning_season_flag",
+    "month_sin",
+    "month_cos",
+    "dow_sin",
+    "dow_cos",
+    "city_lat",
+    "city_lon",
+    "city_elevation_m",
+    "city_population_lakh",
+    "fire_count_500km_lag_1",
+    "fire_count_500km_lag_3",
+    "fire_count_500km_lag_7",
+    "fire_count_500km_roll_mean_7d",
+    "fire_count_500km_roll_max_7d",
+    "fire_count_500km_roll_mean_14d",
+    "fire_count_500km_roll_max_14d",
+    "fire_count_500km_roll_mean_30d",
+    "fire_count_500km_roll_max_30d",
+    "fire_frp_sum_500km_lag_1",
+    "fire_frp_sum_500km_lag_3",
+    "fire_frp_sum_500km_lag_7",
+    "fire_frp_sum_500km_roll_mean_7d",
+    "fire_frp_sum_500km_roll_max_7d",
+    "fire_frp_sum_500km_roll_mean_14d",
+    "fire_frp_sum_500km_roll_max_14d",
+    "fire_frp_sum_500km_roll_mean_30d",
+    "fire_frp_sum_500km_roll_max_30d",
+    "fire_burning_season",
+    "aqi_lag_1",
+    "aqi_lag_3",
+    "aqi_lag_7",
+    "aqi_lag_14",
+    "aqi_roll_mean_7d",
+    "aqi_roll_std_7d",
+    "aqi_roll_mean_14d",
+    "aqi_roll_std_14d",
+    "aqi_roll_mean_30d",
+    "aqi_roll_std_30d",
+    "aqi_diff_1d",
+    "aqi_diff_7d",
+    "temperature_2m_mean_lag_1",
+    "temperature_2m_mean_lag_3",
+    "wind_speed_10m_mean_lag_1",
+    "wind_speed_10m_mean_lag_3",
+    "relative_humidity_2m_mean_lag_1",
+    "relative_humidity_2m_mean_lag_3",
+    "precipitation_sum_lag_1",
+    "precipitation_sum_lag_3",
+    "inversion_risk_flag_lag_1",
+    "inversion_risk_flag_lag_3",
+    "wind_roll_mean_3d",
+    "wind_roll_mean_7d",
+    "precip_roll_sum_7d",
+    "fire_x_low_wind",
+    "inversion_x_fire",
+    "festival_burning_overlap",
+    "diesel_vehicle_intensity",
+    "winter_stagnation_index",
+    "city_delhi",
+    "city_mumbai",
+    "city_bengaluru",
+    "city_chennai",
+    "city_kolkata",
+    "city_hyderabad",
+    "city_pune",
+    "city_ahmedabad",
+    "city_lucknow",
+    "season_winter",
+    "season_summer",
+    "season_monsoon",
+    "season_post_monsoon",
+    "grap_active",
+    "grap_severe",
+    "grap_lag_1"
+  ],
+  "train_rows": 15502,
+  "train_medians": {
+    "aqi": 79.0,
+    "fire_count_500km": 29.0,
+    "fire_frp_sum_500km": 100.33500000000001,
+    "fire_dist_min_km": 106.6,
+    "temperature_2m_mean": 26.3,
+    "temperature_2m_max": 30.8,
+    "temperature_2m_min": 22.3,
+    "relative_humidity_2m_mean": 73.0,
+    "wind_speed_10m_mean": 9.9,
+    "wind_direction_10m_dominant": 211.0,
+    "precipitation_sum": 0.0,
+    "surface_pressure_mean": 1009.5,
+    "inversion_risk_flag": 0.0,
+    "fog_risk_flag": 0.0,
+    "rain_washout_flag": 0.0,
+    "diesel_frac": 0.15555555555555556,
+    "cng_frac": 0.006443298969072165,
+    "ev_frac": 0.0017473118279569893,
+    "two_wheeler_frac": 0.7214285714285714,
+    "vehicles_per_lakh": 315904.0,
+    "iip_manufacturing_index": 0.0,
+    "grap_stage": 0.0,
+    "odd_even_active": 0.0,
+    "bsvi_active": 1.0,
+    "festival_flag": 0.0,
+    "day_of_week": 3.0,
+    "month": 6.0,
+    "day_of_year": 181.0,
+    "weekend_flag": 0.0,
+    "burning_season_flag": 0.0,
+    "month_sin": 1.2246467991473532e-16,
+    "month_cos": -1.8369701987210297e-16,
+    "dow_sin": 0.0,
+    "dow_cos": -0.22252093395631434,
+    "city_lat": 19.076,
+    "city_lon": 77.5946,
+    "city_elevation_m": 120.0,
+    "city_population_lakh": 87.5,
+    "fire_count_500km_lag_1": 29.0,
+    "fire_count_500km_lag_3": 29.0,
+    "fire_count_500km_lag_7": 29.0,
+    "fire_count_500km_roll_mean_7d": 60.0,
+    "fire_count_500km_roll_max_7d": 149.0,
+    "fire_count_500km_roll_mean_14d": 69.85714285714286,
+    "fire_count_500km_roll_max_14d": 202.0,
+    "fire_count_500km_roll_mean_30d": 75.73333333333333,
+    "fire_count_500km_roll_max_30d": 265.0,
+    "fire_frp_sum_500km_lag_1": 99.82,
+    "fire_frp_sum_500km_lag_3": 99.48,
+    "fire_frp_sum_500km_lag_7": 97.71,
+    "fire_frp_sum_500km_roll_mean_7d": 222.3528571428561,
+    "fire_frp_sum_500km_roll_max_7d": 558.12,
+    "fire_frp_sum_500km_roll_mean_14d": 260.1207142857143,
+    "fire_frp_sum_500km_roll_max_14d": 796.83,
+    "fire_frp_sum_500km_roll_mean_30d": 296.03333333333336,
+    "fire_frp_sum_500km_roll_max_30d": 1174.33,
+    "fire_burning_season": 0.0,
+    "aqi_lag_1": 79.0,
+    "aqi_lag_3": 79.0,
+    "aqi_lag_7": 78.9,
+    "aqi_lag_14": 78.7,
+    "aqi_roll_mean_7d": 81.22857142857143,
+    "aqi_roll_std_7d": 15.866511603884085,
+    "aqi_roll_mean_14d": 81.71428571428571,
+    "aqi_roll_std_14d": 19.879035287358317,
+    "aqi_roll_mean_30d": 82.22,
+    "aqi_roll_std_30d": 24.35449402698298,
+    "aqi_diff_1d": 0.4000000000000057,
+    "aqi_diff_7d": 0.0,
+    "temperature_2m_mean_lag_1": 26.3,
+    "temperature_2m_mean_lag_3": 26.3,
+    "wind_speed_10m_mean_lag_1": 9.9,
+    "wind_speed_10m_mean_lag_3": 9.9,
+    "relative_humidity_2m_mean_lag_1": 73.0,
+    "relative_humidity_2m_mean_lag_3": 73.0,
+    "precipitation_sum_lag_1": 0.0,
+    "precipitation_sum_lag_3": 0.0,
+    "inversion_risk_flag_lag_1": 0.0,
+    "inversion_risk_flag_lag_3": 0.0,
+    "wind_roll_mean_3d": 9.999999999999995,
+    "wind_roll_mean_7d": 10.114285714285716,
+    "precip_roll_sum_7d": 3.8000000000000096,
+    "fire_x_low_wind": 2.938842203548086,
+    "inversion_x_fire": 0.0,
+    "festival_burning_overlap": 0.0,
+    "diesel_vehicle_intensity": 52571.47096774193,
+    "winter_stagnation_index": 0.0,
+    "city_delhi": 0.0,
+    "city_mumbai": 0.0,
+    "city_bengaluru": 0.0,
+    "city_chennai": 0.0,
+    "city_kolkata": 0.0,
+    "city_hyderabad": 0.0,
+    "city_pune": 0.0,
+    "city_ahmedabad": 0.0,
+    "city_lucknow": 0.0,
+    "season_winter": 0.0,
+    "season_summer": 0.0,
+    "season_monsoon": 0.0,
+    "season_post_monsoon": 0.0,
+    "grap_active": 0.0,
+    "grap_severe": 0.0,
+    "grap_lag_1": 0.0
+  },
+  "target_aqi": {
+    "min": 9.4,
+    "max": 500.0,
+    "mean": 103.17106824925816,
+    "std": 77.58444623036236
+  },
+  "features": {
+    "aqi": {
+      "min": 9.4,
+      "max": 500.0,
+      "mean": 103.22737066185007,
+      "std": 77.68598198497554
+    },
+    "fire_count_500km": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 178.82078505999226,
+      "std": 406.5793717877508
+    },
+    "fire_frp_sum_500km": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 993.5779217133271,
+      "std": 2726.557987213519
+    },
+    "fire_dist_min_km": {
+      "min": 4.3,
+      "max": 999.0,
+      "mean": 353.12507418397627,
+      "std": 417.1334666743112
+    },
+    "temperature_2m_mean": {
+      "min": 11.2,
+      "max": 35.6,
+      "mean": 25.67959618113792,
+      "std": 4.509044053723743
+    },
+    "temperature_2m_max": {
+      "min": 17.3,
+      "max": 42.9,
+      "mean": 30.860817958973037,
+      "std": 4.580941661015983
+    },
+    "temperature_2m_min": {
+      "min": 5.8,
+      "max": 29.8,
+      "mean": 21.385292220358664,
+      "std": 5.066676484035161
+    },
+    "relative_humidity_2m_mean": {
+      "min": 20.0,
+      "max": 93.0,
+      "mean": 68.3975616049542,
+      "std": 16.996601290083195
+    },
+    "wind_speed_10m_mean": {
+      "min": 4.1,
+      "max": 25.748999999999977,
+      "mean": 10.72072132628048,
+      "std": 4.085962444002976
+    },
+    "wind_direction_10m_dominant": {
+      "min": 3.0,
+      "max": 358.0,
+      "mean": 193.27719003999485,
+      "std": 102.16858840345124
+    },
+    "precipitation_sum": {
+      "min": 0.0,
+      "max": 58.848999999999975,
+      "mean": 3.394740743129918,
+      "std": 8.058648586228111
+    },
+    "surface_pressure_mean": {
+      "min": 995.8,
+      "max": 1020.0,
+      "mean": 1009.0562443555671,
+      "std": 5.166874498948501
+    },
+    "inversion_risk_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.018126693329892918,
+      "std": 0.13340958106081222
+    },
+    "fog_risk_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 6.450780544445878e-05,
+      "std": 0.008031416076105007
+    },
+    "rain_washout_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.18242807379692944,
+      "std": 0.3861969338144042
+    },
+    "diesel_frac": {
+      "min": 0.12203389830508475,
+      "max": 0.2,
+      "mean": 0.15545056421551331,
+      "std": 0.020315692945183386
+    },
+    "cng_frac": {
+      "min": 0.0022916666666666667,
+      "max": 0.08870967741935484,
+      "mean": 0.020699069702548516,
+      "std": 0.026213174350087534
+    },
+    "ev_frac": {
+      "min": 0.00031578947368421053,
+      "max": 0.010483870967741936,
+      "mean": 0.0023262887527814528,
+      "std": 0.0019373378604124328
+    },
+    "two_wheeler_frac": {
+      "min": 0.6686746987951807,
+      "max": 0.75,
+      "mean": 0.7114120060723377,
+      "std": 0.027116838732052645
+    },
+    "vehicles_per_lakh": {
+      "min": 58700.0,
+      "max": 1620690.0,
+      "mean": 426934.85279318795,
+      "std": 406763.4372685488
+    },
+    "iip_manufacturing_index": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "grap_stage": {
+      "min": 0.0,
+      "max": 4.0,
+      "mean": 0.019352341633337634,
+      "std": 0.22520139605537806
+    },
+    "odd_even_active": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.0007095858598890466,
+      "std": 0.026628600184696823
+    },
+    "bsvi_active": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.7650625725712811,
+      "std": 0.4239597063658859
+    },
+    "festival_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.01902980260611534,
+      "std": 0.1366296791289776
+    },
+    "day_of_week": {
+      "min": 0.0,
+      "max": 6.0,
+      "mean": 3.001677202941556,
+      "std": 1.9994509050248923
+    },
+    "month": {
+      "min": 1.0,
+      "max": 12.0,
+      "mean": 6.4955489614243325,
+      "std": 3.4451223597558958
+    },
+    "day_of_year": {
+      "min": 1.0,
+      "max": 366.0,
+      "mean": 182.2369371693975,
+      "std": 105.30804924640933
+    },
+    "weekend_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.28589859372984133,
+      "std": 0.45184133037285024
+    },
+    "burning_season_flag": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.12733840794736162,
+      "std": 0.33335167287529516
+    },
+    "month_sin": {
+      "min": -1.0,
+      "max": 1.0,
+      "mean": 0.0014148727910217014,
+      "std": 0.7058498661084259
+    },
+    "month_cos": {
+      "min": -1.0,
+      "max": 1.0,
+      "mean": -0.005252588430022233,
+      "std": 0.7083405783692776
+    },
+    "dow_sin": {
+      "min": -0.9749279121818236,
+      "max": 0.9749279121818236,
+      "mean": -0.00012578092016278568,
+      "std": 0.7072481147917459
+    },
+    "dow_cos": {
+      "min": -0.9009688679024191,
+      "max": 1.0,
+      "mean": -0.0004873537693257533,
+      "std": 0.7069652401560744
+    },
+    "city_lat": {
+      "min": 12.9716,
+      "max": 28.6139,
+      "mean": 20.333561540446397,
+      "std": 5.337664993597379
+    },
+    "city_lon": {
+      "min": 72.5714,
+      "max": 88.3639,
+      "mean": 78.27043522126179,
+      "std": 4.677258109326147
+    },
+    "city_elevation_m": {
+      "min": 6.0,
+      "max": 920.0,
+      "mean": 253.23222809960006,
+      "std": 308.5095031475898
+    },
+    "city_population_lakh": {
+      "min": 29.0,
+      "max": 190.8,
+      "mean": 100.48209263320861,
+      "std": 55.208970103423894
+    },
+    "fire_count_500km_lag_1": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 178.76930783124754,
+      "std": 406.58626271312886
+    },
+    "fire_count_500km_lag_3": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 178.64713004773577,
+      "std": 406.6113177663251
+    },
+    "fire_count_500km_lag_7": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 178.33458973035738,
+      "std": 406.6486293886681
+    },
+    "fire_count_500km_roll_mean_7d": {
+      "min": 0.0,
+      "max": 3103.421428571427,
+      "mean": 178.87721894563526,
+      "std": 342.27851938867735
+    },
+    "fire_count_500km_roll_max_7d": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 343.06226744936134,
+      "std": 596.8264145392374
+    },
+    "fire_count_500km_roll_mean_14d": {
+      "min": 0.0,
+      "max": 2573.095714285713,
+      "mean": 178.87492330498813,
+      "std": 313.2922759597975
+    },
+    "fire_count_500km_roll_max_14d": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 436.80187653206036,
+      "std": 688.5086944879685
+    },
+    "fire_count_500km_roll_mean_30d": {
+      "min": 0.0,
+      "max": 2155.803999999999,
+      "mean": 178.9325170723149,
+      "std": 279.12740854775694
+    },
+    "fire_count_500km_roll_max_30d": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 575.5994658753708,
+      "std": 817.5977619780949
+    },
+    "fire_frp_sum_500km_lag_1": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 993.5461761321118,
+      "std": 2726.6713780500263
+    },
+    "fire_frp_sum_500km_lag_3": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 993.2143634627788,
+      "std": 2726.859870884006
+    },
+    "fire_frp_sum_500km_lag_7": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 992.0872727648042,
+      "std": 2727.082369209529
+    },
+    "fire_frp_sum_500km_roll_mean_7d": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 993.9180453363928,
+      "std": 2308.0467340316686
+    },
+    "fire_frp_sum_500km_roll_max_7d": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 1942.9126029415552,
+      "std": 4066.4337767571014
+    },
+    "fire_frp_sum_500km_roll_mean_14d": {
+      "min": 0.0,
+      "max": 18565.210257142844,
+      "mean": 993.96451251645,
+      "std": 2123.000806001576
+    },
+    "fire_frp_sum_500km_roll_max_14d": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 2489.838346793961,
+      "std": 4676.883513155982
+    },
+    "fire_frp_sum_500km_roll_mean_30d": {
+      "min": 0.0,
+      "max": 16395.793866666656,
+      "mean": 994.3123573069663,
+      "std": 1881.3733981863168
+    },
+    "fire_frp_sum_500km_roll_max_30d": {
+      "min": 0.0,
+      "max": 22838.855599999963,
+      "mean": 3355.713784956778,
+      "std": 5555.1186529304905
+    },
+    "fire_burning_season": {
+      "min": 0.0,
+      "max": 3193.3899999999976,
+      "mean": 21.736343697587408,
+      "std": 177.14546437337825
+    },
+    "aqi_lag_1": {
+      "min": 9.4,
+      "max": 500.0,
+      "mean": 103.19608437620951,
+      "std": 77.65852144024488
+    },
+    "aqi_lag_3": {
+      "min": 9.4,
+      "max": 500.0,
+      "mean": 103.11202425493485,
+      "std": 77.58172852296764
+    },
+    "aqi_lag_7": {
+      "min": 9.4,
+      "max": 500.0,
+      "mean": 102.918507289382,
+      "std": 77.44265228540557
+    },
+    "aqi_lag_14": {
+      "min": 9.4,
+      "max": 500.0,
+      "mean": 102.60756676557864,
+      "std": 77.18570202595946
+    },
+    "aqi_roll_mean_7d": {
+      "min": 13.471428571428572,
+      "max": 446.45000000000005,
+      "mean": 103.37879720589049,
+      "std": 73.01918625625167
+    },
+    "aqi_roll_std_7d": {
+      "min": 0.7659416862080007,
+      "max": 137.7825305119839,
+      "mean": 22.46617000391534,
+      "std": 19.043466715848243
+    },
+    "aqi_roll_mean_14d": {
+      "min": 14.914285714285713,
+      "max": 446.45000000000005,
+      "mean": 103.52329817179981,
+      "std": 71.40461360451822
+    },
+    "aqi_roll_std_14d": {
+      "min": 1.3213379832837697,
+      "max": 119.98628676223349,
+      "mean": 26.411783989226354,
+      "std": 19.76852062969311
+    },
+    "aqi_roll_mean_30d": {
+      "min": 16.586666666666666,
+      "max": 446.45000000000005,
+      "mean": 103.91718110974573,
+      "std": 69.92347973980472
+    },
+    "aqi_roll_std_30d": {
+      "min": 4.384062043356597,
+      "max": 133.78819940058372,
+      "mean": 30.344635014955802,
+      "std": 20.56301060278668
+    },
+    "aqi_diff_1d": {
+      "min": -301.5,
+      "max": 314.4,
+      "mean": -0.07509998709843889,
+      "std": 29.758381834709922
+    },
+    "aqi_diff_7d": {
+      "min": -344.0,
+      "max": 338.0,
+      "mean": -0.33881434653593073,
+      "std": 51.038239649840065
+    },
+    "temperature_2m_mean_lag_1": {
+      "min": 11.2,
+      "max": 35.6,
+      "mean": 25.68315701199845,
+      "std": 4.505877927587997
+    },
+    "temperature_2m_mean_lag_3": {
+      "min": 11.2,
+      "max": 35.6,
+      "mean": 25.689640046445614,
+      "std": 4.500440467781221
+    },
+    "wind_speed_10m_mean_lag_1": {
+      "min": 4.1,
+      "max": 25.748999999999977,
+      "mean": 10.721024512966068,
+      "std": 4.084589111015206
+    },
+    "wind_speed_10m_mean_lag_3": {
+      "min": 4.1,
+      "max": 25.748999999999977,
+      "mean": 10.721205134821314,
+      "std": 4.081884630502879
+    },
+    "relative_humidity_2m_mean_lag_1": {
+      "min": 20.0,
+      "max": 93.0,
+      "mean": 68.39569087859631,
+      "std": 16.99522353563219
+    },
+    "relative_humidity_2m_mean_lag_3": {
+      "min": 20.0,
+      "max": 93.0,
+      "mean": 68.39369113662754,
+      "std": 16.98823711181589
+    },
+    "precipitation_sum_lag_1": {
+      "min": 0.0,
+      "max": 58.848999999999975,
+      "mean": 3.3931280479938066,
+      "std": 8.056140201341325
+    },
+    "precipitation_sum_lag_3": {
+      "min": 0.0,
+      "max": 58.848999999999975,
+      "mean": 3.3929990323829182,
+      "std": 8.058234283463417
+    },
+    "inversion_risk_flag_lag_1": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.01806218552444846,
+      "std": 0.13317636043430228
+    },
+    "inversion_risk_flag_lag_3": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.01793316991355954,
+      "std": 0.13270859554079842
+    },
+    "wind_roll_mean_3d": {
+      "min": 4.1,
+      "max": 25.748999999999977,
+      "mean": 10.720480497140153,
+      "std": 3.709232172830741
+    },
+    "wind_roll_mean_7d": {
+      "min": 4.3999999999999995,
+      "max": 25.477857142857125,
+      "mean": 10.718865912846882,
+      "std": 3.292345459403857
+    },
+    "precip_roll_sum_7d": {
+      "min": 0.0,
+      "max": 350.99599999999987,
+      "mean": 23.749928847890594,
+      "std": 40.65706738883089
+    },
+    "fire_x_low_wind": {
+      "min": 0.0,
+      "max": 570.2482142857139,
+      "mean": 19.793646813097595,
+      "std": 47.13659954557208
+    },
+    "inversion_x_fire": {
+      "min": 0.0,
+      "max": 713.0,
+      "mean": 0.9689072377757708,
+      "std": 13.76803660569527
+    },
+    "festival_burning_overlap": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.015223842084892272,
+      "std": 0.12244213619938718
+    },
+    "diesel_vehicle_intensity": {
+      "min": 9433.928571428572,
+      "max": 272413.8510638298,
+      "mean": 69335.95773132799,
+      "std": 71684.72702667945
+    },
+    "winter_stagnation_index": {
+      "min": 0.0,
+      "max": 0.21219512195121953,
+      "mean": 0.0029190673877275055,
+      "std": 0.017462017388494223
+    },
+    "city_delhi": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.3223607816084358
+    },
+    "city_mumbai": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.32236078160835757
+    },
+    "city_bengaluru": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.3223607816084726
+    },
+    "city_chennai": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.3223607816084541
+    },
+    "city_kolkata": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.32236078160839915
+    },
+    "city_hyderabad": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.32236078160841747
+    },
+    "city_pune": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.0580570249000129,
+      "std": 0.23385124921576234
+    },
+    "city_ahmedabad": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11740420590891498,
+      "std": 0.32190131771069636
+    },
+    "city_lucknow": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11779125274158173,
+      "std": 0.32236078160837844
+    },
+    "season_winter": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.32828022190685074,
+      "std": 0.46958739102706404
+    },
+    "season_summer": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.2548703393110566,
+      "std": 0.43578830806997737
+    },
+    "season_monsoon": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.3328602760934073,
+      "std": 0.4712370026774256
+    },
+    "season_post_monsoon": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.08398916268868534,
+      "std": 0.2773715616993482
+    },
+    "grap_active": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.008708553735001935,
+      "std": 0.09291240405264081
+    },
+    "grap_severe": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.003805960521223068,
+      "std": 0.06157495583218093
+    },
+    "grap_lag_1": {
+      "min": 0.0,
+      "max": 4.0,
+      "mean": 0.019352341633337634,
+      "std": 0.2252013960553781
+    }
+  },
+  "tolerance": {
+    "relative": 0.01,
+    "description": "Values outside train min/max expanded by 1% of the train range are flagged in the risk card; flags are observational and never raise."
+  },
+  "split": {
+    "train_end": "2023-12-31",
+    "val_end": "2024-12-31"
+  }
+}

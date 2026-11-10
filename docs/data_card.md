@@ -184,8 +184,10 @@ Verified hashes in `dvc.lock`:
 | `data/processed/test.parquet` | `bd1de9ea97083402bd9ccaceb1072e3c` |
 
 The DVC graph is `download_* -> ingest_and_merge -> validate -> clean ->
-features -> train -> evaluate`; data and models are stored on the DagsHub remote
-and are not committed to Git.
+features -> train -> evaluate -> model_risk -> register`; data and the full
+model set are stored on the DagsHub remote and are not committed to Git. The
+small champion bundle in `artifacts/champion/` is tracked with DVC
+`cache: false` and is committed to Git for CI and serving.
 
 ---
 

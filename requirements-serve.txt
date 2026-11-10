@@ -1,19 +1,19 @@
-# Inference service dependencies — exact pins match requirements.txt
-# Used in Docker image for the FastAPI serving container
+# Inference service dependencies — exact core pins match requirements.txt
+# Used in the Docker image for the FastAPI serving container
 
 # Core data
-pandas==2.2.2
+pandas==2.3.3
 numpy==1.26.4
-pyarrow==16.0.0
+pyarrow==22.0.0
 
 # ML runtime (inference-only)
-scikit-learn==1.5.0
-lightgbm==4.3.0
+scikit-learn==1.5.1
+lightgbm==4.6.0
 joblib==1.4.2
 
 # Config
-pyyaml==6.0.1
-python-dotenv==1.0.1
+pyyaml==6.0.3
+python-dotenv==1.2.4
 
 # Serving
 fastapi>=0.111.0
@@ -22,4 +22,3 @@ pydantic>=2.0.0
 
 # Observability
 prometheus-client>=0.20.0
-

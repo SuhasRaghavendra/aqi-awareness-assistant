@@ -14,4 +14,5 @@
 | 008 | 2026-10-15 | Baseline models evaluation and MLflow tracking | 6 | Srijan Kumar G S | `783ae9e` | [008-baseline-models-evaluation-and-mlflow-tracking.md](008-baseline-models-evaluation-and-mlflow-tracking.md) |
 | 009 | 2026-10-15 | Feature ablation studies and MLflow experiment comparison | 7 | Srijan Kumar G S | `04fcfbd` | [009-feature-ablation-studies-and-mlflow-experiment-comparison.md](009-feature-ablation-studies-and-mlflow-experiment-comparison.md) |
 | 010 | 2026-10-15 | Milestone 1 synthesis report and release tagging | 9 | Srijan Kumar G S | `2a5d1dd` | [010-milestone-1-synthesis-report-and-release-tagging.md](010-milestone-1-synthesis-report-and-release-tagging.md) |
-| 011 | 2026-11-10 | Phase 0 baseline fixes | 2 | <student-A> | `d988c8909451` | [011-phase-0-baseline-fixes.md](011-phase-0-baseline-fixes.md) |
+| 011 | 2026-11-10 | Phase 0 baseline fixes | 0 | <student-A> | `d988c8909451` | [011-phase-0-baseline-fixes.md](011-phase-0-baseline-fixes.md) |
+| 012 | 2026-11-10 | Registry and bundling | 2 | <student-A> | `4b9146c71d66` | [012-registry-and-bundling.md](012-registry-and-bundling.md) |
