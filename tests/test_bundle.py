@@ -170,6 +170,7 @@ def test_feature_count_is_not_hard_coded(
     assert manifest["feature_names_sha256"] == digest.hexdigest()
 
 
+@pytest.mark.data
 def test_manifest_points_at_the_risk_card_champion(
     repo_root: Path, bundle: AqiBundle, manifest: dict, risk_card: dict
 ) -> None:
@@ -274,19 +275,18 @@ def test_prediction_interval_brackets_the_point_forecast(
 
 
 def test_history_seed_has_the_configured_lookback(
-    repo_root: Path, val_sample: pd.DataFrame, bundle: AqiBundle
+    val_frame: pd.DataFrame, bundle: AqiBundle
 ) -> None:
     seed = bundle.history_seed
-    expected_cities = set(val_sample["city"].unique())
+    expected_cities = set(val_frame["city"].unique())
     assert set(seed["city"].unique()) == expected_cities
     counts = seed.groupby("city")["date"].count()
     assert bundle.manifest["history_seed_days"] == HISTORY_SEED_DAYS
     assert bundle.manifest["history_seed_days"] >= 45
     assert (counts == bundle.manifest["history_seed_days"]).all()
     assert int(counts.sum()) == bundle.manifest["history_seed_rows"]
-    val_full = pd.read_parquet(repo_root / "data/processed/val.parquet")
     val_max = (
-        pd.to_datetime(val_full["date"]).groupby(val_full["city"]).max().dt.strftime("%Y-%m-%d")
+        pd.to_datetime(val_frame["date"]).groupby(val_frame["city"]).max().dt.strftime("%Y-%m-%d")
     )
     seed_max = pd.to_datetime(seed["date"]).groupby(seed["city"]).max().dt.strftime("%Y-%m-%d")
     pd.testing.assert_series_equal(seed_max, val_max, check_names=False)

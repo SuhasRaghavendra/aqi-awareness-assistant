@@ -11,6 +11,7 @@ within 1e-6, and the latency test enforces the Plan's p95 budgets
 
 from __future__ import annotations
 
+import hashlib
 import os
 import time
 from pathlib import Path
@@ -34,9 +35,29 @@ from src.service.history import HistoryStore
 from src.service.schemas import Observation
 from src.serving.bundle import AqiBundle
 
+pytestmark = pytest.mark.service
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_DIR = REPO_ROOT / "artifacts" / "champion"
-VAL_PATH = REPO_ROOT / "data" / "processed" / "val.parquet"
+VAL_SNAPSHOT = REPO_ROOT / "tests" / "fixtures" / "val_snapshot.parquet"
+
+
+def resolve_val_path() -> Path:
+    """``AQI_VAL_PATH`` -> committed snapshot -> DVC-managed split.
+
+    CI runs this suite on a clean checkout, so the snapshot must be enough; the
+    DVC path is only a convenience for local runs with the full dataset.
+    """
+    override = os.environ.get("AQI_VAL_PATH")
+    candidates = [Path(override)] if override else []
+    candidates.extend([VAL_SNAPSHOT, REPO_ROOT / "data" / "processed" / "val.parquet"])
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        "No validation split found; set AQI_VAL_PATH or commit tests/fixtures/val_snapshot.parquet"
+    )
+
 
 # Fields a client sends: today's observations only.  Calendar, city-static,
 # vehicle/IIP, GRAP and festival values are filled server-side.
@@ -70,7 +91,7 @@ def bundle() -> AqiBundle:
 
 @pytest.fixture(scope="session")
 def val_frame() -> pd.DataFrame:
-    frame = pd.read_parquet(VAL_PATH)
+    frame = pd.read_parquet(resolve_val_path())
     frame["date"] = pd.to_datetime(frame["date"]).dt.strftime("%Y-%m-%d")
     return frame.sort_values(["city", "date"]).reset_index(drop=True)
 
@@ -89,6 +110,16 @@ def _fresh_history(client: TestClient):
     predictor.reset_history()
     yield
     predictor.reset_history()
+
+
+def test_validation_snapshot_is_hash_pinned() -> None:
+    """CI runs on the committed snapshot; it must be the frozen val.parquet."""
+    assert VAL_SNAPSHOT.exists(), "commit tests/fixtures/val_snapshot.parquet"
+    digest = hashlib.md5(VAL_SNAPSHOT.read_bytes()).hexdigest()  # noqa: S324 - content identity
+    assert digest == "462b7712b4cea342fe36ca80868a29f4", (
+        "val_snapshot.parquet drifted from the frozen validation split; "
+        "update params.yaml integrity.val_md5 and the ADR deliberately"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -88,6 +88,7 @@ def _metamorphic_tolerance() -> float:
     return 0.10
 
 
+@pytest.mark.data
 @pytest.mark.parametrize("split", ["train", "val", "test"])
 def test_processed_split_schema_matches_manifest(
     repo_root: Path,
@@ -200,13 +201,13 @@ def test_festival_counterfactual_increases_or_preserves_aqi(
 
 
 def test_seasonal_predictions_oct_nov_exceed_jul_aug(
-    repo_root: Path,
+    val_frame: pd.DataFrame,
     champion: mr.ChampionArtifact,
     feature_manifest: dict,
     reference_stats: dict,
     scaler,
 ) -> None:
-    val = pd.read_parquet(repo_root / "data/processed/val.parquet")
+    val = val_frame.copy()
     preds = _predict(
         champion.name,
         champion.model,
@@ -351,6 +352,7 @@ def test_gate_g4_category_quality(risk_card: dict) -> None:
     assert any(value is not None for value in recalls.values())
 
 
+@pytest.mark.data
 def test_gate_g4_selects_the_classifier_on_validation(repo_root: Path, risk_card: dict) -> None:
     """G4 must pick the classifier from validation metrics, never from test."""
     value = risk_card["gates"]["G4"]["value"]
@@ -377,12 +379,14 @@ def test_select_classifier_uses_the_scores_it_is_given() -> None:
     assert mr.select_classifier(higher_f1)["model"] == "highest_f1"
 
 
+@pytest.mark.data
 def test_resolve_classifier_artifact_maps_the_hybrid_entry(repo_root: Path) -> None:
     name, path = mr.resolve_classifier_artifact(repo_root, "regress_then_bucket_lightgbm_reg")
     assert name == "regress_then_bucket"
     assert path == repo_root / "models/regress_then_bucket.joblib"
 
 
+@pytest.mark.data
 def test_reference_stats_timestamp_is_reproducible(
     repo_root: Path, test_df: pd.DataFrame, feature_manifest: dict, params: dict
 ) -> None:
@@ -412,6 +416,7 @@ def test_gate_g5_latency(repo_root: Path, risk_card: dict) -> None:
     assert report["champion"] == gate["value"]["champion"]
 
 
+@pytest.mark.data
 def test_risk_card_metadata_and_limitations(
     repo_root: Path,
     risk_card: dict,

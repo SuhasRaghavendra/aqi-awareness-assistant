@@ -20,3 +20,4 @@
 | 014 | 2026-11-10 | Validation-selected G4 and deterministic manifest | 1 | <student-A> | `a58763273a3d` | [014-validation-g4-and-deterministic-manifest.md](014-validation-g4-and-deterministic-manifest.md) |
 | 015 | 2026-11-12 | FastAPI inference service | 3 | <student-A> | `23f78f5c1952` | [015-fastapi-inference-service.md](015-fastapi-inference-service.md) |
 | 016 | 2026-11-12 | Integrity, atomic artifacts and serving safety | 0 | <student-A> | `f9fa35922404` | [016-integrity-and-serving-safety.md](016-integrity-and-serving-safety.md) |
+| 017 | 2026-11-12 | CI repair and hermetic quality gates | 0 | <student-A> | `---` | [017-ci-and-hermetic-gates.md](017-ci-and-hermetic-gates.md) |

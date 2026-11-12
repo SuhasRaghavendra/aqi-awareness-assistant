@@ -89,7 +89,7 @@ def _dvc_lock_md5(root: Path) -> dict[str, str]:
     return found
 
 
-def audit_bundle(audit: Audit, root: Path) -> dict[str, Any]:
+def audit_bundle(audit: Audit, root: Path, bundle_only: bool = False) -> dict[str, Any]:
     """Bundle/manifest/risk-card identity checks that need no DVC data."""
     bundle_dir = root / "artifacts/champion"
     try:
@@ -166,7 +166,12 @@ def audit_bundle(audit: Audit, root: Path) -> dict[str, Any]:
         "feature_list": root / "data/processed/feature_list.json",
         "scaler": root / "data/processed/scaler.joblib",
     }
+    # The split/feature/scaler md5s describe DVC-managed outputs that are not in
+    # a git checkout. Bundle-only mode (CI, clean clone) hashes everything that
+    # actually ships with the bundle above; the full-data audit checks the rest.
     for name, expected_md5 in risk_card["data"].get("file_md5", {}).items():
+        if bundle_only:
+            continue
         path = artifacts_by_name.get(name)
         audit.check(
             f"risk_card.file_md5_matches.{name}",
@@ -351,7 +356,7 @@ def audit_splits(audit: Audit, root: Path) -> dict[str, pd.DataFrame]:
 
 def run_audit(root: Path, bundle_only: bool = False) -> dict[str, Any]:
     audit = Audit()
-    bundle_info = audit_bundle(audit, root)
+    bundle_info = audit_bundle(audit, root, bundle_only=bundle_only)
     if not bundle_only:
         audit_splits(audit, root)
     report = {

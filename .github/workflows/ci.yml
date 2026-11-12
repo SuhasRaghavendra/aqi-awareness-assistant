@@ -6,68 +6,164 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHON_VERSION: "3.12"
+
 jobs:
-  lint-and-format:
-    name: Lint & Code Style Checks
+  # 1. Style and static checks.
+  lint:
+    name: Lint & Code Style
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
       - name: Install lint dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black
-
-      - name: Check code formatting (Black)
+          pip install -r requirements-dev.txt
+      - name: Check formatting (black)
         run: black --check .
-
-      - name: Lint codebase (Ruff)
+      - name: Lint (ruff)
         run: ruff check .
 
-  test-suite:
-    name: Automated Unit & Service Tests
+  # 2. Fast unit tests: no DVC data, no model gate, no registry, no service.
+  unit:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-serve.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run unit tests
+        run: pytest -m "not model and not data and not registry and not slow and not service"
 
-      - name: Run FastAPI Service Tests
-        run: pytest tests/test_service.py -v
-
-  docker-smoke-test:
-    name: Container Build & Smoke Verification
+  # 3. Service contract, 1e-6 offline parity and p95 latency budgets.
+  #    Uses the committed hash-pinned snapshot, so no DVC pull is needed.
+  service:
+    name: Service Contract & Latency
     runs-on: ubuntu-latest
-    needs: [lint-and-format, test-suite]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run service tests
+        run: pytest -m service tests/test_service.py -v
 
-      - name: Set up Docker Buildx
-        uses: actions/docker-setup-buildx-action@v3
+  # 4. Model gate: bundle integrity, tamper detection, metamorphic and
+  #    determinism checks on the committed fixture + bundle. Excludes tests
+  #    that need the DVC-managed splits (marker: data).
+  model-gate:
+    name: Model Gate & Bundle Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run model gate
+        run: pytest -m "model and not data" -v
+      - name: Verify bundle hashes without DVC data
+        run: python scripts/audit_integrity.py --bundle-only
 
-      - name: Build Docker image
+  # 5. Registry parity in a throwaway SQLite store: models:/...@champion must
+  #    reproduce the bundle within 1e-6.
+  registry:
+    name: Registry Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Verify registry parity
+        run: python scripts/verify_registry.py
+
+  # 6. Container build and smoke test.
+  docker:
+    name: Container Build & Smoke
+    runs-on: ubuntu-latest
+    needs: [lint, unit, service, model-gate, registry]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
         run: docker build -t aqi-predictor:test .
-
-      - name: Execute container smoke test
+      - name: Smoke test container
         run: |
           chmod +x scripts/test_container.sh
           ./scripts/test_container.sh
 
+  # 7. Full-pipeline consistency on main, when DVC remote credentials exist.
+  dvc-consistency:
+    name: DVC Consistency (full data)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Detect DVC credentials
+        id: creds
+        env:
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          if [ -n "$DAGSHUB_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "DAGSHUB_TOKEN is not configured; skipping the full-data job."
+          fi
+      - name: Install dependencies
+        if: steps.creds.outputs.available == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Pull DVC data
+        if: steps.creds.outputs.available == 'true'
+        env:
+          DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user "$DAGSHUB_USER"
+          dvc remote modify origin --local password "$DAGSHUB_TOKEN"
+          dvc pull
+      - name: Check pipeline consistency
+        if: steps.creds.outputs.available == 'true'
+        run: |
+          dvc status -c
+          dvc status
+          pytest -m "data or model" -v
+          python scripts/audit_integrity.py

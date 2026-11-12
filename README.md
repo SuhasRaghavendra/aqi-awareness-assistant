@@ -197,7 +197,7 @@ cp .env.example .env
 
 ### 6.2 Verification & Execution
 ```bash
-# Run the full test suite (146 tests: data, features, models, integrity, Phase 3 service)
+# Run the full test suite (149 tests: data, features, models, integrity, registry, Phase 3 service)
 pytest -q
 
 # Recompute every corruption/leakage invariant (64 checks; exits non-zero on drift)
@@ -238,9 +238,9 @@ aqi-awareness-assistant/
 │   ├── interim/              # Daily aggregated panels, cleaned panels
 │   └── processed/            # Chronological splits (train, val, test) & feature list
 ├── docs/
-│   ├── logbook/              # Audit trail: 16 step-close entries (001 to 016) & INDEX.md
+│   ├── logbook/              # Audit trail: 17 step-close entries (001 to 017) & INDEX.md
 │   ├── CHANGELOG.md          # Keep-a-Changelog release notes
-│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-034)
+│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-037)
 │   ├── data_card.md          # Formal dataset schema, sourcing, and validation card
 │   └── dataset_approval.md   # Faculty project approval document
 ├── models/                   # Serialized model artifacts (.joblib, scalers)
@@ -260,7 +260,7 @@ aqi-awareness-assistant/
 │   ├── service/              # FastAPI app, schemas, predictor, history store, middleware
 │   ├── serving/              # Champion bundle loader and MLflow pyfunc adapter
 │   └── utils/                # logging_utils, stage_stats, mlflow_utils, reproducibility
-└── tests/                    # 146 automated pytest tests (data, features, models, integrity, service parity/latency)
+└── tests/                    # 149 automated pytest tests (data, features, models, integrity, registry, service parity/latency)
 ```
 
 ---
@@ -294,7 +294,8 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **013** | 2026-11-10 | Byte-stable champion bundle | Phase 2 | Suhas Raghavendra | `a587632` |
 | **014** | 2026-11-10 | Validation-selected G4 and deterministic manifest | Phase 1 / 2 | Suhas Raghavendra | `a587632` |
 | **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
-| **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0–3 | Suhas Raghavendra | `f9fa35922404` |
+| **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0-3 | Suhas Raghavendra | `f9fa35922404` |
+| **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `<hash>` |
 
 ---
 

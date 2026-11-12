@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "tracking_uri": "temporary sqlite (deleted)",
+  "model_name": "Indian-AQI-Predictor-Parity",
+  "model_version": "1",
+  "alias": "champion",
+  "rows": 423,
+  "fixture": "tests/fixtures/val_sample.parquet",
+  "fixture_sha256": "d44863347197cae9aa4b0a18d81633bc74dc305380d476ba8295fec7803e3d75",
+  "manifest_sha256": "1075a618fa1a2fb1164197fcf5d8638ddac4ee16e6f8c47bbfadd66e8eb6b2e1",
+  "bundle_sha256": "f5d17e54635e5a804404bf59dc2e58a9f59415c1cf456ddeb094c7ff6b1be6cf",
+  "max_abs_diff": 0.0,
+  "tolerance": 1e-06,
+  "passed": true,
+  "pip_requirements": [
+    "pandas==2.3.3",
+    "numpy==1.26.4",
+    "scikit-learn==1.5.1",
+    "lightgbm==4.6.0",
+    "joblib==1.4.2",
+    "pyarrow==22.0.0",
+    "mlflow==3.17.1"
+  ]
+}

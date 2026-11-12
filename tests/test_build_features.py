@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -154,6 +155,7 @@ def test_interaction_features_exist():
     assert (df["diesel_vehicle_intensity"] >= 0).all()
 
 
+@pytest.mark.data
 def test_scaler_matches_train_split():
     """
     Step 0.3: The saved scaler's mean_ and scale_ must match what a fresh
