@@ -6,10 +6,10 @@ FastAPI application for the Indian AQI Awareness Assistant.
 Endpoints
 ---------
 GET  /health          Liveness probe.
-GET  /ready           Readiness probe (model loaded?).
+GET  /ready           Readiness probe (bundle + scaler + history seed loaded?).
 GET  /metadata        Model version, metrics, gates, feature count.
 POST /predict         Single city-day prediction.
-POST /predict/batch   Vectorised batch (up to 63 rows — 9 cities × 7 days).
+POST /predict/batch   Vectorised batch (up to 63 rows - 9 cities x 7 days).
 GET  /metrics         Prometheus exposition page.
 
 Usage (local dev)
@@ -23,7 +23,6 @@ Production (Docker entrypoint)
 
 from __future__ import annotations
 
-import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -40,26 +39,27 @@ from src.service.schemas import (
     PredictRequest,
     PredictResponse,
     ReadyResponse,
+    validate_semantics,
 )
+from src.utils.logging_utils import configure_json_logging, get_logger
 
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
-logger = logging.getLogger(__name__)
+configure_json_logging()
+logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # App lifecycle
 # ---------------------------------------------------------------------------
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the champion bundle at startup; nothing to teardown."""
+    """Load the champion bundle at startup; nothing to tear down."""
     bundle_dir = os.environ.get("BUNDLE_DIR", "artifacts/champion")
-    predictor.configure(bundle_dir)
+    config_dir = os.environ.get("CONFIG_DIR")
+    predictor.configure(bundle_dir, config_dir)
     predictor.load()
     yield
 
@@ -72,7 +72,7 @@ app = FastAPI(
     title="AQI Awareness Assistant",
     description=(
         "Production-grade next-day Air Quality Index forecasting for 9 Indian cities. "
-        "Champion model: residual_lightgbm (val R²=0.90, test R²=0.88). "
+        "Champion model: residual_lightgbm (val R2=0.90, test R2=0.88). "
         "Data sources: XKDR CAAQM, ERA5 weather, NASA FIRMS, MoRTH Vahan."
     ),
     version="1.0.0",
@@ -81,13 +81,37 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Attach timing + Prometheus middleware
+# Attach timing + request-id + Prometheus middleware
 app.add_middleware(mw.TimingMiddleware)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _require_ready() -> None:
+    if not predictor.is_ready():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model bundle is not loaded. Try again shortly.",
+        )
+
+
+def _validate(observation) -> None:
+    """Reject physically impossible values with HTTP 400 (not schema 422)."""
+    problems = validate_semantics(observation)
+    if problems:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Impossible observation values", "errors": problems},
+        )
 
 
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @app.get("/", tags=["General"])
 async def root():
@@ -103,24 +127,31 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse, tags=["Observability"])
 async def health() -> HealthResponse:
-    """Liveness probe — always returns 200 if the process is alive."""
+    """Liveness probe - always returns 200 if the process is alive."""
     return HealthResponse()
 
 
 @app.get("/ready", response_model=ReadyResponse, tags=["Observability"])
 async def ready() -> ReadyResponse:
-    """Readiness probe — returns ready=False (503) until bundle is loaded."""
+    """Readiness probe - returns ready=False (503) until the bundle is loaded."""
     if not predictor.is_ready():
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"ready": False, "model_name": None, "features_count": None, "bundle_version": None},
+            content={
+                "ready": False,
+                "model_name": None,
+                "model_version": None,
+                "features_count": None,
+                "history_seed_days": None,
+            },
         )
     bundle = predictor.get_bundle()
     return ReadyResponse(
         ready=True,
         model_name=bundle.manifest["model"]["name"],
+        model_version=str(bundle.manifest.get("bundle_version", "?")),
         features_count=bundle.feature_count,
-        bundle_version=bundle.manifest.get("bundle_version"),
+        history_seed_days=int(bundle.manifest.get("history_seed_days", 0)),
     )
 
 
@@ -140,19 +171,28 @@ async def predict(request: PredictRequest) -> PredictResponse:
     """
     Predict next-day AQI and CPCB category for a single city-day.
 
+    The request carries today's raw observations only; calendar, city-static,
+    vehicle/IIP, GRAP and lag features are rebuilt server-side from the seeded
+    history (or the optional stateless ``history`` array).
+
     Returns:
-    - **predicted_aqi**: continuous AQI value for tomorrow.
-    - **predicted_category**: CPCB health risk category.
-    - **interval**: 10th / 50th / 90th percentile prediction interval.
+    - **aqi_pred**: continuous AQI value for tomorrow.
+    - **category**: CPCB health-risk category.
+    - **aqi_interval_80**: 10th / 50th / 90th percentile prediction interval.
+    - **warnings** / **degraded**: out-of-range inputs and short-history flags.
     """
-    if not predictor.is_ready():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Model bundle is not loaded. Try again shortly.",
-        )
+    _require_ready()
+    _validate(request)
     result = predictor.predict_one(request.model_dump())
-    mw.record_prediction(city=request.city, fallback=result["fallback_used"])
-    return PredictResponse(city=request.city, date=request.date, **result)
+    out_of_range = result.pop("out_of_range_fields", [])
+    mw.record_prediction(
+        city=result["city"],
+        fallback=result["fallback_used"],
+        aqi=result["aqi_pred"],
+        out_of_range_fields=out_of_range,
+        model_used=result["model_used"],
+    )
+    return PredictResponse(**result)
 
 
 @app.post("/predict/batch", response_model=BatchPredictResponse, tags=["Inference"])
@@ -160,18 +200,34 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
     """
     Vectorised batch inference for multiple city-days in one call.
 
-    Accepts up to 63 rows (9 cities × 7 days). Ideal for dashboard use.
+    Accepts up to 63 rows (9 cities x 7 days). Ideal for dashboard use. Each
+    row is inferred in order, so a chronological per-city batch reuses the
+    rolling history correctly.
     """
-    if not predictor.is_ready():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Model bundle is not loaded. Try again shortly.",
-        )
+    _require_ready()
+    for index, row in enumerate(request.rows):
+        problems = validate_semantics(row)
+        if problems:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": f"Impossible observation values in row {index}",
+                    "errors": problems,
+                },
+            )
     rows = [r.model_dump() for r in request.rows]
     results = predictor.predict_batch(rows)
-    predictions = [PredictResponse(**r) for r in results]
-    for r in results:
-        mw.record_prediction(city=r["city"], fallback=r["fallback_used"])
+    predictions = []
+    for result in results:
+        out_of_range = result.pop("out_of_range_fields", [])
+        mw.record_prediction(
+            city=result["city"],
+            fallback=result["fallback_used"],
+            aqi=result["aqi_pred"],
+            out_of_range_fields=out_of_range,
+            model_used=result["model_used"],
+        )
+        predictions.append(PredictResponse(**result))
     return BatchPredictResponse(predictions=predictions, rows_processed=len(predictions))
 
 
@@ -179,4 +235,3 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
 async def metrics():
     """Prometheus metrics exposition endpoint."""
     return mw.metrics_response()
-

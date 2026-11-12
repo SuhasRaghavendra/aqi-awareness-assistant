@@ -30,7 +30,7 @@ try {
     Write-Host "==> 7. Testing POST /predict..." -ForegroundColor Cyan
     $payload = @{
         city = "Delhi"
-        date = "2026-01-15"
+        date = "2025-01-02"
         aqi = 180.0
         pm25 = 95.0
         pm10 = 150.0

@@ -10,11 +10,10 @@ from typing import Any
 
 import joblib
 import lightgbm  # noqa: F401  # import before pandas/pyarrow on Windows (ADR D-015)
-import mlflow.pyfunc
 import numpy as np
 import pandas as pd
 
-from src.models.model_risk import rebuild_features
+from src.features.serving_features import build_feature_frame
 
 BUNDLE_FILENAME = "bundle.joblib"
 MANIFEST_FILENAME = "MANIFEST.json"
@@ -82,7 +81,7 @@ class AqiBundle:
 
     def predict_raw(self, panel: pd.DataFrame) -> np.ndarray:
         """Rebuild features from a raw city-day panel slice, then predict."""
-        frame = rebuild_features(
+        frame = build_feature_frame(
             panel,
             self.feature_names,
             self.feature_config,
@@ -142,18 +141,3 @@ class AqiBundle:
         if not isinstance(bundle, cls):
             raise TypeError(f"Unexpected bundle type: {type(bundle)!r}")
         return bundle
-
-
-class AqiBundlePyfunc(mlflow.pyfunc.PythonModel):
-    """MLflow pyfunc adapter used by the model registry."""
-
-    def load_context(self, context) -> None:
-        self.bundle = AqiBundle.load(Path(context.artifacts["bundle_dir"]))
-
-    def predict(
-        self,
-        context: Any,
-        model_input: pd.DataFrame,
-        params: dict[str, Any] | None = None,
-    ) -> np.ndarray:
-        return self.bundle.predict(model_input)

@@ -10,6 +10,7 @@ and include the step number, e.g. `feat(step-008): baseline models and MLflow tr
 ## [Unreleased]
 
 ### Added
+- **Step 015** (Phase 3): FastAPI inference service with training-identical feature rebuild, 1e-6 offline parity (50/50 rows), and 11 ms / 63 ms p95 latency — [015-fastapi-inference-service.md](logbook/015-fastapi-inference-service.md) — 2026-11-12
 - **Step 014** (Phases 1/2): Validation-selected G4 gate and deterministic, reproducible manifest — [014-validation-g4-and-deterministic-manifest.md](logbook/014-validation-g4-and-deterministic-manifest.md) — 2026-11-10
 - **Step 013** (Phase 2): Byte-stable champion bundle — `MANIFEST.sha256` now verifies on any checkout — [013-bundle-byte-stability.md](logbook/013-bundle-byte-stability.md) — 2026-11-10
 - **Step 012** (Phase 2): Champion bundle packaging and MLflow registry with challenger/champion aliases — [012-registry-and-bundling.md](logbook/012-registry-and-bundling.md) — 2026-11-10

@@ -44,7 +44,9 @@ def test_endpoint(client: httpx.Client, base_url: str) -> bool:
         r = client.get(f"{base_url}/metadata")
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         data = r.json()
-        print(f"  [PASS] GET /metadata -> Model: {data.get('model_name')}, Features: {data.get('features_count')}")
+        print(
+            f"  [PASS] GET /metadata -> Model: {data.get('model_name')}, Features: {data.get('features_count')}"
+        )
     except Exception as e:
         print(f"  [FAIL] GET /metadata: {e}")
         return False
@@ -53,7 +55,7 @@ def test_endpoint(client: httpx.Client, base_url: str) -> bool:
     try:
         payload = {
             "city": "Delhi",
-            "date": "2026-01-15",
+            "date": "2025-01-02",
             "aqi": 180.0,
             "pm25": 95.0,
             "pm10": 150.0,
@@ -68,12 +70,26 @@ def test_endpoint(client: httpx.Client, base_url: str) -> bool:
         r = client.post(f"{base_url}/predict", json=payload)
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         pred = r.json()
+        assert "aqi_pred" in pred and "category" in pred and "aqi_interval_80" in pred
+        assert pred["aqi_interval_80"]["lower"] <= pred["aqi_interval_80"]["upper"]
         print(
             f"  [PASS] POST /predict -> City: {pred['city']}, "
-            f"Predicted AQI: {pred['predicted_aqi']}, Category: {pred['predicted_category']}"
+            f"Predicted AQI: {pred['aqi_pred']:.1f}, Category: {pred['category']}, "
+            f"degraded={pred['degraded']}, history_days={pred['history_days']}"
         )
     except Exception as e:
         print(f"  [FAIL] POST /predict: {e}")
+        return False
+
+    # 4b. Schema and semantic errors
+    try:
+        bad_schema = {"city": "Delhi", "date": "not-a-date", "aqi": 100.0}
+        assert client.post(f"{base_url}/predict", json=bad_schema).status_code == 422
+        bad_value = {**payload, "aqi": -1.0}
+        assert client.post(f"{base_url}/predict", json=bad_value).status_code == 400
+        print("  [PASS] POST /predict error contract (422 schema, 400 impossible value)")
+    except Exception as e:
+        print(f"  [FAIL] POST /predict error contract: {e}")
         return False
 
     # 5. Prometheus Metrics

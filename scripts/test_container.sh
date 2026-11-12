@@ -38,7 +38,7 @@ curl -fsS -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{
     "city": "Delhi",
-    "date": "2026-01-15",
+    "date": "2025-01-02",
     "aqi": 180.0,
     "pm25": 95.0,
     "pm10": 150.0,
@@ -51,6 +51,12 @@ curl -fsS -X POST http://localhost:8000/predict \
     "relative_humidity_2m_mean": 72.0
   }'
 echo ""
+
+echo "==> 7b. Testing POST /predict error contract (422)..."
+curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"city": "Delhi", "date": "not-a-date", "aqi": 100.0}' | grep -q "422"
+echo "    422 OK"
 
 echo "==> 8. Testing GET /metrics..."
 curl -fsS http://localhost:8000/metrics | head -n 10

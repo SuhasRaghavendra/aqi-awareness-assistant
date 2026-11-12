@@ -1,9 +1,9 @@
 {
   "stage": "train",
-  "start_time": "2026-11-10T14:03:30.333053+00:00",
-  "end_time": "2026-11-10T14:03:30.365003+00:00",
-  "duration_s": 0.02,
-  "git_commit": "d988c89",
+  "start_time": "2026-11-12T05:17:43.827975+00:00",
+  "end_time": "2026-11-12T05:17:43.841417+00:00",
+  "duration_s": 0.018,
+  "git_commit": "5700eac",
   "params_hash": "d2497f4f5008",
   "inputs": [
     {
@@ -256,7 +256,7 @@
     {
       "path": "reports\\metrics\\val_metrics.json",
       "exists": true,
-      "size_bytes": 3754
+      "size_bytes": 3753
     },
     {
       "path": "models\\persistence.joblib",

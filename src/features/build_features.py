@@ -36,12 +36,20 @@ from pathlib import Path
 from typing import Any
 
 import joblib
-import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from src.config import load_params
 from src.features.aqi_utils import aqi_to_category
+from src.features.serving_features import (
+    add_aqi_history_features,
+    add_city_onehot,
+    add_fire_features,
+    add_grap_features,
+    add_interaction_features,
+    add_season_onehot,
+    add_weather_lag_features,
+)
 from src.utils.logging_utils import get_logger, setup_logging
 from src.utils.stage_stats import track_stage
 
@@ -87,179 +95,6 @@ def make_target(df: pd.DataFrame) -> pd.DataFrame:
         targets.append(grp)
 
     return pd.concat(targets, ignore_index=True)
-
-
-def add_fire_features(
-    df: pd.DataFrame,
-    lags: list[int],
-    rolling_windows: list[int],
-) -> pd.DataFrame:
-    """Lag and rolling features for fire events (per city)."""
-    fire_cols = ["fire_count_500km", "fire_frp_sum_500km"]
-
-    for _city, grp_idx in df.groupby("city").groups.items():
-        # sort grp_idx by date so values align correctly
-        sub = df.loc[grp_idx].sort_values("date")
-        sorted_idx = sub.index  # sorted integer index
-
-        grp = sub.set_index("date")
-        full_idx = pd.date_range(grp.index.min(), grp.index.max(), freq="D")
-        grp = grp.reindex(full_idx)
-
-        for col in fire_cols:
-            if col not in grp.columns:
-                continue
-            for lag in lags:
-                vals = grp[col].shift(lag).reindex(sub["date"]).values
-                df.loc[sorted_idx, f"{col}_lag_{lag}"] = vals
-            for w in rolling_windows:
-                mean_vals = (
-                    grp[col].shift(1).rolling(w, min_periods=1).mean().reindex(sub["date"]).values
-                )
-                max_vals = (
-                    grp[col].shift(1).rolling(w, min_periods=1).max().reindex(sub["date"]).values
-                )
-                df.loc[sorted_idx, f"{col}_roll_mean_{w}d"] = mean_vals
-                df.loc[sorted_idx, f"{col}_roll_max_{w}d"] = max_vals
-
-    # Burning season × fire interaction
-    if "burning_season_flag" in df.columns and "fire_count_500km" in df.columns:
-        df["fire_burning_season"] = df["fire_count_500km"] * df["burning_season_flag"]
-
-    return df
-
-
-def add_aqi_history_features(
-    df: pd.DataFrame,
-    lags: list[int],
-    rolling_windows: list[int],
-) -> pd.DataFrame:
-    """
-    AQI lag features — these are causal: past AQI gives context about
-    the baseline pollution level driven by cumulative sources.
-
-    Fix (ADR D-019): the previous implementation called .reindex(grp_idx) on a
-    DatetimeIndex-indexed Series using integer labels, returning all-NaN.
-    The fix reindexes by the original date values instead.
-    """
-    for _city, grp_idx in df.groupby("city").groups.items():
-        # sort so values align correctly when written back
-        sub = df.loc[grp_idx].sort_values("date")
-        sorted_idx = sub.index
-
-        grp = sub.set_index("date")
-        full_idx = pd.date_range(grp.index.min(), grp.index.max(), freq="D")
-        grp = grp.reindex(full_idx)
-
-        if "aqi" not in grp.columns:
-            continue
-
-        for lag in lags:
-            df.loc[sorted_idx, f"aqi_lag_{lag}"] = grp["aqi"].shift(lag).reindex(sub["date"]).values
-        for w in rolling_windows:
-            df.loc[sorted_idx, f"aqi_roll_mean_{w}d"] = (
-                grp["aqi"].shift(1).rolling(w, min_periods=1).mean().reindex(sub["date"]).values
-            )
-            df.loc[sorted_idx, f"aqi_roll_std_{w}d"] = (
-                grp["aqi"].shift(1).rolling(w, min_periods=1).std().reindex(sub["date"]).values
-            )
-        df.loc[sorted_idx, "aqi_diff_1d"] = grp["aqi"].diff(1).reindex(sub["date"]).values
-        df.loc[sorted_idx, "aqi_diff_7d"] = grp["aqi"].diff(7).reindex(sub["date"]).values
-
-    return df
-
-
-def add_weather_lag_features(df: pd.DataFrame, lags: list[int]) -> pd.DataFrame:
-    """Lag yesterday's weather (most impactful meteorological features)."""
-    weather_lag_cols = [
-        "temperature_2m_mean",
-        "wind_speed_10m_mean",
-        "relative_humidity_2m_mean",
-        "precipitation_sum",
-        "inversion_risk_flag",
-    ]
-    for col in weather_lag_cols:
-        if col not in df.columns:
-            continue
-        for lag in lags[:2]:  # lag 1 and 3 only for weather
-            df[f"{col}_lag_{lag}"] = df.groupby("city")[col].shift(lag)
-
-    # Rolling 3-day and 7-day wind mean (dispersion context)
-    if "wind_speed_10m_mean" in df.columns:
-        df["wind_roll_mean_3d"] = df.groupby("city")["wind_speed_10m_mean"].transform(
-            lambda s: s.shift(1).rolling(3, min_periods=1).mean()
-        )
-        df["wind_roll_mean_7d"] = df.groupby("city")["wind_speed_10m_mean"].transform(
-            lambda s: s.shift(1).rolling(7, min_periods=1).mean()
-        )
-
-    # 7-day cumulative rain
-    if "precipitation_sum" in df.columns:
-        df["precip_roll_sum_7d"] = df.groupby("city")["precipitation_sum"].transform(
-            lambda s: s.shift(1).rolling(7, min_periods=1).sum()
-        )
-
-    return df
-
-
-def add_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Causal interaction features that model how root causes compound.
-    These are interpretable and awareness-focused.
-    """
-    # Fire × stagnant air (worst pollution scenario)
-    if "fire_count_500km" in df.columns and "wind_speed_10m_mean" in df.columns:
-        # High fire + low wind = very bad air
-        df["fire_x_low_wind"] = df["fire_count_500km"] / (df["wind_speed_10m_mean"].clip(lower=0.5))
-
-    # Temperature inversion × fire (trapping burning smoke)
-    if "inversion_risk_flag" in df.columns and "fire_count_500km" in df.columns:
-        df["inversion_x_fire"] = df["inversion_risk_flag"] * df["fire_count_500km"]
-
-    # Festival × fire (Diwali fireworks near burning season)
-    if "festival_flag" in df.columns and "burning_season_flag" in df.columns:
-        df["festival_burning_overlap"] = df["festival_flag"] * df["burning_season_flag"]
-
-    # Vehicle density × diesel fraction (heavy emission profile)
-    if "vehicles_per_lakh" in df.columns and "diesel_frac" in df.columns:
-        df["diesel_vehicle_intensity"] = df["vehicles_per_lakh"] * df["diesel_frac"]
-
-    # Winter stagnation index (cold + high humidity + low wind)
-    if all(
-        c in df.columns
-        for c in ["temperature_2m_mean", "relative_humidity_2m_mean", "wind_speed_10m_mean"]
-    ):
-        df["winter_stagnation_index"] = (
-            (df["relative_humidity_2m_mean"].clip(0, 100) / 100)
-            * (1 / df["wind_speed_10m_mean"].clip(lower=0.5))
-            * (df["temperature_2m_mean"] < 15).astype(float)
-        )
-
-    return df
-
-
-def add_city_onehot(df: pd.DataFrame, cities: list[str]) -> pd.DataFrame:
-    """One-hot encode city."""
-    for city in cities:
-        df[f"city_{city.lower().replace(' ', '_')}"] = (df["city"] == city).astype(int)
-    return df
-
-
-def add_season_onehot(df: pd.DataFrame) -> pd.DataFrame:
-    """One-hot encode season."""
-    if "season" in df.columns:
-        for s in ["winter", "summer", "monsoon", "post_monsoon"]:
-            df[f"season_{s}"] = (df["season"] == s).astype(int)
-    return df
-
-
-def add_grap_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Binary flags from GRAP stage + lag (yesterday's restriction stage)."""
-    if "grap_stage" in df.columns:
-        df["grap_active"] = (df["grap_stage"] > 0).astype(int)
-        df["grap_severe"] = (df["grap_stage"] >= 3).astype(int)
-        df["grap_lag_1"] = df.groupby("city")["grap_stage"].shift(1)
-    return df
 
 
 def split_chronological(
@@ -452,6 +287,8 @@ def main() -> None:
         json.dump(feat_list, f, indent=2)
 
     # ── Correlation plot ──────────────────────────────────────────────────────
+    import matplotlib.pyplot as plt  # training-only dependency (not in the serve image)
+
     corr = df_train[feature_cols].apply(lambda s: s.corr(df_train["target_aqi"])).dropna()
     top15 = corr.abs().sort_values(ascending=False).head(15)
 

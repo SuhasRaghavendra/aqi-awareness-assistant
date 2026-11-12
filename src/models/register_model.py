@@ -21,13 +21,8 @@ from src.models.package_model import (
     read_dvc_data_md5,
     repo_root,
 )
-from src.serving.bundle import (
-    MANIFEST_FILENAME,
-    MANIFEST_SHA_FILENAME,
-    AqiBundle,
-    AqiBundlePyfunc,
-    sha256_file,
-)
+from src.serving.bundle import MANIFEST_FILENAME, MANIFEST_SHA_FILENAME, AqiBundle, sha256_file
+from src.serving.pyfunc import AqiBundlePyfunc
 from src.utils.mlflow_utils import setup_experiment, start_run
 
 DEFAULT_MODEL_NAME = "Indian-AQI-Predictor"

@@ -31,15 +31,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import load_params
-from src.features.build_features import (
-    add_aqi_history_features,
-    add_city_onehot,
-    add_fire_features,
-    add_grap_features,
-    add_interaction_features,
-    add_season_onehot,
-    add_weather_lag_features,
-)
+from src.features.serving_features import build_feature_frame
 from src.utils.reproducibility import build_timestamp
 
 CATEGORY_ORDER = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poor", "Severe"]
@@ -195,30 +187,12 @@ def rebuild_features(
     params: dict[str, Any],
     train_medians: dict[str, float],
 ) -> pd.DataFrame:
-    """Rebuild the Phase 0 feature set from a raw city-day panel slice."""
-    df = panel.copy()
-    df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
-    df = df.sort_values(["city", "date"]).reset_index(drop=True)
+    """Rebuild the Phase 0 feature set from a raw city-day panel slice.
 
-    feat_cfg = params.get("features", {})
-    aqi_lags = list(feat_cfg.get("aqi_lags", [1, 3, 7, 14]))
-    fire_lags = list(feat_cfg.get("fire_lags", [1, 3, 7]))
-    rolling_windows = list(feat_cfg.get("rolling_windows", [7, 14, 30]))
-    cities = list(params.get("data", {}).get("cities", sorted(df["city"].unique())))
-
-    df = add_fire_features(df, fire_lags, rolling_windows)
-    df = add_aqi_history_features(df, aqi_lags, rolling_windows)
-    df = add_weather_lag_features(df, aqi_lags[:2])
-    df = add_interaction_features(df)
-    df = add_city_onehot(df, cities)
-    df = add_season_onehot(df)
-    df = add_grap_features(df)
-
-    for name in feature_names:
-        if name not in df.columns:
-            df[name] = np.nan
-    df[feature_names] = df[feature_names].fillna(pd.Series(train_medians))
-    return df
+    Kept as a thin compatibility wrapper; the implementation is shared with the
+    online service via ``src.features.serving_features``.
+    """
+    return build_feature_frame(panel, feature_names, params, train_medians)
 
 
 def select_champion(val_metrics: list[dict[str, Any]]) -> dict[str, Any]:

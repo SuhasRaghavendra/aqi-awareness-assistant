@@ -80,6 +80,44 @@ class _JsonlHandler(logging.Handler):
             super().close()
 
 
+class JsonFormatter(logging.Formatter):
+    """Render each log record as a single JSON object (stdout-friendly)."""
+
+    _RESERVED = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict[str, Any] = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        for key, value in vars(record).items():
+            if key not in self._RESERVED and not key.startswith("_"):
+                payload[key] = value
+        if record.exc_info:
+            payload["exc_info"] = self.formatException(record.exc_info)
+        return json.dumps(payload, default=str)
+
+
+def configure_json_logging(level: int = logging.INFO) -> None:
+    """Install one JSON stdout handler on the root logger (idempotent).
+
+    Used by the FastAPI service so request-id middleware can emit structured
+    JSON logs without each module knowing the format.
+    """
+    root = logging.getLogger()
+    if getattr(root, "_aqi_json_configured", False):
+        return
+    for handler in list(root.handlers):
+        root.removeHandler(handler)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(JsonFormatter())
+    root.addHandler(handler)
+    root.setLevel(level)
+    root._aqi_json_configured = True  # type: ignore[attr-defined]
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 _LOG_DIR = Path(__file__).resolve().parents[2] / "logs"

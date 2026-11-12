@@ -105,9 +105,78 @@ Ablation experiments evaluated on the validation split empirically quantify the 
 
 ---
 
-## 5. Quick Start & Setup
+## 5. Inference Service (Phase 3)
 
-### 5.1 Environment Configuration
+The Phase 2 champion (`residual_lightgbm`, 103 features, bundle `1.0`) is served by a FastAPI app in `src/service/`. The client sends **today's raw observations only**; the server rebuilds every calendar, city-static, vehicle/IIP, GRAP, festival and lag/rolling feature from the bundle's 45-day per-city history seed, using the same feature code as offline training (`src/features/serving_features.py`).
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/health` | Liveness probe (always 200 while the process is alive) |
+| `GET` | `/ready` | Readiness: 503 until the bundle, scaler and history seed are loaded |
+| `GET` | `/metadata` | Model version, val/test metrics, gate status, feature counts |
+| `POST` | `/predict` | Single city-day prediction |
+| `POST` | `/predict/batch` | Vectorised batch (up to 63 rows = 9 cities × 7 days) |
+| `GET` | `/metrics` | Prometheus exposition (requests, latency, predictions, out-of-range inputs) |
+| `GET` | `/docs` | OpenAPI / Swagger UI |
+
+```bash
+uvicorn src.service.app:app --host 0.0.0.0 --port 8000
+```
+
+Request and response:
+
+```jsonc
+// POST /predict
+{
+  "city": "Delhi",
+  "date": "2024-12-31",
+  "aqi": 180.0,
+  "temperature_2m_mean": 14.0,
+  "wind_speed_10m_mean": 4.5,
+  "relative_humidity_2m_mean": 72.0,
+  "fire_count_500km": 12.0
+}
+```
+
+```jsonc
+// 200 OK (real response from the champion bundle)
+{
+  "city": "Delhi",
+  "date": "2024-12-31",
+  "target_date": "2025-01-01",
+  "aqi_pred": 210.6700400086736,
+  "category": "Poor",
+  "category_probs": {
+    "Good": 1e-06, "Satisfactory": 0.000545, "Moderate": 0.375899,
+    "Poor": 0.619357, "Very Poor": 0.004197, "Severe": 0.0
+  },
+  "aqi_interval_80": {
+    "lower": 168.7128400086736,
+    "median": 210.6700400086736,
+    "upper": 255.5801400086736
+  },
+  "model_name": "residual_lightgbm",
+  "model_version": "1.0",
+  "alias": "champion",
+  "model_used": "residual_lightgbm",
+  "fallback_used": false,
+  "warnings": [],
+  "latency_ms": 11.041,
+  "degraded": false,
+  "history_days": 45
+}
+```
+
+- **Stateless history:** pass an optional `history` array of previous city-days (max 90) to rebuild lags without the server store. Supplying it does not mutate the store.
+- **Errors:** `422` schema/validation (unknown city, bad date, extra feature fields), `400` physically impossible values (e.g. negative AQI, humidity > 100), `503` model not ready.
+- **Observability:** every response echoes or generates `X-Request-ID`; each request emits one JSON log line; `degraded=true` flags short history, a calendar gap, or a persistence fallback.
+- **Parity:** the service matches the offline pipeline within `1e-6` on 50 validation rows (predictions and all 103 features). **Latency:** p95 ≈ 11 ms single row and ≈ 63 ms for the 9-city batch, inside the Plan's 50 ms / 100 ms budgets. Both are enforced by `tests/test_service.py`.
+
+---
+
+## 6. Quick Start & Setup
+
+### 6.1 Environment Configuration
 ```bash
 # 1. Clone repository
 git clone https://github.com/SuhasRaghavendra/aqi-awareness-assistant.git
@@ -126,9 +195,9 @@ cp .env.example .env
 # Edit .env and set OPENAQ_API_KEY=<your-key> (optional for unsigned S3 archive access)
 ```
 
-### 5.2 Verification & Execution
+### 6.2 Verification & Execution
 ```bash
-# Run unit test suite (76 tests covering baselines, validation, schema, leak checks)
+# Run the full test suite (120 tests: data, features, models, Phase 3 service)
 pytest -q
 
 # Run automated logbook governance check
@@ -146,19 +215,21 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 
 ---
 
-## 6. Repository Layout
+## 7. Repository Layout
 
 ```
 aqi-awareness-assistant/
-├── configs/                  # Frozen station lists, CPCB breakpoints, festival dates
+├── artifacts/
+│   └── champion/             # Byte-stable champion bundle (model, scaler, manifest, 45-day history seed)
+├── configs/                  # Frozen station lists, CPCB breakpoints, festival dates, GRAP calendar
 ├── data/                     # DVC-versioned datasets
 │   ├── raw/                  # OpenAQ S3 archives, ERA5 weather CSVs, station catalog
 │   ├── interim/              # Daily aggregated panels, cleaned panels
 │   └── processed/            # Chronological splits (train, val, test) & feature list
 ├── docs/
-│   ├── logbook/              # Audit trail: 9 step-close entries (001 to 009) & INDEX.md
+│   ├── logbook/              # Audit trail: 15 step-close entries (001 to 015) & INDEX.md
 │   ├── CHANGELOG.md          # Keep-a-Changelog release notes
-│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-017)
+│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-029)
 │   ├── data_card.md          # Formal dataset schema, sourcing, and validation card
 │   └── dataset_approval.md   # Faculty project approval document
 ├── models/                   # Serialized model artifacts (.joblib, scalers)
@@ -173,15 +244,17 @@ aqi-awareness-assistant/
 ├── scripts/                  # log_step.py, build_logbook_index.py, view_dataset.py
 ├── src/
 │   ├── data/                 # discover, download, ingest, validate, hourly_to_daily, merge, clean
-│   ├── features/             # aqi_utils (CPCB breakpoints), build_features
-│   ├── models/               # baselines, train, ablations, evaluate, compare_runs
-│   └── utils/                # logging_utils, stage_stats, mlflow_utils
-└── tests/                    # 76 automated pytest unit tests
+│   ├── features/             # aqi_utils (CPCB breakpoints), build_features, serving_features (shared online/offline)
+│   ├── models/               # baselines, train, ablations, evaluate, compare_runs, package_model, register_model
+│   ├── service/              # FastAPI app, schemas, predictor, history store, middleware
+│   ├── serving/              # Champion bundle loader and MLflow pyfunc adapter
+│   └── utils/                # logging_utils, stage_stats, mlflow_utils, reproducibility
+└── tests/                    # 120 automated pytest tests (data, features, models, service parity/latency)
 ```
 
 ---
 
-## 7. Logbook & Governance (Step-Close Protocol)
+## 8. Logbook & Governance (Step-Close Protocol)
 
 To maintain an unforgeable development audit trail, every advancement strictly executed the **Step-Close Protocol**:
 1. Run automated test suite (`pytest tests/ -q`).
@@ -203,11 +276,17 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **006** | 2026-10-15 | Hourly to daily AQI computation and EDA | Phase 4 | Suhas Raghavendra | `41ecc50` |
 | **007** | 2026-10-15 | Feature engineering and chronological split | Phase 5 | Suhas Raghavendra | `9cc4b9a` |
 | **008** | 2026-10-15 | Baseline models evaluation and MLflow tracking | Phase 6 & 8 | Srijan Kumar G S | `04fcfbd` |
-| **009** | 2026-10-15 | Feature ablation studies and MLflow experiment comparison | Phase 7 | Srijan Kumar G S | `2a5d1dd` |
+| **009** | 2026-10-15 | Feature ablation studies and MLflow experiment comparison | Phase 7 | Srijan Kumar G S | `04fcfbd` |
+| **010** | 2026-10-15 | Milestone 1 synthesis report and release tagging | Phase 9 | Srijan Kumar G S | `2a5d1dd` |
+| **011** | 2026-11-10 | Phase 0 baseline fixes | Phase 0 | Suhas Raghavendra | `d988c89` |
+| **012** | 2026-11-10 | Registry and bundling | Phase 2 | Suhas Raghavendra | `4b9146c` |
+| **013** | 2026-11-10 | Byte-stable champion bundle | Phase 2 | Suhas Raghavendra | `a587632` |
+| **014** | 2026-11-10 | Validation-selected G4 and deterministic manifest | Phase 1 / 2 | Suhas Raghavendra | `a587632` |
+| **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
 
 ---
 
-## 8. Team Contributions
+## 9. Team Contributions
 
 | Team Member | Core Responsibilities |
 |---|---|
@@ -216,7 +295,7 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 
 ---
 
-## 9. Data Sources & Licensing
+## 10. Data Sources & Licensing
 
 - **OpenAQ Archive:** OpenAQ Community, AWS Open Data Archive (`s3://openaq-data-archive/`). Aggregated under provider licenses.
 - **Open-Meteo ERA5:** European Centre for Medium-Range Weather Forecasts (ECMWF) / Open-Meteo, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

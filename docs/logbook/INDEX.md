@@ -18,3 +18,4 @@
 | 012 | 2026-11-10 | Registry and bundling | 2 | <student-A> | `4b9146c71d66` | [012-registry-and-bundling.md](012-registry-and-bundling.md) |
 | 013 | 2026-11-10 | Byte-stable champion bundle | 2 | <student-A> | `a58763273a3d` | [013-bundle-byte-stability.md](013-bundle-byte-stability.md) |
 | 014 | 2026-11-10 | Validation-selected G4 and deterministic manifest | 1 | <student-A> | `a58763273a3d` | [014-validation-g4-and-deterministic-manifest.md](014-validation-g4-and-deterministic-manifest.md) |
+| 015 | 2026-11-12 | FastAPI inference service | 3 | <student-A> | `5700eac44833` | [015-fastapi-inference-service.md](015-fastapi-inference-service.md) |
