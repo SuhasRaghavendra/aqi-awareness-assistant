@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-11-12T07:11:48+00:00",
+  "method": "live uvicorn subprocess, HTTP requests, post-warmup",
+  "transport": "http://127.0.0.1:52837",
+  "command": "C:\\Users\\Suhas Raghavendra\\anaconda3\\python.exe -m uvicorn src.service.app:app --host 127.0.0.1 --port 52837 --log-level warning",
+  "date": "2024-12-30",
+  "iterations": {
+    "single": 100,
+    "batch": 30,
+    "batch_rows": 9,
+    "warmup": 10
+  },
+  "champion": "residual_lightgbm_monotone",
+  "bundle_version": "1.1",
+  "single": {
+    "server_latency_ms": {
+      "p50": 12.42,
+      "p95": 13.195,
+      "p99": 13.849,
+      "min": 11.753,
+      "max": 13.937,
+      "mean": 12.5067
+    },
+    "http_roundtrip_ms": {
+      "p50": 14.8698,
+      "p95": 16.0138,
+      "p99": 16.372,
+      "min": 14.0909,
+      "max": 16.585,
+      "mean": 14.9722
+    }
+  },
+  "batch_9_cities": {
+    "http_roundtrip_ms": {
+      "p50": 68.678,
+      "p95": 76.3604,
+      "p99": 79.1665,
+      "min": 65.6302,
+      "max": 79.1665,
+      "mean": 70.05
+    },
+    "per_row_ms": {
+      "p50": 7.6309,
+      "p95": 8.4845,
+      "p99": 8.7963,
+      "min": 7.2922,
+      "max": 8.7963,
+      "mean": 7.7833
+    }
+  },
+  "budget_ms": {
+    "single_p95": 50.0,
+    "batch_p95": 100.0
+  },
+  "passed": true
+}

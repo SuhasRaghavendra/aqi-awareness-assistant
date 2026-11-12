@@ -10,6 +10,7 @@ and include the step number, e.g. `feat(step-008): baseline models and MLflow tr
 ## [Unreleased]
 
 ### Added
+- **Step 019** (Phases 0–3): Gate 4 — model card (intended use, metrics, `category_probs` method, G3 waiver, limitations), ADR table cleanup, live `uvicorn` latency probe (`scripts/latency_probe.py`) and final verification; tag `phase3-final` — [019-gate4-model-card-and-final-verification.md](logbook/019-gate4-model-card-and-final-verification.md) — 2026-11-12
 - **Step 018** (Phases 0–3): Gate 3 — monotone-constrained LightGBM restores the 5% metamorphic gate, uniform per-city calibration and a single-shot holdout report; G3 improves to 1.0597 and remains waived (D-038) — [018-gate3-monotone-and-calibration.md](logbook/018-gate3-monotone-and-calibration.md) — 2026-11-12
 - **Step 017** (Phases 0–3): CI/CD repair — seven hermetic GitHub Actions jobs, hash-pinned validation snapshot, bundle-only audit mode, temporary-registry parity check, valid Docker action namespaces and a failing Trivy gate — [017-ci-and-hermetic-gates.md](logbook/017-ci-and-hermetic-gates.md) — 2026-11-12
 - **Step 016** (Phases 0–3): Integrity hardening — hash-verified bundle load (before unpickling), atomic artifact writes, staging-swap publish, frozen split hashes, 64-check integrity audit, and 26 new corruption/leak/serving-safety tests — [016-integrity-and-serving-safety.md](logbook/016-integrity-and-serving-safety.md) — 2026-11-12

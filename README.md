@@ -170,7 +170,7 @@ Request and response:
 - **Stateless history:** pass an optional `history` array of previous city-days (max 90) to rebuild lags without the server store. Supplying it does not mutate the store.
 - **Errors:** `422` schema/validation (unknown city, bad date, extra feature fields), `400` physically impossible values (e.g. negative AQI, humidity > 100), `503` model not ready.
 - **Observability:** every response echoes or generates `X-Request-ID`; each request emits one JSON log line; `degraded=true` flags short history, a calendar gap, or a persistence fallback.
-- **Parity:** the service matches the offline pipeline within `1e-6` on 50 validation rows (predictions and all 103 features). **Latency:** p95 ≈ 11 ms single row and ≈ 63 ms for the 9-city batch, inside the Plan's 50 ms / 100 ms budgets. Both are enforced by `tests/test_service.py`.
+- **Parity:** the service matches the offline pipeline within `1e-6` on 50 validation rows (predictions and all 103 features). **Latency:** p95 ≈ 13 ms single row and ≈ 76 ms for the 9-city batch against a live `uvicorn` process (in-process ≈ 8 ms and ≈ 63 ms), inside the Plan's 50 ms / 100 ms budgets. Budgets are enforced by `tests/test_service.py`; the live probe is `scripts/latency_probe.py`. Full model documentation — intended use, metrics, the `category_probs` approximation, the G3 waiver and limitations — is in [`docs/model_card.md`](docs/model_card.md).
 
 ---
 
@@ -197,7 +197,7 @@ cp .env.example .env
 
 ### 6.2 Verification & Execution
 ```bash
-# Run the full test suite (162 tests: data, features, models, integrity, registry, Phase 3 service)
+# Run the full test suite (174 tests: data, features, models, integrity, registry, Phase 3 service)
 pytest -q
 
 # Recompute every corruption/leakage invariant (64 checks; exits non-zero on drift)
@@ -238,9 +238,10 @@ aqi-awareness-assistant/
 │   ├── interim/              # Daily aggregated panels, cleaned panels
 │   └── processed/            # Chronological splits (train, val, test) & feature list
 ├── docs/
-│   ├── logbook/              # Audit trail: 18 step-close entries (001 to 018) & INDEX.md
+│   ├── logbook/              # Audit trail: 19 step-close entries (001 to 019) & INDEX.md
 │   ├── CHANGELOG.md          # Keep-a-Changelog release notes
 │   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-038)
+│   ├── model_card.md         # Intended use, metrics, gate waivers, category_probs method, limitations
 │   ├── data_card.md          # Formal dataset schema, sourcing, and validation card
 │   └── dataset_approval.md   # Faculty project approval document
 ├── models/                   # Serialized model artifacts (.joblib, scalers)
@@ -260,7 +261,7 @@ aqi-awareness-assistant/
 │   ├── service/              # FastAPI app, schemas, predictor, history store, middleware
 │   ├── serving/              # Champion bundle loader and MLflow pyfunc adapter
 │   └── utils/                # logging_utils, stage_stats, mlflow_utils, reproducibility
-└── tests/                    # 162 automated pytest tests (data, features, models, integrity, registry, service parity/latency)
+└── tests/                    # 174 automated pytest tests (data, features, models, integrity, registry, service parity/latency)
 ```
 
 ---

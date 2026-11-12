@@ -7,7 +7,7 @@
   "rows": 423,
   "fixture": "tests/fixtures/val_sample.parquet",
   "fixture_sha256": "d44863347197cae9aa4b0a18d81633bc74dc305380d476ba8295fec7803e3d75",
-  "manifest_sha256": "1e30b4ebd54fcf8f5582a6e2900d4a655f0fda08cf70f0946533c96b2d7811b3",
+  "manifest_sha256": "148a5b4fd5c997d2aca670557571363643b41943ef81f2440c3984e3f7a6e9fb",
   "bundle_sha256": "3bdc05c84ce0c2213aabd4894f17cfb25adf3d3aeba7986950fa927d4af77f8d",
   "max_abs_diff": 0.0,
   "tolerance": 1e-06,
