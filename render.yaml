@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: aqi-awareness-assistant
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: BUNDLE_DIR
+        value: artifacts/champion
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PORT
+        value: "8000"
+    healthCheckPath: /health
+

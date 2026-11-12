@@ -1,0 +1,20 @@
+services:
+  aqi-predictor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aqi-awareness-assistant:latest
+    container_name: aqi-predictor
+    ports:
+      - "8000:8000"
+    environment:
+      - BUNDLE_DIR=artifacts/champion
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

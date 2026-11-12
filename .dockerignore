@@ -1,0 +1,35 @@
+# Version control & tooling
+.git
+.gitignore
+.gitattributes
+.github
+.dvc
+.dvcignore
+.pytest_cache
+.ruff_cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Raw data and notebooks (not needed in serving image)
+data/raw/
+data/interim/
+notebooks/
+docs/
+reports/figures/
+reports/step_reports/
+tests/
+
+# MLflow local runs and logs
+mlruns/
+mlflow.db
+logs/
+*.log
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
