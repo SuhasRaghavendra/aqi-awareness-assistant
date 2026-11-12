@@ -74,7 +74,7 @@ and the service test budgets are unchanged. Report:
 | Integrity | `scripts/audit_integrity.py` | **64 checks, 0 failed** |
 | Registry parity | `scripts/verify_registry.py` | 423 rows, max \|diff\| `0.0` |
 | Champion alias | `register_model --verify` | 423 rows, max diff `0.0` |
-| Hermetic CI | unit 56, service 43, model 48, bundle-only audit 13/13 | pass with `data/processed` and `models/` removed |
+| Hermetic CI | unit 68, service 43, model 48, bundle-only audit 13/13 | pass with `data/processed` and `models/` removed |
 
 ### Container smoke
 
