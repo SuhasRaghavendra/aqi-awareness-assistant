@@ -296,7 +296,7 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
 | **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0-3 | Suhas Raghavendra | `f9fa35922404` |
 | **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `a7598a55df8a` |
-| **018** | 2026-11-12 | Gate 3 monotone constraints and per-city calibration | Phases 0-3 | Suhas Raghavendra | `<hash>` |
+| **018** | 2026-11-12 | Gate 3 monotone constraints and per-city calibration | Phases 0-3 | Suhas Raghavendra | `5d6ff1538100` |
 
 ---
 
