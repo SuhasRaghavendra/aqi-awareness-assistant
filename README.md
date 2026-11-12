@@ -1,12 +1,27 @@
-# AI-Based Air Quality Awareness Assistant — MLOps Milestone 1
+# AI-Based Air Quality Awareness Assistant — MLOps Milestone 2
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![DVC Tracked](https://img.shields.io/badge/DVC-tracked-white.svg?logo=dvc)](https://dvc.org/)
-[![MLflow](https://img.shields.io/badge/MLflow-2.13.0-0194E2.svg?logo=mlflow)](https://mlflow.org/)
+[![MLflow](https://img.shields.io/badge/MLflow-3.17-0194E2.svg?logo=mlflow)](https://mlflow.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI](https://github.com/SuhasRaghavendra/aqi-awareness-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/SuhasRaghavendra/aqi-awareness-assistant/actions/workflows/ci.yml)
+[![CD](https://github.com/SuhasRaghavendra/aqi-awareness-assistant/actions/workflows/cd.yml/badge.svg)](https://github.com/SuhasRaghavendra/aqi-awareness-assistant/actions/workflows/cd.yml)
+[![Live API](https://img.shields.io/badge/Live%20API-Render-46E3B7.svg?logo=render)](https://aqi-predictor-gxbd.onrender.com/docs)
+[![Container](https://img.shields.io/badge/Container-GHCR-2088FF.svg?logo=github)](https://github.com/SuhasRaghavendra/aqi-awareness-assistant/pkgs/container/aqi-awareness-assistant)
 
 > A production-grade, leak-free, reproducible MLOps pipeline for forecasting Next-Day Air Quality Index (AQI) and CPCB Health Risk Categories across Indian metropolitan areas, enriched with ECMWF ERA5 meteorological reanalysis.
+
+## 🚀 Live Deployment
+
+| Resource | URL |
+|---|---|
+| **Live API (Render)** | https://aqi-predictor-gxbd.onrender.com |
+| **Swagger UI / Docs** | https://aqi-predictor-gxbd.onrender.com/docs |
+| **Prometheus Metrics** | https://aqi-predictor-gxbd.onrender.com/metrics |
+| **Container Image (GHCR)** | `ghcr.io/suhasraghavendra/aqi-awareness-assistant:latest` |
+
+> **Note:** The free-tier Render instance spins down after 15 min of inactivity. The first request after idle may take ~30 s to wake up.
 
 ---
 
@@ -299,6 +314,9 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `a7598a55df8a` |
 | **018** | 2026-11-12 | Gate 3 monotone constraints and per-city calibration | Phases 0-3 | Suhas Raghavendra | `5d6ff1538100` |
 | **019** | 2026-11-12 | Gate 4 model card, live latency probe and final verification | Phases 0-3 | Suhas Raghavendra | `c3460ec8da82` |
+| **020** | 2026-11-12 | Docker containerization, multi-stage build and security hardening | Phase 4 | Suhas Raghavendra | `11cd466` |
+| **021** | 2026-11-12 | GitHub Actions CI/CD pipeline and GHCR publishing | Phase 5 | Suhas Raghavendra | `11cd466` |
+| **022** | 2026-11-12 | Render cloud deployment, live smoke test and drift monitoring runbook | Phase 6 | Suhas Raghavendra | `11cd466` |
 
 ---
 

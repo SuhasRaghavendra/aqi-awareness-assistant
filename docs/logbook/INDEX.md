@@ -23,3 +23,6 @@
 | 017 | 2026-11-12 | CI repair and hermetic quality gates | 0 | <student-A> | `a7598a55df8a` | [017-ci-and-hermetic-gates.md](017-ci-and-hermetic-gates.md) |
 | 018 | 2026-11-12 | Gate 3: monotone constraints and uniform per-city calibration | 0 | <student-A> | `5d6ff1538100` | [018-gate3-monotone-and-calibration.md](018-gate3-monotone-and-calibration.md) |
 | 019 | 2026-11-12 | Gate 4: model card, final ADRs and end-to-end verification | 0 | <student-A> | `c3460ec8da82` | [019-gate4-model-card-and-final-verification.md](019-gate4-model-card-and-final-verification.md) |
+| 020 | 2026-11-12 | Docker containerization, multi-stage build and security hardening | 4 | <student-A> | `11cd466` | [020-docker-containerization-and-hardening.md](020-docker-containerization-and-hardening.md) |
+| 021 | 2026-11-12 | GitHub Actions CI/CD pipeline and GHCR publishing | 5 | <student-A> | `11cd466` | [021-github-actions-ci-cd-and-ghcr.md](021-github-actions-ci-cd-and-ghcr.md) |
+| 022 | 2026-11-12 | Render cloud deployment, live smoke test and drift monitoring runbook | 6 | <student-A> | `11cd466` | [022-render-cloud-deployment-and-monitoring.md](022-render-cloud-deployment-and-monitoring.md) |
