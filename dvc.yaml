@@ -157,6 +157,8 @@ stages:
       - src/models/train.py
       - src/models/baselines.py
       - src/models/residual.py
+      - src/models/calibration.py
+      - src/models/monotone.py
       - src/config.py
       - data/processed/train.parquet
       - data/processed/val.parquet
@@ -177,11 +179,13 @@ stages:
     deps:
       - src/models/evaluate.py
       - src/models/residual.py
+      - src/models/calibration.py
       - src/config.py
       - models/
       - data/processed/test.parquet
       - data/processed/feature_list.json
       - data/processed/scaler.joblib
+      - reports/metrics/val_metrics.json
     outs:
       - reports/figures/evaluation/
     metrics:
@@ -190,12 +194,35 @@ stages:
       - reports/metrics/test_per_city_metrics.json:
           cache: false
 
-  # ── Step 12: Model risk / quality audit (Phase 1) ─────────────────────────
+  # ── Step 12: Single-shot holdout evaluation of the frozen champion (A1) ───
+  final_test_eval:
+    cmd: python scripts/final_test_eval.py --allow-new-candidate
+    deps:
+      - scripts/final_test_eval.py
+      - src/models/final_eval.py
+      - src/models/model_risk.py
+      - src/models/calibration.py
+      - src/config.py
+      - src/utils/io.py
+      - params.yaml
+      - data/processed/train.parquet
+      - data/processed/val.parquet
+      - data/processed/test.parquet
+      - data/processed/feature_list.json
+      - data/processed/scaler.joblib
+      - models/
+      - reports/metrics/val_metrics.json
+    metrics:
+      - reports/metrics/final_test_eval.json:
+          cache: false
+
+  # ── Step 13: Model risk / quality audit (Phase 1) ─────────────────────────
   model_risk:
     cmd: python -m src.models.model_risk
     deps:
       - src/models/model_risk.py
       - src/models/residual.py
+      - src/models/calibration.py
       - src/config.py
       - data/processed/train.parquet
       - data/processed/val.parquet
@@ -203,6 +230,8 @@ stages:
       - data/processed/feature_list.json
       - data/processed/scaler.joblib
       - models/
+      - reports/metrics/val_metrics.json
+      - reports/metrics/final_test_eval.json
     params:
       - split
       - seed
@@ -221,6 +250,8 @@ stages:
       - src/models/package_model.py
       - src/models/register_model.py
       - src/models/model_risk.py
+      - src/models/calibration.py
+      - src/models/monotone.py
       - src/serving/bundle.py
       - src/serving/__init__.py
       - src/utils/mlflow_utils.py

@@ -78,14 +78,11 @@ def _delta(
 def _metamorphic_tolerance() -> float:
     """Share of rows allowed to fall by more than 2 AQI after a raw-input shift.
 
-    The Plan's original 5% guideline was calibrated while ``rebuild_features``
-    silently median-filled every lag column (string dates never matched the
-    DatetimeIndex).  After the Phase 3 lag fix the real rates on the 423-row
-    fixture are fire x5 = 6.6% and wind / 3 = 9.0%, with positive mean deltas.
-    The gate is therefore 10% until monotone constraints are added; see ADR
-    D-029 in docs/decisions.md.
+    Restored to the Plan's 5% after the Gate 3 monotone-constrained candidate
+    (ADR D-030) structurally enforces fire >= 0 and wind <= 0.  The tolerance
+    is pre-registered and must not be relaxed again after seeing a test result.
     """
-    return 0.10
+    return 0.05
 
 
 @pytest.mark.data
@@ -325,6 +322,34 @@ def test_gate_g2_test_floor(risk_card: dict) -> None:
     assert float(gate["value"]["test_r2"]) >= 0.65
     assert float(gate["value"]["test_mae"]) <= 30.0
     assert gate["status"] == "pass"
+
+
+def test_diagnostics_use_train_and_validation_only(risk_card: dict) -> None:
+    """Plan A4: the overfitting evidence must not be computed on the holdout."""
+    diagnostics = risk_card["diagnostics"]
+    for key in (
+        "method",
+        "train_rmse",
+        "val_rmse",
+        "train_val_rmse_gap",
+        "train_val_rmse_ratio",
+        "interpretation",
+        "val_per_city",
+    ):
+        assert key in diagnostics
+    assert not any("test" in key for key in diagnostics)
+    train_rmse = float(diagnostics["train_rmse"])
+    val_rmse = float(diagnostics["val_rmse"])
+    assert np.isfinite(train_rmse) and train_rmse > 0.0
+    assert np.isfinite(val_rmse) and val_rmse > 0.0
+    assert float(diagnostics["train_val_rmse_gap"]) == pytest.approx(
+        val_rmse - train_rmse, abs=1e-3
+    )
+    assert diagnostics["interpretation"]
+    assert len(diagnostics["val_per_city"]) == 9
+    if diagnostics["cv_folds"] is not None:
+        assert int(diagnostics["cv_folds"]) >= 1
+        assert float(diagnostics["cv_rmse_mean"]) > 0.0
 
 
 def test_gate_g3_records_per_city_failures_without_weakening(risk_card: dict) -> None:

@@ -2,27 +2,230 @@
   "bundle_version": "1.1",
   "created_at": "2026-03-26T00:00:00+00:00",
   "model": {
-    "name": "residual_lightgbm",
-    "path": "models/residual_lightgbm.joblib",
-    "artifact_md5": "033819888bd9a79319a382071efd0e4e",
-    "artifact_size_bytes": 278997,
+    "name": "residual_lightgbm_monotone",
+    "path": "models/residual_lightgbm_monotone.joblib",
+    "artifact_md5": "728d68b88f7108cc0aa957a1c137a3cd",
+    "artifact_size_bytes": 545162,
     "input_kind": "residual_scaled_df",
     "residual_mode": true,
+    "calibrated": true,
+    "calibration": {
+      "method": "per_city_median_residual",
+      "fitted_on": "validation",
+      "inner_folds": 4,
+      "offsets": {
+        "Ahmedabad": -1.1194,
+        "Bengaluru": -1.313,
+        "Chennai": -1.2954,
+        "Delhi": -2.324,
+        "Hyderabad": -0.9947,
+        "Kolkata": -1.4143,
+        "Lucknow": -3.1683,
+        "Mumbai": -2.1829,
+        "Pune": -2.3777
+      },
+      "n_cities": 9,
+      "offset_mean": -1.7989,
+      "offset_abs_max": 3.1683,
+      "folds": [
+        {
+          "fold": 0,
+          "fit_rows": 661,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -5.0478
+        },
+        {
+          "fold": 1,
+          "fit_rows": 1318,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -2.6792
+        },
+        {
+          "fold": 2,
+          "fit_rows": 1975,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -2.1247
+        },
+        {
+          "fold": 3,
+          "fit_rows": 2632,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -1.714
+        }
+      ],
+      "raw_rmse": 20.34,
+      "calibrated_rmse": 20.61
+    },
+    "monotone_constraints": {
+      "fire_count_500km": 1,
+      "fire_frp_sum_500km": 1,
+      "wind_speed_10m_mean": -1,
+      "fire_count_500km_lag_1": 1,
+      "fire_count_500km_lag_3": 1,
+      "fire_count_500km_lag_7": 1,
+      "fire_count_500km_roll_mean_7d": 1,
+      "fire_count_500km_roll_max_7d": 1,
+      "fire_count_500km_roll_mean_14d": 1,
+      "fire_count_500km_roll_max_14d": 1,
+      "fire_count_500km_roll_mean_30d": 1,
+      "fire_count_500km_roll_max_30d": 1,
+      "fire_frp_sum_500km_lag_1": 1,
+      "fire_frp_sum_500km_lag_3": 1,
+      "fire_frp_sum_500km_lag_7": 1,
+      "fire_frp_sum_500km_roll_mean_7d": 1,
+      "fire_frp_sum_500km_roll_max_7d": 1,
+      "fire_frp_sum_500km_roll_mean_14d": 1,
+      "fire_frp_sum_500km_roll_max_14d": 1,
+      "fire_frp_sum_500km_roll_mean_30d": 1,
+      "fire_frp_sum_500km_roll_max_30d": 1,
+      "fire_burning_season": 1,
+      "wind_speed_10m_mean_lag_1": -1,
+      "wind_speed_10m_mean_lag_3": -1,
+      "wind_roll_mean_3d": -1,
+      "wind_roll_mean_7d": -1,
+      "fire_x_low_wind": 1,
+      "inversion_x_fire": 1,
+      "winter_stagnation_index": 1
+    },
     "val_metrics": {
       "task": "regression",
-      "model": "residual_lightgbm",
-      "mae": 12.955,
-      "rmse": 20.099,
-      "r2": 0.9027,
-      "median_ae": 7.957,
-      "within_20_rate": 0.7999,
-      "skill_score_vs_persistence": 0.11,
-      "time_sec": 0.23
+      "model": "residual_lightgbm_monotone",
+      "mae": 13.233,
+      "rmse": 20.61,
+      "r2": 0.8977,
+      "median_ae": 7.924,
+      "within_20_rate": 0.7896,
+      "skill_score_vs_persistence": 0.0874,
+      "raw_rmse": 20.34,
+      "val_max_city_ratio": 0.9673,
+      "cv_rmse_mean": 24.879,
+      "cv_rmse_std": 2.949,
+      "cv_folds": 4,
+      "config": {
+        "n_estimators": 200,
+        "learning_rate": 0.03,
+        "max_depth": 6,
+        "monotone_constraints_method": "advanced"
+      },
+      "config_index": 1,
+      "calibration": {
+        "method": "per_city_median_residual",
+        "fitted_on": "validation",
+        "inner_folds": 4,
+        "offsets": {
+          "Ahmedabad": -1.1194,
+          "Bengaluru": -1.313,
+          "Chennai": -1.2954,
+          "Delhi": -2.324,
+          "Hyderabad": -0.9947,
+          "Kolkata": -1.4143,
+          "Lucknow": -3.1683,
+          "Mumbai": -2.1829,
+          "Pune": -2.3777
+        },
+        "n_cities": 9,
+        "offset_mean": -1.7989,
+        "offset_abs_max": 3.1683,
+        "folds": [
+          {
+            "fold": 0,
+            "fit_rows": 661,
+            "apply_rows": 657,
+            "cities": 9,
+            "mean_offset": -5.0478
+          },
+          {
+            "fold": 1,
+            "fit_rows": 1318,
+            "apply_rows": 657,
+            "cities": 9,
+            "mean_offset": -2.6792
+          },
+          {
+            "fold": 2,
+            "fit_rows": 1975,
+            "apply_rows": 657,
+            "cities": 9,
+            "mean_offset": -2.1247
+          },
+          {
+            "fold": 3,
+            "fit_rows": 2632,
+            "apply_rows": 657,
+            "cities": 9,
+            "mean_offset": -1.714
+          }
+        ],
+        "raw_rmse": 20.34,
+        "calibrated_rmse": 20.61
+      },
+      "monotone_constraints": {
+        "fire_count_500km": 1,
+        "fire_frp_sum_500km": 1,
+        "wind_speed_10m_mean": -1,
+        "fire_count_500km_lag_1": 1,
+        "fire_count_500km_lag_3": 1,
+        "fire_count_500km_lag_7": 1,
+        "fire_count_500km_roll_mean_7d": 1,
+        "fire_count_500km_roll_max_7d": 1,
+        "fire_count_500km_roll_mean_14d": 1,
+        "fire_count_500km_roll_max_14d": 1,
+        "fire_count_500km_roll_mean_30d": 1,
+        "fire_count_500km_roll_max_30d": 1,
+        "fire_frp_sum_500km_lag_1": 1,
+        "fire_frp_sum_500km_lag_3": 1,
+        "fire_frp_sum_500km_lag_7": 1,
+        "fire_frp_sum_500km_roll_mean_7d": 1,
+        "fire_frp_sum_500km_roll_max_7d": 1,
+        "fire_frp_sum_500km_roll_mean_14d": 1,
+        "fire_frp_sum_500km_roll_max_14d": 1,
+        "fire_frp_sum_500km_roll_mean_30d": 1,
+        "fire_frp_sum_500km_roll_max_30d": 1,
+        "fire_burning_season": 1,
+        "wind_speed_10m_mean_lag_1": -1,
+        "wind_speed_10m_mean_lag_3": -1,
+        "wind_roll_mean_3d": -1,
+        "wind_roll_mean_7d": -1,
+        "fire_x_low_wind": 1,
+        "inversion_x_fire": 1,
+        "winter_stagnation_index": 1
+      },
+      "metamorphic": {
+        "passed": true,
+        "tolerance": 0.05,
+        "rows": 540,
+        "checks": {
+          "fire_x5": {
+            "mean_delta": 2.3867,
+            "non_monotone_rate": 0.0
+          },
+          "wind_div3": {
+            "mean_delta": 0.6051,
+            "non_monotone_rate": 0.0
+          }
+        },
+        "max_non_monotone_rate": 0.0,
+        "min_mean_delta": 0.6051
+      },
+      "pre_registered_acceptance": {
+        "passed": true,
+        "basis": "uncalibrated RMSE vs uncalibrated champion",
+        "val_rmse_relative_change": 0.012,
+        "val_rmse_within_2pct": true,
+        "calibrated_val_rmse_relative_change": 0.0254,
+        "metamorphic_5pct": true
+      },
+      "time_sec": 15.04,
+      "selected": true
     },
     "test_metrics": {
-      "mae": 14.114,
-      "rmse": 23.821,
-      "r2": 0.8779
+      "mae": 14.028,
+      "rmse": 23.886,
+      "r2": 0.8772
     }
   },
   "fallback": {
@@ -32,12 +235,12 @@
   },
   "features_count": 103,
   "feature_names_sha256": "d3cec166e3db1cfd4194dfa4477c73d077580e913eaf036dd65dfe340206216f",
-  "git_commit": "21a2f863edf4f51b4daa97e60bd9019ca5abccca",
+  "git_commit": "5c71a34759d543fc5cfcdfb529402579a6a5191a",
   "dvc_data_path": "data/processed/train.parquet",
   "dvc_data_md5": "49bd4c88748327afa12057c2fe71b0e7",
   "dvc_data_version": "49bd4c88748327afa12057c2fe71b0e7",
-  "params_sha256": "4fffb8fdac7daab22d6bcefa82be16edab4153f582cc713489e1d2793b33dd29",
-  "risk_card_sha": "5c947c5e4918001e4488cb2bc40a8b22a45618b8f0f9362a7fed67ae9f8375be",
+  "params_sha256": "18fa8343245dba72d0cafde2e178889da7c9d026817cf4d2b3b4fb5566a098c4",
+  "risk_card_sha": "fd7cdda7a0827f5d96da152393d19e6d305c18afddd72ee58cb039b4ad10e910",
   "history_seed_days": 45,
   "split": {
     "train_end": "2023-12-31",
@@ -53,59 +256,59 @@
     "G5": "pass"
   },
   "gate_waivers": {
-    "G3": "Accepted red gate per ADR D-023: Kolkata fails the +5% per-city MAE rule; the threshold is unchanged and the failure stays visible in the risk card."
+    "G3": "Accepted red gate per ADR D-023/D-038: the val-frozen monotone+calibrated champion still puts one city above the +5% per-city MAE rule on the single holdout run. The threshold is unchanged, the failure stays visible in the risk card, and no post-test tuning was performed."
   },
   "promotion_policy": "Registration sets the challenger alias; champion is set only after MANIFEST sha and gate validation.",
   "residual_quantiles": {
     "__global__": {
-      "q10": -20.3131,
-      "q50": -1.3297,
-      "q90": 19.3371
+      "q10": -19.7969,
+      "q50": 0.0,
+      "q90": 20.8967
     },
     "Ahmedabad": {
-      "q10": -22.2762,
-      "q50": -0.561,
-      "q90": 24.8963
+      "q10": -21.2233,
+      "q50": 0.0,
+      "q90": 25.049
     },
     "Bengaluru": {
-      "q10": -13.0174,
-      "q50": -1.4177,
-      "q90": 12.1222
+      "q10": -10.7858,
+      "q50": 0.0,
+      "q90": 13.1857
     },
     "Chennai": {
-      "q10": -15.7542,
-      "q50": -1.5671,
-      "q90": 12.9937
+      "q10": -14.6614,
+      "q50": 0.0,
+      "q90": 13.9252
     },
     "Delhi": {
-      "q10": -41.6325,
-      "q50": 0.3247,
-      "q90": 45.2348
+      "q10": -43.9113,
+      "q50": 0.0,
+      "q90": 43.8396
     },
     "Hyderabad": {
-      "q10": -10.3302,
-      "q50": -0.7093,
-      "q90": 7.3643
+      "q10": -9.5093,
+      "q50": 0.0,
+      "q90": 8.217
     },
     "Kolkata": {
-      "q10": -23.7828,
-      "q50": -1.0744,
-      "q90": 22.4867
+      "q10": -22.3552,
+      "q50": 0.0,
+      "q90": 21.0888
     },
     "Lucknow": {
-      "q10": -29.8844,
-      "q50": -1.7851,
-      "q90": 26.9645
+      "q10": -28.0471,
+      "q50": 0.0,
+      "q90": 29.5305
     },
     "Mumbai": {
-      "q10": -18.3365,
-      "q50": -1.9744,
-      "q90": 13.3709
+      "q10": -15.8915,
+      "q50": -0.0,
+      "q90": 15.0981
     },
     "Pune": {
-      "q10": -16.2705,
-      "q50": -1.5416,
-      "q90": 13.3257
+      "q10": -15.5819,
+      "q50": 0.0,
+      "q90": 14.9884
     }
   },
   "python_version": "3.12.7",
@@ -121,6 +324,6 @@
   "reference_stats_sha": "01ab1eabfacb3817bd6f9d86e8bd581c0f0e18420ffe7043a00efe26a90cc2cd",
   "history_seed_sha": "d03c4093c99cae9e93b298754caafedaf31dd92d4fab97d4cd87417c08721119",
   "history_seed_rows": 405,
-  "bundle_sha256": "f5d17e54635e5a804404bf59dc2e58a9f59415c1cf456ddeb094c7ff6b1be6cf",
-  "bundle_size_bytes": 612336
+  "bundle_sha256": "3bdc05c84ce0c2213aabd4894f17cfb25adf3d3aeba7986950fa927d4af77f8d",
+  "bundle_size_bytes": 878496
 }

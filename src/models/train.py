@@ -57,6 +57,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
 from src.config import load_params
+from src.features.serving_features import build_feature_frame
 from src.models.baselines import (
     MajorityClassBaseline,
     PersistenceBaseline,
@@ -64,6 +65,12 @@ from src.models.baselines import (
     StationMonthMeanBaseline,
     WeeklySeasonalNaiveBaseline,
 )
+from src.models.calibration import (
+    CityCalibratedRegressor,
+    forward_calibrated_predictions,
+    per_city_offsets,
+)
+from src.models.monotone import build_monotone_constraints, constrained_features
 from src.models.residual import ResidualRegressor
 from src.utils.logging_utils import get_logger, setup_logging
 from src.utils.mlflow_utils import log_params_yaml, setup_experiment, start_run
@@ -127,8 +134,29 @@ def calc_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[
     }
 
 
+def _residual_cv_scores(
+    config: dict[str, float | int | list[int]],
+    X: pd.DataFrame,
+    y: np.ndarray,
+    aqi: np.ndarray,
+    seed: int,
+    n_splits: int = 4,
+) -> list[float]:
+    """Per-fold TimeSeriesSplit RMSE for a residual LightGBM configuration."""
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    scores: list[float] = []
+    for train_idx, test_idx in tscv.split(X):
+        model = ResidualRegressor(
+            LGBMRegressor(**config, random_state=seed, verbosity=-1, n_jobs=1)
+        )
+        model.fit(X.iloc[train_idx], y[train_idx], aqi[train_idx])
+        preds = model.predict(X.iloc[test_idx], aqi[test_idx])
+        scores.append(float(root_mean_squared_error(y[test_idx], preds)))
+    return scores
+
+
 def _residual_cv_rmse(
-    config: dict[str, float | int],
+    config: dict[str, float | int | list[int]],
     X: pd.DataFrame,
     y: np.ndarray,
     aqi: np.ndarray,
@@ -136,16 +164,144 @@ def _residual_cv_rmse(
     n_splits: int = 4,
 ) -> float:
     """Mean TimeSeriesSplit RMSE for a residual LightGBM configuration (train only)."""
-    tscv = TimeSeriesSplit(n_splits=n_splits)
-    rmses = []
-    for train_idx, test_idx in tscv.split(X):
-        model = ResidualRegressor(
-            LGBMRegressor(**config, random_state=seed, verbosity=-1, n_jobs=1)
+    return float(np.mean(_residual_cv_scores(config, X, y, aqi, seed, n_splits)))
+
+
+def _scaled_frame(
+    scaler: StandardScaler, frame: pd.DataFrame, feature_names: list[str]
+) -> pd.DataFrame:
+    """Scale a frame while keeping the training feature order and names."""
+    scaled = scaler.transform(frame[feature_names])
+    return pd.DataFrame(scaled, columns=feature_names)
+
+
+def _predict_artifact(
+    model: Any,
+    frame: pd.DataFrame,
+    scaler: StandardScaler,
+    feature_names: list[str],
+    aqi_max: float,
+) -> np.ndarray:
+    """Predict with the residual/calibrated contract, clipped to the AQI scale."""
+    scaled_df = _scaled_frame(scaler, frame, feature_names)
+    aqi = frame["aqi"].to_numpy(dtype=float)
+    if isinstance(model, CityCalibratedRegressor):
+        preds = model.predict(scaled_df, aqi, city=frame["city"].to_numpy())
+    else:
+        preds = model.predict(scaled_df, aqi)
+    return np.clip(np.asarray(preds, dtype=float), 0.0, float(aqi_max))
+
+
+def _val_max_city_ratio(frame: pd.DataFrame, preds: np.ndarray, persistence: np.ndarray) -> float:
+    """Largest per-city MAE ratio against persistence on the validation split."""
+    ratios = []
+    for _, group in frame.assign(_pred=preds, _persist=persistence).groupby("city"):
+        truth = group["target_aqi"].to_numpy(dtype=float)
+        mae_model = float(np.mean(np.abs(truth - group["_pred"].to_numpy(dtype=float))))
+        mae_persist = float(np.mean(np.abs(truth - group["_persist"].to_numpy(dtype=float))))
+        ratios.append(mae_model / mae_persist if mae_persist > 0 else 0.0)
+    return float(max(ratios)) if ratios else 0.0
+
+
+def _train_medians(train_df: pd.DataFrame, feature_names: list[str]) -> dict[str, float]:
+    """Recompute the train medians identically to the model-risk reference stats."""
+    medians = train_df[feature_names].median().fillna(0.0)
+    return {name: float(medians[name]) for name in feature_names}
+
+
+def _metamorphic_acceptance(
+    model: Any,
+    val_df: pd.DataFrame,
+    feature_names: list[str],
+    params: dict[str, Any],
+    train_medians: dict[str, float],
+    scaler: StandardScaler,
+    aqi_max: float,
+) -> dict[str, Any]:
+    """Pre-registered metamorphic check on the last 60 validation days per city.
+
+    This mirrors the fixture tests but runs on the real validation split, so the
+    promotion decision never touches the holdout.
+    """
+    frame = val_df.copy()
+    frame["date"] = pd.to_datetime(frame["date"])
+    last = frame.groupby("city")["date"].transform("max")
+    sample = frame[frame["date"] >= last - pd.Timedelta(days=59)].copy()
+    baseline = _predict_artifact(
+        model,
+        build_feature_frame(sample, feature_names, params, train_medians),
+        scaler,
+        feature_names,
+        aqi_max,
+    )
+
+    def fire_mutation(panel: pd.DataFrame) -> None:
+        panel["fire_count_500km"] = panel["fire_count_500km"] * 5.0
+        panel["fire_frp_sum_500km"] = panel["fire_frp_sum_500km"] * 5.0
+
+    def wind_mutation(panel: pd.DataFrame) -> None:
+        panel["wind_speed_10m_mean"] = panel["wind_speed_10m_mean"] / 3.0
+
+    checks: dict[str, dict[str, float]] = {}
+    for label, mutate in (("fire_x5", fire_mutation), ("wind_div3", wind_mutation)):
+        treated = sample.copy()
+        mutate(treated)
+        delta = (
+            _predict_artifact(
+                model,
+                build_feature_frame(treated, feature_names, params, train_medians),
+                scaler,
+                feature_names,
+                aqi_max,
+            )
+            - baseline
         )
-        model.fit(X.iloc[train_idx], y[train_idx], aqi[train_idx])
-        preds = model.predict(X.iloc[test_idx], aqi[test_idx])
-        rmses.append(float(root_mean_squared_error(y[test_idx], preds)))
-    return float(np.mean(rmses))
+        checks[label] = {
+            "mean_delta": round(float(delta.mean()), 4),
+            "non_monotone_rate": round(float(np.mean(delta < -2.0)), 4),
+        }
+
+    max_rate = max(check["non_monotone_rate"] for check in checks.values())
+    min_mean = min(check["mean_delta"] for check in checks.values())
+    return {
+        "passed": bool(max_rate <= 0.05 and min_mean >= 0.0),
+        "tolerance": 0.05,
+        "rows": int(len(sample)),
+        "checks": checks,
+        "max_non_monotone_rate": max_rate,
+        "min_mean_delta": min_mean,
+    }
+
+
+def _mark_selected(leaderboard: list[dict[str, Any]]) -> dict[str, Any]:
+    """Apply the pre-registered selection rule and flag one champion.
+
+    D-030: a monotone candidate that passes its pre-registered acceptance is
+    preferred over the unconstrained incumbent even when its validation RMSE is
+    up to 2% worse, because it restores the 5% metamorphic gate structurally.
+    D-031: within the preferred pool, minimise validation RMSE subject to
+    validation per-city MAE ratio <= 1.05 when any candidate satisfies it.
+    """
+    eligible = [
+        entry
+        for entry in leaderboard
+        if entry.get("task") == "regression" and entry.get("model") not in model_risk_exclusions()
+    ]
+    accepted = [
+        entry for entry in eligible if entry.get("pre_registered_acceptance", {}).get("passed")
+    ]
+    pool = accepted or eligible
+    conforming = [entry for entry in pool if float(entry.get("val_max_city_ratio", np.inf)) <= 1.05]
+    chosen = min(conforming or pool, key=lambda entry: float(entry["rmse"]))
+    for entry in eligible:
+        entry["selected"] = False
+    chosen["selected"] = True
+    return chosen
+
+
+def model_risk_exclusions() -> set[str]:
+    """Champion exclusions shared with ``model_risk.CHAMPION_EXCLUDED``."""
+    return {"persistence", "seasonal_naive", "station_month_mean", "random_forest_reg"}
 
 
 def main() -> None:
@@ -551,19 +707,23 @@ def main() -> None:
         {"n_estimators": 100, "learning_rate": 0.05, "max_depth": 4},
     ]
     cv_scores = []
+    cv_folds_by_config: list[list[float]] = []
     for config in lgbm_res_configs:
-        score = _residual_cv_rmse(
+        folds = _residual_cv_scores(
             config,
             X_train_df.iloc[time_order],
             y_train_reg[time_order],
             aqi_train[time_order],
             seed=seed,
         )
+        cv_folds_by_config.append(folds)
+        score = float(np.mean(folds))
         cv_scores.append(score)
         logger.info(f"Residual LightGBM CV RMSE {config}: {score:.3f}")
     best_lgbm_res_idx = int(np.argmin(cv_scores))
     best_lgbm_res_cfg = lgbm_res_configs[best_lgbm_res_idx]
     best_lgbm_res_cv = cv_scores[best_lgbm_res_idx]
+    best_lgbm_res_folds = cv_folds_by_config[best_lgbm_res_idx]
 
     t0 = time.time()
     residual_lgbm = ResidualRegressor(
@@ -612,9 +772,208 @@ def main() -> None:
             "task": "regression",
             "model": "residual_lightgbm",
             **m_res_lgbm,
+            "val_max_city_ratio": round(
+                _val_max_city_ratio(df_val, preds_val_res_lgbm, preds_val_persist), 4
+            ),
+            "cv_rmse_mean": round(best_lgbm_res_cv, 3),
+            "cv_rmse_std": round(float(np.std(best_lgbm_res_folds)), 3),
+            "cv_folds": len(best_lgbm_res_folds),
             "time_sec": round(time_res_lgbm, 2),
         }
     )
+
+    # =========================================================================
+    # GATE 3 (ADR D-030 / D-031): monotone + uniformly calibrated candidates
+    # Selection is validation-only; the holdout is touched once by
+    # scripts/final_test_eval.py after the champion is frozen.
+    # =========================================================================
+    monotone_cfg = params.get("train", {}).get("monotone", {})
+    monotone_enabled = bool(monotone_cfg.get("enabled", True))
+    calibration_folds = int(monotone_cfg.get("calibration_folds", 4))
+    objectives = list(monotone_cfg.get("objectives", ["l2"]))
+    aqi_max = float(df_train["target_aqi"].max())
+    train_medians = _train_medians(df_train, feature_names)
+    constraints = build_monotone_constraints(feature_names)
+    if monotone_enabled:
+        logger.info(
+            "Monotone constraints: %d features (%s positive, %s negative)",
+            sum(1 for value in constraints if value),
+            sum(1 for value in constraints if value > 0),
+            sum(1 for value in constraints if value < 0),
+        )
+
+    monotone_entries: list[dict[str, Any]] = []
+    for objective in objectives:
+        suffix = "" if objective == "l2" else f"_{objective}"
+        name = f"residual_lightgbm_monotone{suffix}"
+        t0 = time.time()
+
+        # Reuse the unconstrained family's three pre-specified configurations.
+        # The constrained winner is chosen by validation OOF RMSE only; the
+        # holdout is not consulted here.
+        best: dict[str, Any] | None = None
+        for config_index, base_cfg in enumerate(lgbm_res_configs):
+            candidate_config: dict[str, Any] = {
+                **base_cfg,
+                "monotone_constraints": constraints,
+                "monotone_constraints_method": str(
+                    monotone_cfg.get("constraints_method", "advanced")
+                ),
+            }
+            if objective != "l2":
+                candidate_config["objective"] = objective
+                if objective == "huber":
+                    candidate_config["alpha"] = float(monotone_cfg.get("huber_alpha", 0.9))
+
+            raw_model = ResidualRegressor(
+                LGBMRegressor(**candidate_config, random_state=seed, verbosity=-1, n_jobs=-1)
+            )
+            raw_model.fit(X_train_df, y_train_reg, aqi_train)
+            raw_val = raw_model.predict(X_val_df, aqi_val)
+            raw_metrics = calc_regression_metrics(y_val_reg, raw_val, persistence_rmse=persist_rmse)
+
+            val_cities = df_val["city"].to_numpy()
+            oof_pred, fold_records = forward_calibrated_predictions(
+                y_val_reg,
+                raw_val,
+                val_cities,
+                df_val["date"].to_numpy(),
+                n_splits=calibration_folds,
+            )
+            offsets = per_city_offsets(y_val_reg, raw_val, val_cities)
+            calibrated_model = CityCalibratedRegressor(base_model=raw_model, offsets=offsets)
+            m_calibrated = calc_regression_metrics(
+                y_val_reg, oof_pred, persistence_rmse=persist_rmse
+            )
+            logger.info(
+                "Constrained %s config %d (n_estimators=%s, lr=%s, depth=%s): val RMSE %.3f",
+                objective,
+                config_index,
+                base_cfg["n_estimators"],
+                base_cfg["learning_rate"],
+                base_cfg["max_depth"],
+                m_calibrated["rmse"],
+            )
+            if best is None or m_calibrated["rmse"] < best["metrics"]["rmse"]:
+                best = {
+                    "config": candidate_config,
+                    "config_index": config_index,
+                    "model": calibrated_model,
+                    "metrics": m_calibrated,
+                    "raw_metrics": raw_metrics,
+                    "predictions": oof_pred,
+                    "folds": fold_records,
+                }
+
+        assert best is not None  # lgbm_res_configs is never empty
+        calibrated_model = best["model"]
+        m_calibrated = best["metrics"]
+        raw_metrics = best["raw_metrics"]
+        val_ratio = _val_max_city_ratio(df_val, best["predictions"], preds_val_persist)
+        metamorphic = _metamorphic_acceptance(
+            calibrated_model,
+            df_val,
+            feature_names,
+            params,
+            train_medians,
+            scaler,
+            aqi_max,
+        )
+        cv_folds_scores = _residual_cv_scores(
+            best["config"],
+            X_train_df.iloc[time_order],
+            y_train_reg[time_order],
+            aqi_train[time_order],
+            seed=seed,
+        )
+        relative_change = raw_metrics["rmse"] / m_res_lgbm["rmse"] - 1.0
+        calibrated_change = m_calibrated["rmse"] / m_res_lgbm["rmse"] - 1.0
+        acceptance = {
+            # A2 judges the *constrained model* against the unconstrained
+            # incumbent.  The per-city calibration is a separate, uniformly
+            # applied A3 step; its OOF cost is reported but is not part of the
+            # monotonicity acceptance.
+            "passed": bool(relative_change <= 0.02 and metamorphic["passed"]),
+            "basis": "uncalibrated RMSE vs uncalibrated champion",
+            "val_rmse_relative_change": round(float(relative_change), 4),
+            "val_rmse_within_2pct": bool(relative_change <= 0.02),
+            "calibrated_val_rmse_relative_change": round(float(calibrated_change), 4),
+            "metamorphic_5pct": bool(metamorphic["passed"]),
+        }
+        time_candidate = time.time() - t0
+
+        joblib.dump(calibrated_model, args.models_dir / f"{name}.joblib")
+        saved_model_paths.append(str(args.models_dir / f"{name}.joblib"))
+
+        selected_config = {
+            key: value for key, value in best["config"].items() if key != "monotone_constraints"
+        }
+        with start_run(
+            step_id="018",
+            logbook_entry="018-gate3-monotone-and-calibration.md",
+            run_name=name,
+            experiment_id=reg_exp_id,
+            tags={
+                "task": "regression",
+                "model_family": "gradient_boosting_residual_monotone",
+                "stage": "gate3_candidate",
+                "residual": "true",
+                "calibrated": "true",
+                "author": "Suhas Raghavendra",
+            },
+        ):
+            mlflow.log_params(
+                {
+                    "model_type": "CityCalibratedRegressor(ResidualRegressor(LGBMRegressor))",
+                    "objective": objective,
+                    "monotone_features": int(sum(1 for value in constraints if value)),
+                    "calibration_folds": calibration_folds,
+                    "n_estimators": int(best["config"]["n_estimators"]),
+                    "learning_rate": float(best["config"]["learning_rate"]),
+                    "max_depth": int(best["config"]["max_depth"]),
+                    "config_index": int(best["config_index"]),
+                    "cv_rmse": round(float(np.mean(cv_folds_scores)), 3),
+                    "seed": seed,
+                }
+            )
+            mlflow.log_metrics(
+                {**m_calibrated, "raw_rmse": raw_metrics["rmse"], "train_time_sec": time_candidate}
+            )
+            mlflow.log_artifact(str(args.models_dir / f"{name}.joblib"))
+
+        entry = {
+            "task": "regression",
+            "model": name,
+            **m_calibrated,
+            "raw_rmse": raw_metrics["rmse"],
+            "val_max_city_ratio": round(val_ratio, 4),
+            "cv_rmse_mean": round(float(np.mean(cv_folds_scores)), 3),
+            "cv_rmse_std": round(float(np.std(cv_folds_scores)), 3),
+            "cv_folds": len(cv_folds_scores),
+            "config": selected_config,
+            "config_index": int(best["config_index"]),
+            "calibration": {
+                **calibrated_model.calibration_report(),
+                "folds": best["folds"],
+                "raw_rmse": raw_metrics["rmse"],
+                "calibrated_rmse": m_calibrated["rmse"],
+            },
+            "monotone_constraints": constrained_features(feature_names),
+            "metamorphic": metamorphic,
+            "pre_registered_acceptance": acceptance,
+            "time_sec": round(time_candidate, 2),
+        }
+        leaderboard.append(entry)
+        monotone_entries.append(entry)
+
+    if monotone_entries:
+        best_monotone = min(monotone_entries, key=lambda item: float(item["rmse"]))
+        logger.info(
+            "Best monotone candidate: %s (val RMSE %.3f, accepted=%s)",
+            best_monotone["model"],
+            best_monotone["rmse"],
+            best_monotone["pre_registered_acceptance"]["passed"],
+        )
 
     # Identify best *direct* learned regressor for downstream "regress-then-bucket".
     # Residual models are level candidates and need today's AQI, so they are not
@@ -909,6 +1268,16 @@ def main() -> None:
             **m_xgbc,
             "time_sec": round(time_xgbc, 2),
         }
+    )
+
+    # Validation-only champion selection (ADR D-030/D-031). The chosen entry is
+    # flagged so model_risk/package_model consume exactly this decision.
+    selected = _mark_selected(leaderboard)
+    logger.info(
+        "Selected champion on validation: %s (RMSE %.3f, max city ratio %.3f)",
+        selected["model"],
+        selected["rmse"],
+        selected.get("val_max_city_ratio", float("nan")),
     )
 
     # Write output metrics JSON

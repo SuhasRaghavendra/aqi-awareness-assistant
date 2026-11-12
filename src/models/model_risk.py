@@ -197,7 +197,12 @@ def rebuild_features(
 
 
 def select_champion(val_metrics: list[dict[str, Any]]) -> dict[str, Any]:
-    """Select the lowest-val-RMSE learned regressor, excluding Random Forest on size."""
+    """Select the champion recorded by the validation-only selection rule.
+
+    ``train.py`` marks exactly one eligible entry with ``selected: true`` after
+    applying the pre-registered criteria (D-030/D-031).  If no entry carries the
+    flag (older leaderboards), fall back to the lowest validation RMSE.
+    """
     candidates = [
         entry
         for entry in val_metrics
@@ -205,6 +210,9 @@ def select_champion(val_metrics: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     if not candidates:
         raise ValueError("No eligible regression candidates found in val_metrics.json")
+    selected = [entry for entry in candidates if entry.get("selected")]
+    if len(selected) == 1:
+        return selected[0]
     return min(candidates, key=lambda entry: float(entry["rmse"]))
 
 
@@ -242,10 +250,22 @@ def predict_regression(
     feature_names: list[str],
     aqi_max: float,
 ) -> np.ndarray:
-    """Predict and clip regression output to the training AQI scale."""
+    """Predict and clip regression output to the training AQI scale.
+
+    Calibrated champions receive ``city`` so their per-city offsets are
+    applied identically offline and in serving.
+    """
+    from src.models.calibration import CityCalibratedRegressor
+
     scaled = scaler.transform(df[feature_names])
     scaled_df = pd.DataFrame(scaled, columns=feature_names)
-    if name.startswith("residual_"):
+    if isinstance(model, CityCalibratedRegressor):
+        preds = model.predict(
+            scaled_df,
+            df["aqi"].to_numpy(dtype=float),
+            city=df["city"].to_numpy(),
+        )
+    elif name.startswith("residual_"):
         preds = model.predict(scaled_df, df["aqi"].to_numpy(dtype=float))
     elif name == "ridge":
         preds = model.predict(scaled)
@@ -452,33 +472,79 @@ def build_risk_card(
     test_df = pd.read_parquet(base / "data/processed/test.parquet")
     aqi_max = float(reference_stats["target_aqi"]["max"])
 
+    # The holdout numbers come from the single-shot evaluation (ADR A1). Refuse
+    # a stale report: it must describe this exact test file and champion.
+    final_eval_path = base / "reports/metrics/final_test_eval.json"
+    final_eval = read_json(final_eval_path)
+    test_md5 = file_md5(base / "data/processed/test.parquet")
+    if final_eval["splits"]["test"] != test_md5:
+        raise RuntimeError(
+            "final_test_eval.json was computed on a different test split; "
+            "re-run scripts/final_test_eval.py"
+        )
+    if final_eval["candidate"]["artifact_md5"] != file_md5(champion.path):
+        raise RuntimeError(
+            "final_test_eval.json belongs to a different champion artifact; "
+            "freeze the candidate and re-run scripts/final_test_eval.py"
+        )
+
     persistence = joblib.load(base / "models/persistence.joblib")
     val_persist = predict_regression(
         "persistence", persistence, val_df, scaler, feature_names, aqi_max
     )
-    test_persist = predict_regression(
-        "persistence", persistence, test_df, scaler, feature_names, aqi_max
-    )
     val_pred = predict_regression(
         champion.name, champion.model, val_df, scaler, feature_names, aqi_max
     )
-    test_pred = predict_regression(
-        champion.name, champion.model, test_df, scaler, feature_names, aqi_max
-    )
 
-    test_metrics = regression_metrics(test_df["target_aqi"].to_numpy(dtype=float), test_pred)
+    test_metrics = {key: float(final_eval["metrics"][key]) for key in ("mae", "rmse", "r2")}
     val_skill = skill_vs_persistence(
         val_df["target_aqi"].to_numpy(dtype=float), val_pred, val_persist
     )
-    test_skill = skill_vs_persistence(
-        test_df["target_aqi"].to_numpy(dtype=float), test_pred, test_persist
+    test_skill = float(final_eval["skill_vs_persistence"])
+    test_ci = (float(final_eval["skill_ci_lo_95"]), float(final_eval["skill_ci_hi_95"]))
+
+    # Overfitting diagnostics (Plan A4). These use train/validation only; the
+    # holdout is never re-used to judge the fit.
+    train_pred = predict_regression(
+        champion.name, champion.model, train_df, scaler, feature_names, aqi_max
     )
-    test_ci = bootstrap_skill_ci(
-        test_df["target_aqi"].to_numpy(dtype=float),
-        test_pred,
-        test_persist,
-        test_df["date"].to_numpy(),
+    train_rmse = float(
+        regression_metrics(train_df["target_aqi"].to_numpy(dtype=float), train_pred)["rmse"]
     )
+    val_rmse = float(champion.val_metrics.get("rmse", float("nan")))
+    cv_mean = champion.val_metrics.get("cv_rmse_mean")
+    cv_std = champion.val_metrics.get("cv_rmse_std")
+    cv_folds = champion.val_metrics.get("cv_folds")
+    train_val_gap = val_rmse - train_rmse
+    train_val_ratio = val_rmse / train_rmse if train_rmse > 0 else float("inf")
+    if not np.isfinite(val_rmse) or train_rmse <= 0:
+        interpretation = "insufficient training statistics"
+    elif train_val_ratio <= 1.10:
+        interpretation = "no material overfitting: validation RMSE is within 10% of training RMSE"
+    elif train_val_ratio <= 1.25:
+        interpretation = "moderate train/validation gap; validation scores may be mildly optimistic"
+    else:
+        interpretation = "material train/validation gap; treat validation scores as optimistic"
+    diagnostics = {
+        "method": "train vs validation RMSE and TimeSeriesSplit CV (holdout not used)",
+        "train_rmse": round(train_rmse, 3),
+        "val_rmse": round(val_rmse, 3) if np.isfinite(val_rmse) else None,
+        "train_val_rmse_gap": round(train_val_gap, 3) if np.isfinite(val_rmse) else None,
+        "train_val_rmse_ratio": round(train_val_ratio, 4) if np.isfinite(val_rmse) else None,
+        "cv_rmse_mean": round(float(cv_mean), 3) if cv_mean is not None else None,
+        "cv_rmse_std": round(float(cv_std), 3) if cv_std is not None else None,
+        "cv_folds": int(cv_folds) if cv_folds is not None else None,
+        "interpretation": interpretation,
+        "val_per_city": [
+            {
+                "city": row["city"],
+                "mae": row["mae"],
+                "rmse": row["rmse"],
+                "mae_ratio_vs_persistence": row["mae_ratio_vs_persistence"],
+            }
+            for row in per_city_records(val_df, val_pred, val_persist)
+        ],
+    }
 
     val_metrics_list = read_json(base / "reports/metrics/val_metrics.json")
     classifier_entry = select_classifier(val_metrics_list)
@@ -497,7 +563,24 @@ def build_risk_card(
         )
     )
 
-    per_city = per_city_records(test_df, test_pred, test_persist, true_categories, category_pred)
+    # G3 uses the frozen holdout rows from final_test_eval; G4 adds the Poor+
+    # recall that needs classifier predictions.
+    poor_plus: dict[str, dict[str, Any]] = {}
+    category_frame = pd.DataFrame(
+        {"city": test_df["city"].to_numpy(), "category": true_categories, "pred": category_pred}
+    )
+    for city, group in category_frame.groupby("city"):
+        mask = group["category"].isin(POOR_PLUS)
+        support = int(mask.sum())
+        poor_plus[str(city)] = {
+            "poor_plus_support": support,
+            "poor_plus_recall": (
+                round(float(np.mean(group.loc[mask, "pred"] == group.loc[mask, "category"])), 4)
+                if support
+                else None
+            ),
+        }
+    per_city = [{**row, **poor_plus.get(str(row["city"]), {})} for row in final_eval["per_city"]]
     failing_cities = [
         row["city"] for row in per_city if float(row["mae_ratio_vs_persistence"]) > 1.05
     ]
@@ -619,14 +702,18 @@ def build_risk_card(
             "artifact_md5": file_md5(champion.path),
             "artifact_size_bytes": int(champion.path.stat().st_size),
             "selection_rule": (
-                "lowest validation RMSE among learned regressors, "
-                "Random Forest excluded on artifact size"
+                "validation-only: accept a monotone candidate within 2% of the "
+                "incumbent validation RMSE, then minimise validation RMSE subject "
+                "to per-city MAE ratio <= 1.05 (ADRs D-030/D-031); Random Forest "
+                "excluded on artifact size"
             ),
             "val_metrics": {
                 key: round(float(value), 4)
                 for key, value in champion.val_metrics.items()
                 if isinstance(value, (int, float))
             },
+            "calibration": champion.val_metrics.get("calibration"),
+            "monotone_constraints": champion.val_metrics.get("monotone_constraints"),
             "test_metrics": {
                 "mae": round(test_metrics["mae"], 3),
                 "rmse": round(test_metrics["rmse"], 3),
@@ -653,6 +740,7 @@ def build_risk_card(
         "git_commit": commit,
         "gates": gates,
         "per_city": per_city,
+        "diagnostics": diagnostics,
         "test_counts": {
             "rows": int(len(test_df)),
             "cities": int(test_df["city"].nunique()),

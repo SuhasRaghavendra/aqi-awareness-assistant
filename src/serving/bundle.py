@@ -47,11 +47,22 @@ def sha256_file(path: Path) -> str:
 
 
 def _iter_estimators(model: Any) -> Iterator[Any]:
-    """Yield the model and any wrapped base estimator (``ResidualRegressor``)."""
-    yield model
-    base = getattr(model, "base_model", None)
-    if base is not None and base is not model:
-        yield base
+    """Yield the model and every wrapped base estimator.
+
+    Calibrated champions nest ``CityCalibratedRegressor -> ResidualRegressor ->
+    LGBMRegressor``, so the walk must follow the whole ``base_model`` chain.
+    """
+    seen: set[int] = set()
+    stack: list[Any] = [model]
+    while stack:
+        estimator = stack.pop()
+        if id(estimator) in seen:
+            continue
+        seen.add(id(estimator))
+        yield estimator
+        base = getattr(estimator, "base_model", None)
+        if base is not None and base is not estimator:
+            stack.append(base)
 
 
 @dataclass
@@ -91,8 +102,16 @@ class AqiBundle:
 
     def predict(self, frame: pd.DataFrame) -> np.ndarray:
         """Predict next-day AQI from a frame containing the manifest features."""
+        from src.models.calibration import CityCalibratedRegressor
+
         scaled, scaled_df = self._scaled(frame)
-        if self.input_kind == "residual_scaled_df":
+        if isinstance(self.model, CityCalibratedRegressor):
+            preds = self.model.predict(
+                scaled_df,
+                frame["aqi"].to_numpy(dtype=float),
+                city=frame["city"].to_numpy(),
+            )
+        elif self.input_kind == "residual_scaled_df":
             preds = self.model.predict(scaled_df, frame["aqi"].to_numpy(dtype=float))
         elif self.input_kind == "scaled_array":
             preds = self.model.predict(scaled)
@@ -206,6 +225,15 @@ class AqiBundle:
         missing = cities - set(self.residual_quantiles)
         if missing:
             raise BundleIntegrityError(f"residual_quantiles is missing cities: {sorted(missing)}")
+
+        from src.models.calibration import CityCalibratedRegressor
+
+        if isinstance(self.model, CityCalibratedRegressor):
+            uncalibrated = cities - set(self.model.offsets)
+            if uncalibrated:
+                raise BundleIntegrityError(
+                    f"city calibration is missing cities: {sorted(uncalibrated)}"
+                )
 
     def save(self, path: str | Path, include_payload: bool = True) -> dict[str, Any]:
         """Persist the bundle, MANIFEST.json and MANIFEST.sha256 atomically.

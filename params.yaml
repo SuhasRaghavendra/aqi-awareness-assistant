@@ -93,3 +93,13 @@ train:
     - residual_ridge       # Phase 0.4: persistence-anchored Ridge (TimeSeriesSplit CV)
     - residual_lightgbm    # Phase 0.4: persistence-anchored LightGBM (TimeSeriesSplit CV)
   cv_folds: 4
+
+  # --- Gate 3 (ADR D-030/D-031) ---
+  # Monotone fire/wind constraints restore the 5% metamorphic gate; every city
+  # receives the same additive calibration fitted on validation inner folds.
+  monotone:
+    enabled: true
+    objectives: [l2, huber]
+    constraints_method: advanced
+    calibration_folds: 4
+    huber_alpha: 0.9

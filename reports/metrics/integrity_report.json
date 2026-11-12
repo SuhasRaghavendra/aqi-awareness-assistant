@@ -334,80 +334,80 @@
       "check": "risk_card.per_city_mae_matches.Ahmedabad",
       "passed": true,
       "detail": {
-        "card": 11.713,
-        "recomputed": 11.7126
+        "card": 11.794,
+        "recomputed": 11.7944
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Bengaluru",
       "passed": true,
       "detail": {
-        "card": 5.04,
-        "recomputed": 5.0399
+        "card": 4.844,
+        "recomputed": 4.8438
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Chennai",
       "passed": true,
       "detail": {
-        "card": 11.354,
-        "recomputed": 11.3536
+        "card": 11.158,
+        "recomputed": 11.1581
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Delhi",
       "passed": true,
       "detail": {
-        "card": 21.491,
-        "recomputed": 21.4908
+        "card": 21.578,
+        "recomputed": 21.5783
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Hyderabad",
       "passed": true,
       "detail": {
-        "card": 19.089,
-        "recomputed": 19.0887
+        "card": 19.077,
+        "recomputed": 19.0769
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Kolkata",
       "passed": true,
       "detail": {
-        "card": 15.041,
-        "recomputed": 15.041
+        "card": 14.593,
+        "recomputed": 14.5934
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Lucknow",
       "passed": true,
       "detail": {
-        "card": 12.699,
-        "recomputed": 12.6995
+        "card": 13.368,
+        "recomputed": 13.3683
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Mumbai",
       "passed": true,
       "detail": {
-        "card": 15.352,
-        "recomputed": 15.3525
+        "card": 15.003,
+        "recomputed": 15.0025
       }
     },
     {
       "check": "risk_card.per_city_mae_matches.Pune",
       "passed": true,
       "detail": {
-        "card": 7.479,
-        "recomputed": 7.4788
+        "card": 7.238,
+        "recomputed": 7.2382
       }
     },
     {
       "check": "risk_card.champion_matches_artifact",
       "passed": true,
       "detail": {
-        "card": "residual_lightgbm",
-        "artifact": "residual_lightgbm"
+        "card": "residual_lightgbm_monotone",
+        "artifact": "residual_lightgbm_monotone"
       }
     },
     {
@@ -416,6 +416,6 @@
       "detail": null
     }
   ],
-  "bundle_sha256": "f5d17e54635e5a804404bf59dc2e58a9f59415c1cf456ddeb094c7ff6b1be6cf",
-  "manifest_sha256": "1075a618fa1a2fb1164197fcf5d8638ddac4ee16e6f8c47bbfadd66e8eb6b2e1"
+  "bundle_sha256": "3bdc05c84ce0c2213aabd4894f17cfb25adf3d3aeba7986950fa927d4af77f8d",
+  "manifest_sha256": "148a5b4fd5c997d2aca670557571363643b41943ef81f2440c3984e3f7a6e9fb"
 }

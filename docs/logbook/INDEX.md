@@ -21,3 +21,4 @@
 | 015 | 2026-11-12 | FastAPI inference service | 3 | <student-A> | `23f78f5c1952` | [015-fastapi-inference-service.md](015-fastapi-inference-service.md) |
 | 016 | 2026-11-12 | Integrity, atomic artifacts and serving safety | 0 | <student-A> | `f9fa35922404` | [016-integrity-and-serving-safety.md](016-integrity-and-serving-safety.md) |
 | 017 | 2026-11-12 | CI repair and hermetic quality gates | 0 | <student-A> | `a7598a55df8a` | [017-ci-and-hermetic-gates.md](017-ci-and-hermetic-gates.md) |
+| 018 | 2026-11-12 | Gate 3: monotone constraints and uniform per-city calibration | 0 | <student-A> | `---` | [018-gate3-monotone-and-calibration.md](018-gate3-monotone-and-calibration.md) |

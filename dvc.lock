@@ -414,14 +414,22 @@ stages:
       hash: md5
       md5: cd5fc9122ff50d24a1da7179608e1e3f
       size: 7857
+    - path: src/models/calibration.py
+      hash: md5
+      md5: 425efed28e565a23d3713b6a982f1b20
+      size: 5365
+    - path: src/models/monotone.py
+      hash: md5
+      md5: 6e6443c5c113e8c8fb3df548d16525b0
+      size: 2080
     - path: src/models/residual.py
       hash: md5
       md5: cea66ffdf431e55da7e6c25cbd1119cd
       size: 2045
     - path: src/models/train.py
       hash: md5
-      md5: a7daacb1fec4ddeb7227ea81265fe361
-      size: 35121
+      md5: f3542f4a5af45733481b217b8da74dc5
+      size: 51159
     params:
       params.yaml:
         seed: 42
@@ -437,16 +445,24 @@ stages:
           - residual_ridge
           - residual_lightgbm
           cv_folds: 4
+          monotone:
+            enabled: true
+            objectives:
+            - l2
+            - huber
+            constraints_method: advanced
+            calibration_folds: 4
+            huber_alpha: 0.9
     outs:
     - path: models/
       hash: md5
-      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
-      size: 46540494
-      nfiles: 15
+      md5: b85b1e42f9316a688b0445ca546d3d25.dir
+      size: 47689192
+      nfiles: 17
     - path: reports/metrics/val_metrics.json
       hash: md5
-      md5: 026eb9c37a40cbd8a304b97657f183a4
-      size: 3755
+      md5: d686752fafe034bbaf02142050c18fbd
+      size: 11436
   evaluate:
     cmd: python -m src.models.evaluate --scaler data/processed/scaler.joblib
     deps:
@@ -464,17 +480,25 @@ stages:
       size: 457927
     - path: models/
       hash: md5
-      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
-      size: 46540494
-      nfiles: 15
+      md5: b85b1e42f9316a688b0445ca546d3d25.dir
+      size: 47689192
+      nfiles: 17
+    - path: reports/metrics/val_metrics.json
+      hash: md5
+      md5: d686752fafe034bbaf02142050c18fbd
+      size: 11436
     - path: src/config.py
       hash: md5
       md5: 2c18ade013cf4e48bbb05431ce01cc9e
       size: 1490
+    - path: src/models/calibration.py
+      hash: md5
+      md5: 425efed28e565a23d3713b6a982f1b20
+      size: 5365
     - path: src/models/evaluate.py
       hash: md5
-      md5: a30ebba4a4c5d634a2c3e88472fd6641
-      size: 17236
+      md5: 84b72e8d64990064e51d438178f525ea
+      size: 18472
     - path: src/models/residual.py
       hash: md5
       md5: cea66ffdf431e55da7e6c25cbd1119cd
@@ -482,17 +506,17 @@ stages:
     outs:
     - path: reports/figures/evaluation/
       hash: md5
-      md5: 239d63bfa1368973e9f65b1ffce8e8e6.dir
-      size: 639667
+      md5: 5dc6365e92eec87744fb82ab5b687cca.dir
+      size: 645962
       nfiles: 4
     - path: reports/metrics/test_metrics.json
       hash: md5
-      md5: 908bb649d9208c6ba3d1b819a1725f8a
-      size: 3402
+      md5: e27b0e6c5a9465d35c7ac2f2da723898
+      size: 3887
     - path: reports/metrics/test_per_city_metrics.json
       hash: md5
-      md5: a861e46b0cc1764bbf0bd897fac8686d
-      size: 2639
+      md5: 44500dc0cccdc70a7a8a67c7260a3267
+      size: 2720
   model_risk:
     cmd: python -m src.models.model_risk
     deps:
@@ -518,17 +542,29 @@ stages:
       size: 717507
     - path: models/
       hash: md5
-      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
-      size: 46540494
-      nfiles: 15
+      md5: b85b1e42f9316a688b0445ca546d3d25.dir
+      size: 47689192
+      nfiles: 17
+    - path: reports/metrics/final_test_eval.json
+      hash: md5
+      md5: c30a926019be7ca0aa57ab439b740415
+      size: 4268
+    - path: reports/metrics/val_metrics.json
+      hash: md5
+      md5: d686752fafe034bbaf02142050c18fbd
+      size: 11436
     - path: src/config.py
       hash: md5
       md5: 2c18ade013cf4e48bbb05431ce01cc9e
       size: 1490
+    - path: src/models/calibration.py
+      hash: md5
+      md5: 425efed28e565a23d3713b6a982f1b20
+      size: 5365
     - path: src/models/model_risk.py
       hash: md5
-      md5: 3f42c12c4d250e1deaef44ed7d2523cc
-      size: 27406
+      md5: 4ef6e6e63fd2e0be4d217df8293ac5f4
+      size: 31882
     - path: src/models/residual.py
       hash: md5
       md5: cea66ffdf431e55da7e6c25cbd1119cd
@@ -542,12 +578,12 @@ stages:
     outs:
     - path: reports/metrics/latency.json
       hash: md5
-      md5: b05b0077ba824d486a6233143b533b0b
-      size: 142
+      md5: 0bf6a276e5cc0c3f17bc6e6fdeaab8c0
+      size: 151
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: ecb4a040e8b12bf5c3ee706d562f368c
-      size: 8173
+      md5: 328de4837e1b5d1ba8935ee954901e42
+      size: 12473
     - path: reports/metrics/reference_stats.json
       hash: md5
       md5: 1e227d498ca9b16de0e8d7304eef6bcf
@@ -569,33 +605,41 @@ stages:
       size: 717507
     - path: models/
       hash: md5
-      md5: 3e25c62079e020f9fdce4b4f79fdd0eb.dir
-      size: 46540494
-      nfiles: 15
+      md5: b85b1e42f9316a688b0445ca546d3d25.dir
+      size: 47689192
+      nfiles: 17
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: ecb4a040e8b12bf5c3ee706d562f368c
-      size: 8173
+      md5: 328de4837e1b5d1ba8935ee954901e42
+      size: 12473
     - path: reports/metrics/reference_stats.json
       hash: md5
       md5: 1e227d498ca9b16de0e8d7304eef6bcf
       size: 21830
     - path: reports/metrics/val_metrics.json
       hash: md5
-      md5: 026eb9c37a40cbd8a304b97657f183a4
-      size: 3755
+      md5: d686752fafe034bbaf02142050c18fbd
+      size: 11436
     - path: src/config.py
       hash: md5
       md5: 2c18ade013cf4e48bbb05431ce01cc9e
       size: 1490
+    - path: src/models/calibration.py
+      hash: md5
+      md5: 425efed28e565a23d3713b6a982f1b20
+      size: 5365
     - path: src/models/model_risk.py
       hash: md5
-      md5: 3f42c12c4d250e1deaef44ed7d2523cc
-      size: 27406
+      md5: 4ef6e6e63fd2e0be4d217df8293ac5f4
+      size: 31882
+    - path: src/models/monotone.py
+      hash: md5
+      md5: 6e6443c5c113e8c8fb3df548d16525b0
+      size: 2080
     - path: src/models/package_model.py
       hash: md5
-      md5: e3be8049d1cfca5985c17747e245ede8
-      size: 11305
+      md5: c1aa540f5372de1bcb007c9fe5c7a477
+      size: 11872
     - path: src/models/register_model.py
       hash: md5
       md5: 2c024354a2b92d03c157227a3112a441
@@ -606,8 +650,8 @@ stages:
       size: 54
     - path: src/serving/bundle.py
       hash: md5
-      md5: 6a2c2b25af3ddc31922d3513b0838a0c
-      size: 13808
+      md5: 4e05e0f147bebe994fd868dbde3ad145
+      size: 14851
     - path: src/utils/mlflow_utils.py
       hash: md5
       md5: f6ae3351d7152d9b86d3d312eb08ebe0
@@ -655,6 +699,71 @@ stages:
     outs:
     - path: artifacts/champion/
       hash: md5
-      md5: 4359c1d3292e067b8aa3fcfd9c3d7d9c.dir
-      size: 800636
+      md5: 6d73dc77cffe358391336266029fb60e.dir
+      size: 1072802
       nfiles: 5
+  final_test_eval:
+    cmd: python scripts/final_test_eval.py --allow-new-candidate
+    deps:
+    - path: data/processed/feature_list.json
+      hash: md5
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: f6cb0fca0416e232c91cd60694422aa0
+      size: 5919
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: bd1de9ea97083402bd9ccaceb1072e3c
+      size: 457927
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 49bd4c88748327afa12057c2fe71b0e7
+      size: 2647977
+    - path: data/processed/val.parquet
+      hash: md5
+      md5: 462b7712b4cea342fe36ca80868a29f4
+      size: 717507
+    - path: models/
+      hash: md5
+      md5: b85b1e42f9316a688b0445ca546d3d25.dir
+      size: 47689192
+      nfiles: 17
+    - path: params.yaml
+      hash: md5
+      md5: 9676314c30bbe9436d3d7e1ef8416193
+      size: 2936
+    - path: reports/metrics/val_metrics.json
+      hash: md5
+      md5: d686752fafe034bbaf02142050c18fbd
+      size: 11436
+    - path: scripts/final_test_eval.py
+      hash: md5
+      md5: 09740c00c869732fb6349cef1ffcc1a1
+      size: 3559
+    - path: src/config.py
+      hash: md5
+      md5: 2c18ade013cf4e48bbb05431ce01cc9e
+      size: 1490
+    - path: src/models/calibration.py
+      hash: md5
+      md5: 425efed28e565a23d3713b6a982f1b20
+      size: 5365
+    - path: src/models/final_eval.py
+      hash: md5
+      md5: b51d952ef16272bb090b3d6141bba013
+      size: 7033
+    - path: src/models/model_risk.py
+      hash: md5
+      md5: 4ef6e6e63fd2e0be4d217df8293ac5f4
+      size: 31882
+    - path: src/utils/io.py
+      hash: md5
+      md5: b321197765f2fd0f69825b58c7a2576b
+      size: 4578
+    outs:
+    - path: reports/metrics/final_test_eval.json
+      hash: md5
+      md5: c30a926019be7ca0aa57ab439b740415
+      size: 4268

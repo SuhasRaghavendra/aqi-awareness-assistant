@@ -191,11 +191,11 @@ class TestObservability:
         assert resp.status_code == 503
         assert resp.json()["ready"] is False
 
-    def test_metadata(self, client):
+    def test_metadata(self, client, bundle):
         resp = client.get("/metadata")
         assert resp.status_code == 200
         body = resp.json()
-        assert body["model_name"] == "residual_lightgbm"
+        assert body["model_name"] == bundle.manifest["model"]["name"]
         assert body["features_count"] == 103
         assert body["history_seed_days"] == 45
         assert body["history_seed_rows"] == 405
@@ -246,10 +246,10 @@ class TestPredictContract:
         assert body["aqi_pred"] == pytest.approx(interval["median"])
         assert 0.0 <= body["aqi_pred"] <= 500.0
         assert sum(body["category_probs"].values()) == pytest.approx(1.0, abs=1e-5)
-        assert body["model_name"] == "residual_lightgbm"
+        assert body["model_name"] == bundle.manifest["model"]["name"]
         assert body["model_version"] == bundle.manifest["bundle_version"]
         assert body["alias"] == "champion"
-        assert body["model_used"] == "residual_lightgbm"
+        assert body["model_used"] == bundle.manifest["model"]["name"]
         assert body["fallback_used"] is False
         assert body["degraded"] is False
         assert body["history_days"] == 44

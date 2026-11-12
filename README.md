@@ -107,7 +107,7 @@ Ablation experiments evaluated on the validation split empirically quantify the 
 
 ## 5. Inference Service (Phase 3)
 
-The Phase 2 champion (`residual_lightgbm`, 103 features, bundle `1.1`) is served by a FastAPI app in `src/service/`. The client sends **today's raw observations only**; the server rebuilds every calendar, city-static, vehicle/IIP, GRAP, festival and lag/rolling feature from the bundle's 45-day per-city history seed, using the same feature code as offline training (`src/features/serving_features.py`).
+The Phase 2 champion (`residual_lightgbm_monotone`, 103 features, bundle `1.1`) is served by a FastAPI app in `src/service/`. The client sends **today's raw observations only**; the server rebuilds every calendar, city-static, vehicle/IIP, GRAP, festival and lag/rolling feature from the bundle's 45-day per-city history seed, using the same feature code as offline training (`src/features/serving_features.py`). The model is a persistence-anchored LightGBM with monotone fire/wind constraints and a uniform per-city additive calibration fitted on validation (ADR D-030/D-031/D-038).
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -144,24 +144,24 @@ Request and response:
   "city": "Delhi",
   "date": "2024-12-31",
   "target_date": "2025-01-01",
-  "aqi_pred": 210.6700400086736,
+  "aqi_pred": 212.29964672681731,
   "category": "Poor",
   "category_probs": {
-    "Good": 1e-06, "Satisfactory": 0.000545, "Moderate": 0.375899,
-    "Poor": 0.619357, "Very Poor": 0.004197, "Severe": 0.0
+    "Good": 1e-06, "Satisfactory": 0.000518, "Moderate": 0.359182,
+    "Poor": 0.63509, "Very Poor": 0.005209, "Severe": 0.0
   },
   "aqi_interval_80": {
-    "lower": 168.7128400086736,
-    "median": 210.6700400086736,
-    "upper": 255.5801400086736
+    "lower": 168.3883467268173,
+    "median": 212.29964672681731,
+    "upper": 256.1392467268173
   },
-  "model_name": "residual_lightgbm",
-  "model_version": "1.0",
+  "model_name": "residual_lightgbm_monotone",
+  "model_version": "1.1",
   "alias": "champion",
-  "model_used": "residual_lightgbm",
+  "model_used": "residual_lightgbm_monotone",
   "fallback_used": false,
   "warnings": [],
-  "latency_ms": 11.041,
+  "latency_ms": 26.463,
   "degraded": false,
   "history_days": 45
 }
@@ -197,7 +197,7 @@ cp .env.example .env
 
 ### 6.2 Verification & Execution
 ```bash
-# Run the full test suite (149 tests: data, features, models, integrity, registry, Phase 3 service)
+# Run the full test suite (162 tests: data, features, models, integrity, registry, Phase 3 service)
 pytest -q
 
 # Recompute every corruption/leakage invariant (64 checks; exits non-zero on drift)
@@ -238,9 +238,9 @@ aqi-awareness-assistant/
 │   ├── interim/              # Daily aggregated panels, cleaned panels
 │   └── processed/            # Chronological splits (train, val, test) & feature list
 ├── docs/
-│   ├── logbook/              # Audit trail: 17 step-close entries (001 to 017) & INDEX.md
+│   ├── logbook/              # Audit trail: 18 step-close entries (001 to 018) & INDEX.md
 │   ├── CHANGELOG.md          # Keep-a-Changelog release notes
-│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-037)
+│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-038)
 │   ├── data_card.md          # Formal dataset schema, sourcing, and validation card
 │   └── dataset_approval.md   # Faculty project approval document
 ├── models/                   # Serialized model artifacts (.joblib, scalers)
@@ -260,7 +260,7 @@ aqi-awareness-assistant/
 │   ├── service/              # FastAPI app, schemas, predictor, history store, middleware
 │   ├── serving/              # Champion bundle loader and MLflow pyfunc adapter
 │   └── utils/                # logging_utils, stage_stats, mlflow_utils, reproducibility
-└── tests/                    # 149 automated pytest tests (data, features, models, integrity, registry, service parity/latency)
+└── tests/                    # 162 automated pytest tests (data, features, models, integrity, registry, service parity/latency)
 ```
 
 ---
@@ -296,6 +296,7 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
 | **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0-3 | Suhas Raghavendra | `f9fa35922404` |
 | **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `a7598a55df8a` |
+| **018** | 2026-11-12 | Gate 3 monotone constraints and per-city calibration | Phases 0-3 | Suhas Raghavendra | `<hash>` |
 
 ---
 

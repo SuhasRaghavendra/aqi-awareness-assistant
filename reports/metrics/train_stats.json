@@ -1,15 +1,15 @@
 {
   "stage": "train",
-  "start_time": "2026-11-12T05:42:37.646218+00:00",
-  "end_time": "2026-11-12T05:42:37.666591+00:00",
-  "duration_s": 0.014,
-  "git_commit": "21a2f86",
-  "params_hash": "d2497f4f5008",
+  "start_time": "2026-11-12T06:50:03.388018+00:00",
+  "end_time": "2026-11-12T06:50:03.424810+00:00",
+  "duration_s": 0.046,
+  "git_commit": "5c71a34",
+  "params_hash": "18fa8343245d",
   "inputs": [
     {
       "path": "data\\processed\\train.parquet",
       "exists": true,
-      "size_bytes": 2839639,
+      "size_bytes": 2647977,
       "rows": 15502,
       "columns": [
         "date",
@@ -129,7 +129,7 @@
     {
       "path": "data\\processed\\val.parquet",
       "exists": true,
-      "size_bytes": 727470,
+      "size_bytes": 717507,
       "rows": 3289,
       "columns": [
         "date",
@@ -256,7 +256,7 @@
     {
       "path": "reports\\metrics\\val_metrics.json",
       "exists": true,
-      "size_bytes": 3758
+      "size_bytes": 11436
     },
     {
       "path": "models\\persistence.joblib",
@@ -281,17 +281,17 @@
     {
       "path": "models\\random_forest_reg.joblib",
       "exists": true,
-      "size_bytes": 18940961
+      "size_bytes": 19053137
     },
     {
       "path": "models\\xgboost_reg.joblib",
       "exists": true,
-      "size_bytes": 483299
+      "size_bytes": 480101
     },
     {
       "path": "models\\lightgbm_reg.joblib",
       "exists": true,
-      "size_bytes": 289990
+      "size_bytes": 289323
     },
     {
       "path": "models\\residual_ridge.joblib",
@@ -301,7 +301,17 @@
     {
       "path": "models\\residual_lightgbm.joblib",
       "exists": true,
-      "size_bytes": 555526
+      "size_bytes": 278997
+    },
+    {
+      "path": "models\\residual_lightgbm_monotone.joblib",
+      "exists": true,
+      "size_bytes": 545162
+    },
+    {
+      "path": "models\\residual_lightgbm_monotone_huber.joblib",
+      "exists": true,
+      "size_bytes": 603536
     },
     {
       "path": "models\\majority_class.joblib",
@@ -311,7 +321,7 @@
     {
       "path": "models\\regress_then_bucket.joblib",
       "exists": true,
-      "size_bytes": 290579
+      "size_bytes": 289907
     },
     {
       "path": "models\\logistic_regression.joblib",
@@ -321,17 +331,17 @@
     {
       "path": "models\\random_forest_clf.joblib",
       "exists": true,
-      "size_bytes": 21369161
+      "size_bytes": 22021673
     },
     {
       "path": "models\\lightgbm_clf.joblib",
       "exists": true,
-      "size_bytes": 1971003
+      "size_bytes": 1973414
     },
     {
       "path": "models\\xgboost_clf.joblib",
       "exists": true,
-      "size_bytes": 2130856
+      "size_bytes": 2141624
     }
   ],
   "frame_stats": {

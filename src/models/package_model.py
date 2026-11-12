@@ -18,6 +18,7 @@ import yaml
 
 from src.config import load_params
 from src.models import model_risk
+from src.models.calibration import CityCalibratedRegressor
 from src.serving.bundle import (
     FORBIDDEN_SEED_COLUMNS,
     AqiBundle,
@@ -27,8 +28,10 @@ from src.utils.io import replace_directory
 
 GATE_WAIVERS = {
     "G3": (
-        "Accepted red gate per ADR D-023: Kolkata fails the +5% per-city MAE rule; "
-        "the threshold is unchanged and the failure stays visible in the risk card."
+        "Accepted red gate per ADR D-023/D-038: the val-frozen monotone+calibrated "
+        "champion still puts one city above the +5% per-city MAE rule on the single "
+        "holdout run. The threshold is unchanged, the failure stays visible in the "
+        "risk card, and no post-test tuning was performed."
     )
 }
 
@@ -222,6 +225,9 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
             "artifact_size_bytes": int(champion.path.stat().st_size),
             "input_kind": infer_input_kind(champion.name),
             "residual_mode": champion.name.startswith("residual_"),
+            "calibrated": isinstance(champion.model, CityCalibratedRegressor),
+            "calibration": champion.val_metrics.get("calibration"),
+            "monotone_constraints": champion.val_metrics.get("monotone_constraints"),
             "val_metrics": champion.val_metrics,
             "test_metrics": risk_card["model"]["test_metrics"],
         },
@@ -241,7 +247,11 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
         "history_seed_days": HISTORY_SEED_DAYS,
         "split": risk_card["data"]["split_dates"],
         "gate_status": gate_status,
-        "gate_waivers": GATE_WAIVERS,
+        "gate_waivers": {
+            gate_id: text
+            for gate_id, text in GATE_WAIVERS.items()
+            if gate_status.get(gate_id) != "pass"
+        },
         "promotion_policy": (
             "Registration sets the challenger alias; champion is set only after "
             "MANIFEST sha and gate validation."

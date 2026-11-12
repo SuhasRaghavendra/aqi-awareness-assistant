@@ -90,6 +90,26 @@
     "skill_score_vs_persistence": 0.0665
   },
   {
+    "task": "regression",
+    "model": "residual_lightgbm_monotone",
+    "mae": 14.028,
+    "rmse": 23.886,
+    "r2": 0.8772,
+    "median_ae": 6.886,
+    "within_20_rate": 0.7964,
+    "skill_score_vs_persistence": 0.064
+  },
+  {
+    "task": "regression",
+    "model": "residual_lightgbm_monotone_huber",
+    "mae": 14.552,
+    "rmse": 25.292,
+    "r2": 0.8623,
+    "median_ae": 7.088,
+    "within_20_rate": 0.7873,
+    "skill_score_vs_persistence": 0.0088
+  },
+  {
     "task": "classification",
     "model": "majority_class",
     "accuracy": 0.3898,

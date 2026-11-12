@@ -95,6 +95,9 @@ def main() -> None:
     )
     parser.add_argument("--scaler", type=Path, default=Path("data/processed/scaler.joblib"))
     parser.add_argument("--models-dir", type=Path, default=Path("models"))
+    parser.add_argument(
+        "--val-metrics", type=Path, default=Path("reports/metrics/val_metrics.json")
+    )
     parser.add_argument("--figures-dir", type=Path, default=Path("reports/figures/evaluation"))
     parser.add_argument(
         "--output-metrics", type=Path, default=Path("reports/metrics/test_metrics.json")
@@ -142,6 +145,7 @@ def main() -> None:
     # - "scaled_array": linear models fitted on ndarray (Ridge)
     # - "scaled_df": tree-based regressors fitted on scaled DataFrame with feature names
     # - "residual_*": persistence-anchored models needing today's raw AQI as well
+    # - "calibrated": residual model wrapped with per-city offsets (ADR D-031)
     reg_models = [
         ("seasonal_naive", "df"),
         ("station_month_mean", "df"),
@@ -151,6 +155,8 @@ def main() -> None:
         ("lightgbm_reg", "scaled_df"),
         ("residual_ridge", "residual_scaled_array"),
         ("residual_lightgbm", "residual_scaled_df"),
+        ("residual_lightgbm_monotone", "calibrated"),
+        ("residual_lightgbm_monotone_huber", "calibrated"),
     ]
 
     test_predictions: dict[str, np.ndarray] = {"persistence": preds_test_persist}
@@ -168,6 +174,8 @@ def main() -> None:
             preds = model.predict(X_test_df, aqi_test)
         elif input_type == "residual_scaled_array":
             preds = model.predict(X_test_scaled, aqi_test)
+        elif input_type == "calibrated":
+            preds = model.predict(X_test_df, aqi_test, city=df_test["city"].to_numpy())
         else:
             preds = model.predict(df_test)
 
@@ -247,14 +255,30 @@ def main() -> None:
         alpha = (1 - ci) / 2
         return float(np.quantile(skills, alpha)), float(np.quantile(skills, 1 - alpha))
 
-    # Find best learned regressor (lowest RMSE, exclude persistence)
-    reg_entries = [
-        e for e in leaderboard if e["task"] == "regression" and e["model"] != "persistence"
-    ]
-    best_model_name = (
-        min(reg_entries, key=lambda x: x["rmse"])["model"] if reg_entries else "persistence"
-    )
-    logger.info(f"Best learned regressor for per-city analysis: {best_model_name}")
+    # The per-city analysis follows the frozen, validation-selected champion.
+    # Choosing the best model on this holdout would leak test information into
+    # model selection (Plan A1), so the decision is read from val_metrics.json.
+    with open(args.val_metrics, encoding="utf-8") as f:
+        val_metrics = json.load(f)
+    selected = [entry for entry in val_metrics if entry.get("selected")]
+    if len(selected) == 1:
+        best_model_name = str(selected[0]["model"])
+    else:
+        eligible = [
+            e
+            for e in val_metrics
+            if e.get("task") == "regression"
+            and e.get("model") not in {"persistence", "seasonal_naive", "station_month_mean"}
+        ]
+        best_model_name = (
+            min(eligible, key=lambda x: float(x["rmse"]))["model"] if eligible else "persistence"
+        )
+    if best_model_name not in test_predictions:
+        raise RuntimeError(
+            f"Validation-selected champion {best_model_name!r} has no test predictions; "
+            "refusing to fall back to a test-ranked model"
+        )
+    logger.info(f"Validation-selected champion for per-city analysis: {best_model_name}")
 
     df_eval = df_test.copy()
     df_eval["pred_best"] = test_predictions.get(best_model_name, test_predictions["persistence"])

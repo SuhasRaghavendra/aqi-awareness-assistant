@@ -30,7 +30,7 @@
     "median_ae": 17.462,
     "within_20_rate": 0.5531,
     "skill_score_vs_persistence": -0.6543,
-    "time_sec": 0.07
+    "time_sec": 0.21
   },
   {
     "task": "regression",
@@ -41,7 +41,8 @@
     "median_ae": 8.951,
     "within_20_rate": 0.7826,
     "skill_score_vs_persistence": 0.064,
-    "time_sec": 0.36
+    "time_sec": 0.67,
+    "selected": false
   },
   {
     "task": "regression",
@@ -52,7 +53,7 @@
     "median_ae": 8.064,
     "within_20_rate": 0.7893,
     "skill_score_vs_persistence": 0.0816,
-    "time_sec": 7.18
+    "time_sec": 9.24
   },
   {
     "task": "regression",
@@ -63,7 +64,8 @@
     "median_ae": 7.974,
     "within_20_rate": 0.8015,
     "skill_score_vs_persistence": 0.107,
-    "time_sec": 0.51
+    "time_sec": 0.78,
+    "selected": false
   },
   {
     "task": "regression",
@@ -74,7 +76,8 @@
     "median_ae": 7.969,
     "within_20_rate": 0.8002,
     "skill_score_vs_persistence": 0.1099,
-    "time_sec": 0.32
+    "time_sec": 0.75,
+    "selected": false
   },
   {
     "task": "regression",
@@ -85,7 +88,8 @@
     "median_ae": 8.41,
     "within_20_rate": 0.7884,
     "skill_score_vs_persistence": 0.0713,
-    "time_sec": 0.36
+    "time_sec": 0.73,
+    "selected": false
   },
   {
     "task": "regression",
@@ -96,7 +100,276 @@
     "median_ae": 7.957,
     "within_20_rate": 0.7999,
     "skill_score_vs_persistence": 0.11,
-    "time_sec": 0.23
+    "val_max_city_ratio": 0.9722,
+    "cv_rmse_mean": 24.537,
+    "cv_rmse_std": 2.584,
+    "cv_folds": 4,
+    "time_sec": 0.48,
+    "selected": false
+  },
+  {
+    "task": "regression",
+    "model": "residual_lightgbm_monotone",
+    "mae": 13.233,
+    "rmse": 20.61,
+    "r2": 0.8977,
+    "median_ae": 7.924,
+    "within_20_rate": 0.7896,
+    "skill_score_vs_persistence": 0.0874,
+    "raw_rmse": 20.34,
+    "val_max_city_ratio": 0.9673,
+    "cv_rmse_mean": 24.879,
+    "cv_rmse_std": 2.949,
+    "cv_folds": 4,
+    "config": {
+      "n_estimators": 200,
+      "learning_rate": 0.03,
+      "max_depth": 6,
+      "monotone_constraints_method": "advanced"
+    },
+    "config_index": 1,
+    "calibration": {
+      "method": "per_city_median_residual",
+      "fitted_on": "validation",
+      "inner_folds": 4,
+      "offsets": {
+        "Ahmedabad": -1.1194,
+        "Bengaluru": -1.313,
+        "Chennai": -1.2954,
+        "Delhi": -2.324,
+        "Hyderabad": -0.9947,
+        "Kolkata": -1.4143,
+        "Lucknow": -3.1683,
+        "Mumbai": -2.1829,
+        "Pune": -2.3777
+      },
+      "n_cities": 9,
+      "offset_mean": -1.7989,
+      "offset_abs_max": 3.1683,
+      "folds": [
+        {
+          "fold": 0,
+          "fit_rows": 661,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -5.0478
+        },
+        {
+          "fold": 1,
+          "fit_rows": 1318,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -2.6792
+        },
+        {
+          "fold": 2,
+          "fit_rows": 1975,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -2.1247
+        },
+        {
+          "fold": 3,
+          "fit_rows": 2632,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -1.714
+        }
+      ],
+      "raw_rmse": 20.34,
+      "calibrated_rmse": 20.61
+    },
+    "monotone_constraints": {
+      "fire_count_500km": 1,
+      "fire_frp_sum_500km": 1,
+      "wind_speed_10m_mean": -1,
+      "fire_count_500km_lag_1": 1,
+      "fire_count_500km_lag_3": 1,
+      "fire_count_500km_lag_7": 1,
+      "fire_count_500km_roll_mean_7d": 1,
+      "fire_count_500km_roll_max_7d": 1,
+      "fire_count_500km_roll_mean_14d": 1,
+      "fire_count_500km_roll_max_14d": 1,
+      "fire_count_500km_roll_mean_30d": 1,
+      "fire_count_500km_roll_max_30d": 1,
+      "fire_frp_sum_500km_lag_1": 1,
+      "fire_frp_sum_500km_lag_3": 1,
+      "fire_frp_sum_500km_lag_7": 1,
+      "fire_frp_sum_500km_roll_mean_7d": 1,
+      "fire_frp_sum_500km_roll_max_7d": 1,
+      "fire_frp_sum_500km_roll_mean_14d": 1,
+      "fire_frp_sum_500km_roll_max_14d": 1,
+      "fire_frp_sum_500km_roll_mean_30d": 1,
+      "fire_frp_sum_500km_roll_max_30d": 1,
+      "fire_burning_season": 1,
+      "wind_speed_10m_mean_lag_1": -1,
+      "wind_speed_10m_mean_lag_3": -1,
+      "wind_roll_mean_3d": -1,
+      "wind_roll_mean_7d": -1,
+      "fire_x_low_wind": 1,
+      "inversion_x_fire": 1,
+      "winter_stagnation_index": 1
+    },
+    "metamorphic": {
+      "passed": true,
+      "tolerance": 0.05,
+      "rows": 540,
+      "checks": {
+        "fire_x5": {
+          "mean_delta": 2.3867,
+          "non_monotone_rate": 0.0
+        },
+        "wind_div3": {
+          "mean_delta": 0.6051,
+          "non_monotone_rate": 0.0
+        }
+      },
+      "max_non_monotone_rate": 0.0,
+      "min_mean_delta": 0.6051
+    },
+    "pre_registered_acceptance": {
+      "passed": true,
+      "basis": "uncalibrated RMSE vs uncalibrated champion",
+      "val_rmse_relative_change": 0.012,
+      "val_rmse_within_2pct": true,
+      "calibrated_val_rmse_relative_change": 0.0254,
+      "metamorphic_5pct": true
+    },
+    "time_sec": 15.04,
+    "selected": true
+  },
+  {
+    "task": "regression",
+    "model": "residual_lightgbm_monotone_huber",
+    "mae": 13.938,
+    "rmse": 22.366,
+    "r2": 0.8796,
+    "median_ae": 8.152,
+    "within_20_rate": 0.7838,
+    "skill_score_vs_persistence": 0.0096,
+    "raw_rmse": 22.336,
+    "val_max_city_ratio": 0.9903,
+    "cv_rmse_mean": 26.801,
+    "cv_rmse_std": 2.662,
+    "cv_folds": 4,
+    "config": {
+      "n_estimators": 200,
+      "learning_rate": 0.03,
+      "max_depth": 6,
+      "monotone_constraints_method": "advanced",
+      "objective": "huber",
+      "alpha": 0.9
+    },
+    "config_index": 1,
+    "calibration": {
+      "method": "per_city_median_residual",
+      "fitted_on": "validation",
+      "inner_folds": 4,
+      "offsets": {
+        "Ahmedabad": 0.6439,
+        "Bengaluru": -0.2906,
+        "Chennai": -0.3084,
+        "Delhi": 1.5104,
+        "Hyderabad": 0.1835,
+        "Kolkata": -0.2512,
+        "Lucknow": 0.8377,
+        "Mumbai": 0.3219,
+        "Pune": -0.6993
+      },
+      "n_cities": 9,
+      "offset_mean": 0.2164,
+      "offset_abs_max": 1.5104,
+      "folds": [
+        {
+          "fold": 0,
+          "fit_rows": 661,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -0.194
+        },
+        {
+          "fold": 1,
+          "fit_rows": 1318,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": 0.3878
+        },
+        {
+          "fold": 2,
+          "fit_rows": 1975,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": -0.2902
+        },
+        {
+          "fold": 3,
+          "fit_rows": 2632,
+          "apply_rows": 657,
+          "cities": 9,
+          "mean_offset": 0.1441
+        }
+      ],
+      "raw_rmse": 22.336,
+      "calibrated_rmse": 22.366
+    },
+    "monotone_constraints": {
+      "fire_count_500km": 1,
+      "fire_frp_sum_500km": 1,
+      "wind_speed_10m_mean": -1,
+      "fire_count_500km_lag_1": 1,
+      "fire_count_500km_lag_3": 1,
+      "fire_count_500km_lag_7": 1,
+      "fire_count_500km_roll_mean_7d": 1,
+      "fire_count_500km_roll_max_7d": 1,
+      "fire_count_500km_roll_mean_14d": 1,
+      "fire_count_500km_roll_max_14d": 1,
+      "fire_count_500km_roll_mean_30d": 1,
+      "fire_count_500km_roll_max_30d": 1,
+      "fire_frp_sum_500km_lag_1": 1,
+      "fire_frp_sum_500km_lag_3": 1,
+      "fire_frp_sum_500km_lag_7": 1,
+      "fire_frp_sum_500km_roll_mean_7d": 1,
+      "fire_frp_sum_500km_roll_max_7d": 1,
+      "fire_frp_sum_500km_roll_mean_14d": 1,
+      "fire_frp_sum_500km_roll_max_14d": 1,
+      "fire_frp_sum_500km_roll_mean_30d": 1,
+      "fire_frp_sum_500km_roll_max_30d": 1,
+      "fire_burning_season": 1,
+      "wind_speed_10m_mean_lag_1": -1,
+      "wind_speed_10m_mean_lag_3": -1,
+      "wind_roll_mean_3d": -1,
+      "wind_roll_mean_7d": -1,
+      "fire_x_low_wind": 1,
+      "inversion_x_fire": 1,
+      "winter_stagnation_index": 1
+    },
+    "metamorphic": {
+      "passed": true,
+      "tolerance": 0.05,
+      "rows": 540,
+      "checks": {
+        "fire_x5": {
+          "mean_delta": 0.0085,
+          "non_monotone_rate": 0.0
+        },
+        "wind_div3": {
+          "mean_delta": 0.0376,
+          "non_monotone_rate": 0.0
+        }
+      },
+      "max_non_monotone_rate": 0.0,
+      "min_mean_delta": 0.0085
+    },
+    "pre_registered_acceptance": {
+      "passed": false,
+      "basis": "uncalibrated RMSE vs uncalibrated champion",
+      "val_rmse_relative_change": 0.1113,
+      "val_rmse_within_2pct": false,
+      "calibrated_val_rmse_relative_change": 0.1128,
+      "metamorphic_5pct": true
+    },
+    "time_sec": 19.92,
+    "selected": false
   },
   {
     "task": "classification",
@@ -106,7 +379,7 @@
     "weighted_f1": 0.2222,
     "balanced_accuracy": 0.1667,
     "within_one_category_rate": 0.9374,
-    "time_sec": 0.01
+    "time_sec": 0.0
   },
   {
     "task": "classification",
@@ -126,7 +399,7 @@
     "weighted_f1": 0.7808,
     "balanced_accuracy": 0.7401,
     "within_one_category_rate": 0.997,
-    "time_sec": 6.86
+    "time_sec": 23.69
   },
   {
     "task": "classification",
@@ -136,7 +409,7 @@
     "weighted_f1": 0.7945,
     "balanced_accuracy": 0.6557,
     "within_one_category_rate": 0.9973,
-    "time_sec": 0.94
+    "time_sec": 1.16
   },
   {
     "task": "classification",
@@ -146,7 +419,7 @@
     "weighted_f1": 0.7934,
     "balanced_accuracy": 0.7012,
     "within_one_category_rate": 0.9964,
-    "time_sec": 1.09
+    "time_sec": 2.49
   },
   {
     "task": "classification",
@@ -156,6 +429,6 @@
     "weighted_f1": 0.7979,
     "balanced_accuracy": 0.6309,
     "within_one_category_rate": 0.9973,
-    "time_sec": 2.09
+    "time_sec": 2.73
   }
 ]

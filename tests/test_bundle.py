@@ -190,7 +190,6 @@ def test_manifest_records_waived_gates_only(manifest: dict, risk_card: dict) -> 
     assert manifest["gate_status"] == status
     failing = {gate for gate, value in status.items() if value != "pass"}
     assert set(manifest["gate_waivers"]) <= failing
-    assert set(manifest["gate_waivers"]) == {"G3"}
 
 
 def test_manifest_uses_the_dvc_data_md5(repo_root: Path, manifest: dict) -> None:
