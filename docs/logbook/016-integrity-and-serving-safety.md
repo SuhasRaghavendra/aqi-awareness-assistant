@@ -3,7 +3,7 @@
 - **Date/time:** 2026-11-12T11:30:00+05:30
 - **Author:** <student-A>      **Reviewer:** <student-B>
 - **Phase:** 0–3           **Branch / PR:** `main` / #<n>
-- **Git commit(s):** `<hash>`      **Data version:** frozen splits, md5 `train 49bd4c88…` / `val 462b7712…` / `test bd1de9ea…` (no data change in this step)
+- **Git commit(s):** `f9fa35922404`      **Data version:** frozen splits, md5 `train 49bd4c88…` / `val 462b7712…` / `test bd1de9ea…` (no data change in this step)
 - **MLflow run IDs (if any):** N/A — serving consumes the regenerated champion bundle; MLflow v16 is promoted to `@champion`
 
 ## 1. Objective
