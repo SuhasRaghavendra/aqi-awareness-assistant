@@ -22,4 +22,4 @@
 | 016 | 2026-11-12 | Integrity, atomic artifacts and serving safety | 0 | <student-A> | `f9fa35922404` | [016-integrity-and-serving-safety.md](016-integrity-and-serving-safety.md) |
 | 017 | 2026-11-12 | CI repair and hermetic quality gates | 0 | <student-A> | `a7598a55df8a` | [017-ci-and-hermetic-gates.md](017-ci-and-hermetic-gates.md) |
 | 018 | 2026-11-12 | Gate 3: monotone constraints and uniform per-city calibration | 0 | <student-A> | `5d6ff1538100` | [018-gate3-monotone-and-calibration.md](018-gate3-monotone-and-calibration.md) |
-| 019 | 2026-11-12 | Gate 4: model card, final ADRs and end-to-end verification | 0 | <student-A> | `---` | [019-gate4-model-card-and-final-verification.md](019-gate4-model-card-and-final-verification.md) |
+| 019 | 2026-11-12 | Gate 4: model card, final ADRs and end-to-end verification | 0 | <student-A> | `c3460ec8da82` | [019-gate4-model-card-and-final-verification.md](019-gate4-model-card-and-final-verification.md) |

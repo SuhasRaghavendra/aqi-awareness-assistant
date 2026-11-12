@@ -3,7 +3,7 @@
 - **Date/time:** 2026-11-12T13:00:00+05:30
 - **Author:** <student-A>      **Reviewer:** <student-B>
 - **Phase:** 0–3           **Branch / PR:** `main` / #<n>
-- **Git commit(s):** `<hash>`      **Data version:** frozen splits unchanged (`train` `49bd4c88748327afa12057c2fe71b0e7`, `val` `462b7712b4cea342fe36ca80868a29f4`, `test` `bd1de9ea97083402bd9ccaceb1072e3c`)
+- **Git commit(s):** `c3460ec8da82`      **Data version:** frozen splits unchanged (`train` `49bd4c88748327afa12057c2fe71b0e7`, `val` `462b7712b4cea342fe36ca80868a29f4`, `test` `bd1de9ea97083402bd9ccaceb1072e3c`)
 - **MLflow run IDs (if any):** `Indian-AQI-Predictor` v23 `@champion` (unchanged by this step)
 - **Tag:** `phase3-final`
 
