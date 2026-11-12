@@ -47,3 +47,4 @@ and include the step number, e.g. `feat(step-008): baseline models and MLflow tr
 - **Task A (Regression):** Ridge Regression achieves Test RMSE **44.05** (R²: 0.6607), outperforming Persistence (**47.22**, R²: 0.6101) with **+6.72% skill score**.
 - **Task B (Classification):** Random Forest Classifier achieves **71.30% Accuracy** (Macro-F1: 0.5581), with Regress-Then-Bucket achieving **97.21% within-one-category accuracy**.
 - **MLflow Tracking:** 22 tracked runs in `sqlite:///mlflow.db` across `aqi-regression-baselines`, `aqi-classification-baselines`, and `aqi-ablations`.
+

@@ -105,7 +105,7 @@ def wait_for_service(base_url: str, max_seconds: int = MAX_RETRY_SECONDS) -> boo
             TimeoutError,
             ConnectionError,
             OSError,
-        ) as exc:
+        ):
             pass
 
         time.sleep(POLL_INTERVAL_SECONDS)
