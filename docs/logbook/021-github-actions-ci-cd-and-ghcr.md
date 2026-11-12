@@ -33,3 +33,4 @@ Published tags:
 - `ghcr.io/suhasraghavendra/aqi-awareness-assistant:latest`
 - `ghcr.io/suhasraghavendra/aqi-awareness-assistant:v1.0.2`
 - `ghcr.io/suhasraghavendra/aqi-awareness-assistant:sha-11cd466`
+

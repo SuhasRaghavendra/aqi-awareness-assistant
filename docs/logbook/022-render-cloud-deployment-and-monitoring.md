@@ -47,3 +47,4 @@ All 5 endpoint checks passed:
 ## 5. Acceptance Criterion
 
 - **V9: Live deployment passes smoke test; `/docs` reachable** — ✅ Verified above.
+
