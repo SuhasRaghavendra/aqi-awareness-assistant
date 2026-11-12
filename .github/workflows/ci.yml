@@ -117,7 +117,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - name: Build image
-        run: docker build -t aqi-predictor:test .
+        run: docker build -t aqi-api:test .
       - name: Smoke test container
         run: |
           chmod +x scripts/test_container.sh

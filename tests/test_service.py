@@ -518,6 +518,9 @@ def p95(values: list[float]) -> float:
 class TestLatency:
     def test_single_row_p95_under_50ms(self, client, val_frame):
         payload = make_payload(row_for(val_frame, "Delhi", "2024-12-30"))
+        # Warm-up pass to let JIT, thread pool, and connection pool settle
+        for _ in range(5):
+            client.post("/predict", json=payload)
         timings = []
         for _ in range(40):
             start = time.perf_counter()
@@ -539,8 +542,11 @@ class TestLatency:
             "Lucknow",
         ]
         rows = [make_payload(row_for(val_frame, city, "2024-12-30")) for city in cities]
+        # Warm-up pass to let batch execution allocate memory pools
+        for _ in range(5):
+            client.post("/predict/batch", json={"rows": rows})
         timings = []
-        for _ in range(20):
+        for _ in range(30):
             start = time.perf_counter()
             resp = client.post("/predict/batch", json={"rows": rows})
             timings.append((time.perf_counter() - start) * 1000.0)
