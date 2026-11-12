@@ -4,6 +4,7 @@
 .gitattributes
 .github
 .dvc
+.dvc/config.local
 .dvcignore
 .pytest_cache
 .ruff_cache
@@ -22,13 +23,16 @@ reports/figures/
 reports/step_reports/
 tests/
 
+# Full model set (only champion bundle is copied explicitly)
+models/
+
 # MLflow local runs and logs
 mlruns/
 mlflow.db
 logs/
 *.log
 
-# Environment variables
+# Environment variables (never bake secrets into image)
 .env
 .env.*
 !.env.example

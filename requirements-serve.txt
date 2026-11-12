@@ -4,7 +4,7 @@
 # Core data
 pandas==2.3.3
 numpy==1.26.4
-pyarrow==22.0.0
+pyarrow==23.0.1
 
 # ML runtime (inference-only)
 scikit-learn==1.5.1

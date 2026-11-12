@@ -1,20 +1,66 @@
 services:
-  aqi-predictor:
+  # ── Core inference service ────────────────────────────────────────────────
+  aqi-api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: aqi-awareness-assistant:latest
-    container_name: aqi-predictor
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUNDLE_VERSION: ${BUNDLE_VERSION:-unknown}
+    image: aqi-api:latest
+    container_name: aqi-api
     ports:
       - "8000:8000"
     environment:
       - BUNDLE_DIR=artifacts/champion
       - PYTHONUNBUFFERED=1
+      - WORKERS=${WORKERS:-1}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 15s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
+
+  # ── Monitoring profile: Prometheus + Grafana ──────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aqi-prometheus
+    profiles: [monitoring]
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - aqi-api
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aqi-grafana
+    profiles: [monitoring]
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    depends_on:
+      - prometheus
+
+  # ── MLflow profile: local experiment UI on the sqlite file ────────────────
+  mlflow-ui:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: aqi-mlflow
+    profiles: [mlflow]
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow.db:/mlflow/mlflow.db:ro
+      - ./mlruns:/mlflow/mlruns:ro
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/mlruns
+      --host 0.0.0.0
+      --port 5000
 

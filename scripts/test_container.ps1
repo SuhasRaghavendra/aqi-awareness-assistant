@@ -5,19 +5,49 @@
 
 $ErrorActionPreference = "Stop"
 
+# Auto-resolve docker in PATH if installed but not loaded in current terminal session
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+    $candidatePaths = @(
+        "$env:LOCALAPPDATA\Programs\DockerDesktop\resources\bin",
+        "C:\Program Files\Docker\Docker\resources\bin"
+    )
+    foreach ($p in $candidatePaths) {
+        if (Test-Path "$p\docker.exe") {
+            $env:PATH = "$p;$env:PATH"
+            break
+        }
+    }
+}
+
+$IMAGE   = "aqi-api:test"
+$CONTAINER = "aqi-test-container"
+
 Write-Host "==> 1. Building Docker image..." -ForegroundColor Cyan
-docker build -t aqi-predictor:test .
+docker build -t $IMAGE .
 
 Write-Host "==> 2. Starting container..." -ForegroundColor Cyan
-$containerId = docker run -d -p 8000:8000 --name aqi-test-container aqi-predictor:test
+docker run -d -p 8000:8000 --name $CONTAINER $IMAGE | Out-Null
 
 try {
-    Write-Host "==> 3. Waiting for container to become healthy (up to 15s)..." -ForegroundColor Cyan
-    Start-Sleep -Seconds 5
+    Write-Host "==> 3. Waiting for /health to become ready (up to 30s)..." -ForegroundColor Cyan
+    $deadline = (Get-Date).AddSeconds(30)
+    $healthy  = $false
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $r = Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get -ErrorAction Stop
+            $healthy = $true
+            break
+        } catch {
+            Start-Sleep -Seconds 2
+        }
+    }
+    if (-not $healthy) { throw "Container did not become healthy within 30s" }
+    Write-Host "    /health OK: $($r | ConvertTo-Json -Compress)" -ForegroundColor Green
 
-    Write-Host "==> 4. Testing GET /health..." -ForegroundColor Cyan
-    $health = Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get
-    Write-Host "    Response: $($health | ConvertTo-Json -Compress)" -ForegroundColor Green
+    Write-Host "==> 4. Checking non-root user (must be UID 10001)..." -ForegroundColor Cyan
+    $uid = docker exec $CONTAINER id -u
+    if ($uid.Trim() -ne "10001") { throw "Container is running as UID $uid, expected 10001" }
+    Write-Host "    UID check passed: running as UID $uid" -ForegroundColor Green
 
     Write-Host "==> 5. Testing GET /ready..." -ForegroundColor Cyan
     $ready = Invoke-RestMethod -Uri "http://localhost:8000/ready" -Method Get
@@ -47,14 +77,14 @@ try {
     Write-Host "    Response: $($pred | ConvertTo-Json -Compress)" -ForegroundColor Green
 
     Write-Host "==> 8. Testing GET /metrics..." -ForegroundColor Cyan
-    $metrics = Invoke-WebRequest -Uri "http://localhost:8000/metrics" -Method Get
+    $metrics = Invoke-WebRequest -Uri "http://localhost:8000/metrics" -Method Get -UseBasicParsing
     Write-Host "    Status code: $($metrics.StatusCode)" -ForegroundColor Green
 
     Write-Host "`nSUCCESS: All container smoke tests passed!" -ForegroundColor Green
 }
 finally {
     Write-Host "==> Cleaning up container..." -ForegroundColor Yellow
-    docker stop aqi-test-container 2>$null
-    docker rm aqi-test-container 2>$null
+    docker stop $CONTAINER 2>$null
+    docker rm   $CONTAINER 2>$null
 }
 

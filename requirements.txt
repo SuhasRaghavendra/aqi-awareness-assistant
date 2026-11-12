@@ -1,7 +1,7 @@
 # Core data
 pandas==2.3.3
 numpy==1.26.4
-pyarrow==22.0.0
+pyarrow==23.0.1
 requests==2.32.5
 tqdm==4.67.3
 
