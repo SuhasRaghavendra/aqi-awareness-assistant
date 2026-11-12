@@ -1,0 +1,421 @@
+{
+  "schema_version": "1.0",
+  "mode": "full",
+  "passed": true,
+  "checks_total": 64,
+  "checks_failed": 0,
+  "failures": [],
+  "checks": [
+    {
+      "check": "bundle.load_verifies_hashes",
+      "passed": true,
+      "detail": "C:\\Users\\Suhas Raghavendra\\Desktop\\MLOPS Project\\artifacts\\champion"
+    },
+    {
+      "check": "bundle.manifest_sha256_matches",
+      "passed": true,
+      "detail": "MANIFEST.json"
+    },
+    {
+      "check": "bundle.payload_sha256_matches",
+      "passed": true,
+      "detail": "bundle.joblib"
+    },
+    {
+      "check": "bundle.reference_stats_sha256_matches",
+      "passed": true,
+      "detail": "reference_stats.json"
+    },
+    {
+      "check": "bundle.history_seed_sha256_matches",
+      "passed": true,
+      "detail": "history_seed.parquet"
+    },
+    {
+      "check": "bundle.feature_count_matches_payload",
+      "passed": true,
+      "detail": {
+        "manifest": 103,
+        "bundle": 103
+      }
+    },
+    {
+      "check": "bundle.history_seed_has_no_labels",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "check": "bundle.history_seed_is_45_days_per_city",
+      "passed": true,
+      "detail": {
+        "days": 45,
+        "cities": 9
+      }
+    },
+    {
+      "check": "bundle.risk_card_sha256_matches",
+      "passed": true,
+      "detail": "reports/metrics/model_risk_card.json"
+    },
+    {
+      "check": "bundle.params_sha256_matches",
+      "passed": true,
+      "detail": "params.yaml"
+    },
+    {
+      "check": "risk_card.generated_at_is_data_derived",
+      "passed": true,
+      "detail": {
+        "generated_at": "2026-03-26T00:00:00+00:00",
+        "test_end": "2026-03-26"
+      }
+    },
+    {
+      "check": "risk_card.file_md5_matches.train",
+      "passed": true,
+      "detail": {
+        "path": "data\\processed\\train.parquet"
+      }
+    },
+    {
+      "check": "risk_card.file_md5_matches.val",
+      "passed": true,
+      "detail": {
+        "path": "data\\processed\\val.parquet"
+      }
+    },
+    {
+      "check": "risk_card.file_md5_matches.test",
+      "passed": true,
+      "detail": {
+        "path": "data\\processed\\test.parquet"
+      }
+    },
+    {
+      "check": "risk_card.file_md5_matches.feature_list",
+      "passed": true,
+      "detail": {
+        "path": "data\\processed\\feature_list.json"
+      }
+    },
+    {
+      "check": "risk_card.file_md5_matches.scaler",
+      "passed": true,
+      "detail": {
+        "path": "data\\processed\\scaler.joblib"
+      }
+    },
+    {
+      "check": "bundle.gate_status_matches_card",
+      "passed": true,
+      "detail": {
+        "G1": "pass",
+        "G2": "pass",
+        "G3": "fail",
+        "G4": "pass",
+        "G5": "pass"
+      }
+    },
+    {
+      "check": "bundle.waivers_cover_exactly_the_failing_gates",
+      "passed": true,
+      "detail": {
+        "failing": [
+          "G3"
+        ],
+        "waived": [
+          "G3"
+        ]
+      }
+    },
+    {
+      "check": "split.train_md5_matches_params",
+      "passed": true,
+      "detail": {
+        "actual": "49bd4c88748327afa12057c2fe71b0e7",
+        "expected": "49bd4c88748327afa12057c2fe71b0e7"
+      }
+    },
+    {
+      "check": "split.train_md5_matches_dvc_lock",
+      "passed": true,
+      "detail": {
+        "actual": "49bd4c88748327afa12057c2fe71b0e7",
+        "dvc_lock": "49bd4c88748327afa12057c2fe71b0e7"
+      }
+    },
+    {
+      "check": "split.train_has_no_duplicate_city_dates",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "check": "split.train_dates_are_monotonic_per_city",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "split.val_md5_matches_params",
+      "passed": true,
+      "detail": {
+        "actual": "462b7712b4cea342fe36ca80868a29f4",
+        "expected": "462b7712b4cea342fe36ca80868a29f4"
+      }
+    },
+    {
+      "check": "split.val_md5_matches_dvc_lock",
+      "passed": true,
+      "detail": {
+        "actual": "462b7712b4cea342fe36ca80868a29f4",
+        "dvc_lock": "462b7712b4cea342fe36ca80868a29f4"
+      }
+    },
+    {
+      "check": "split.val_has_no_duplicate_city_dates",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "check": "split.val_dates_are_monotonic_per_city",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "split.test_md5_matches_params",
+      "passed": true,
+      "detail": {
+        "actual": "bd1de9ea97083402bd9ccaceb1072e3c",
+        "expected": "bd1de9ea97083402bd9ccaceb1072e3c"
+      }
+    },
+    {
+      "check": "split.test_md5_matches_dvc_lock",
+      "passed": true,
+      "detail": {
+        "actual": "bd1de9ea97083402bd9ccaceb1072e3c",
+        "dvc_lock": "bd1de9ea97083402bd9ccaceb1072e3c"
+      }
+    },
+    {
+      "check": "split.test_has_no_duplicate_city_dates",
+      "passed": true,
+      "detail": 0
+    },
+    {
+      "check": "split.test_dates_are_monotonic_per_city",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "split.train_ends_on_train_end",
+      "passed": true,
+      "detail": "2023-12-31 00:00:00"
+    },
+    {
+      "check": "split.val_fits_the_val_window",
+      "passed": true,
+      "detail": {
+        "min": "2024-01-01 00:00:00",
+        "max": "2024-12-31 00:00:00"
+      }
+    },
+    {
+      "check": "split.test_starts_after_val_end",
+      "passed": true,
+      "detail": "2025-01-01 00:00:00"
+    },
+    {
+      "check": "split.windows_do_not_overlap",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "split.test_covers_every_city_with_1500_rows",
+      "passed": true,
+      "detail": {
+        "rows": 1852,
+        "cities": 9
+      }
+    },
+    {
+      "check": "features.count_matches_manifest",
+      "passed": true,
+      "detail": {
+        "n_features": 103,
+        "len": 103
+      }
+    },
+    {
+      "check": "features.train_column_order_matches_manifest",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "features.train_are_finite",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "features.val_column_order_matches_manifest",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "features.val_are_finite",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "features.test_column_order_matches_manifest",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "features.test_are_finite",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "scaler.mean_matches_a_fresh_train_fit",
+      "passed": true,
+      "detail": 0.0
+    },
+    {
+      "check": "scaler.scale_matches_a_fresh_train_fit",
+      "passed": true,
+      "detail": 0.0
+    },
+    {
+      "check": "scaler.feature_count_matches_manifest",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.train_target_is_next_day_aqi",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.train_aqi_lag_1_is_previous_day",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.val_target_is_next_day_aqi",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.val_aqi_lag_1_is_previous_day",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.test_target_is_next_day_aqi",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "leakage.test_aqi_lag_1_is_previous_day",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "repro.reference_stats_timestamp_is_data_derived",
+      "passed": true,
+      "detail": "2023-12-31T00:00:00+00:00"
+    },
+    {
+      "check": "repro.feature_list_timestamp_is_data_derived",
+      "passed": true,
+      "detail": "2026-03-26T00:00:00+00:00"
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Ahmedabad",
+      "passed": true,
+      "detail": {
+        "card": 11.713,
+        "recomputed": 11.7126
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Bengaluru",
+      "passed": true,
+      "detail": {
+        "card": 5.04,
+        "recomputed": 5.0399
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Chennai",
+      "passed": true,
+      "detail": {
+        "card": 11.354,
+        "recomputed": 11.3536
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Delhi",
+      "passed": true,
+      "detail": {
+        "card": 21.491,
+        "recomputed": 21.4908
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Hyderabad",
+      "passed": true,
+      "detail": {
+        "card": 19.089,
+        "recomputed": 19.0887
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Kolkata",
+      "passed": true,
+      "detail": {
+        "card": 15.041,
+        "recomputed": 15.041
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Lucknow",
+      "passed": true,
+      "detail": {
+        "card": 12.699,
+        "recomputed": 12.6995
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Mumbai",
+      "passed": true,
+      "detail": {
+        "card": 15.352,
+        "recomputed": 15.3525
+      }
+    },
+    {
+      "check": "risk_card.per_city_mae_matches.Pune",
+      "passed": true,
+      "detail": {
+        "card": 7.479,
+        "recomputed": 7.4788
+      }
+    },
+    {
+      "check": "risk_card.champion_matches_artifact",
+      "passed": true,
+      "detail": {
+        "card": "residual_lightgbm",
+        "artifact": "residual_lightgbm"
+      }
+    },
+    {
+      "check": "risk_card.champion_artifact_md5_matches",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "bundle_sha256": "f5d17e54635e5a804404bf59dc2e58a9f59415c1cf456ddeb094c7ff6b1be6cf",
+  "manifest_sha256": "1075a618fa1a2fb1164197fcf5d8638ddac4ee16e6f8c47bbfadd66e8eb6b2e1"
+}

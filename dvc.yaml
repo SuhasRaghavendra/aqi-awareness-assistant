@@ -211,6 +211,8 @@ stages:
           cache: false
       - reports/metrics/model_risk_card.json:
           cache: false
+      - reports/metrics/latency.json:
+          cache: false
 
   # ---- Step 13: Package champion + MLflow registry (Phase 2) ----
   register:
@@ -235,6 +237,7 @@ stages:
       - data
       - split
       - seed
+      - integrity
     outs:
       - artifacts/champion/:
           cache: false

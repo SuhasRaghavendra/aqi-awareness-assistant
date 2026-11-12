@@ -30,8 +30,6 @@ Outputs:
 from __future__ import annotations
 
 import argparse
-import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +48,9 @@ from src.features.serving_features import (
     add_season_onehot,
     add_weather_lag_features,
 )
+from src.utils.io import atomic_write_json
 from src.utils.logging_utils import get_logger, setup_logging
+from src.utils.reproducibility import frame_timestamp
 from src.utils.stage_stats import track_stage
 
 logger = get_logger("build_features")
@@ -281,10 +281,9 @@ def main() -> None:
                 if any(k in c for k in ["_x_", "intensity", "overlap", "stagnation_index"])
             ],
         },
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": frame_timestamp(df_test),
     }
-    with open(args.output_dir / "feature_list.json", "w") as f:
-        json.dump(feat_list, f, indent=2)
+    atomic_write_json(args.output_dir / "feature_list.json", feat_list)
 
     # ── Correlation plot ──────────────────────────────────────────────────────
     import matplotlib.pyplot as plt  # training-only dependency (not in the serve image)
@@ -309,7 +308,7 @@ def main() -> None:
 
     # ── Stats ─────────────────────────────────────────────────────────────────
     stats: dict[str, Any] = {
-        "created_at": datetime.now().isoformat(),
+        "created_at": frame_timestamp(df_test),
         "n_features": len(feature_cols),
         "train_rows": len(df_train),
         "val_rows": len(df_val),
@@ -321,10 +320,7 @@ def main() -> None:
         },
         "feature_group_sizes": {k: len(v) for k, v in feat_list["feature_groups"].items()},
     }
-    out_path = Path("reports/metrics/features_stats.json")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w") as f:
-        json.dump(stats, f, indent=2)
+    atomic_write_json(Path("reports/metrics/features_stats.json"), stats)
 
     with track_stage(
         "features",

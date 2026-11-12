@@ -34,4 +34,8 @@ testpaths = ["tests"]
 addopts = "-v --tb=short"
 markers = [
     "model: model-risk and quality-gate tests (require trained artifacts)",
+    "service: FastAPI contract, parity and latency tests",
+    "data: tests that need the full DVC-managed splits",
+    "registry: MLflow registry parity tests",
+    "slow: long-running checks",
 ]

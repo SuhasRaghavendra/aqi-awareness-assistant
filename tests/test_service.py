@@ -150,8 +150,8 @@ class TestObservability:
         body = resp.json()
         assert body["ready"] is True
         assert body["model_name"] == bundle.manifest["model"]["name"]
-        assert body["model_version"] == "1.0"
-        assert body["features_count"] == 103
+        assert body["model_version"] == bundle.manifest["bundle_version"]
+        assert body["features_count"] == len(bundle.feature_names)
         assert body["history_seed_days"] == 45
 
     def test_ready_503_when_bundle_missing(self, client, monkeypatch):
@@ -194,7 +194,7 @@ class TestObservability:
 
 
 class TestPredictContract:
-    def test_valid_request_returns_full_contract(self, client, val_frame):
+    def test_valid_request_returns_full_contract(self, client, val_frame, bundle):
         resp = client.post("/predict", json=make_payload(row_for(val_frame, "Delhi", "2024-12-30")))
         assert resp.status_code == 200
         body = resp.json()
@@ -216,7 +216,7 @@ class TestPredictContract:
         assert 0.0 <= body["aqi_pred"] <= 500.0
         assert sum(body["category_probs"].values()) == pytest.approx(1.0, abs=1e-5)
         assert body["model_name"] == "residual_lightgbm"
-        assert body["model_version"] == "1.0"
+        assert body["model_version"] == bundle.manifest["bundle_version"]
         assert body["alias"] == "champion"
         assert body["model_used"] == "residual_lightgbm"
         assert body["fallback_used"] is False
@@ -616,6 +616,95 @@ class TestHistoryStore:
         assert store.snapshot() == {"Delhi": 3}
         assert store.last_date("Delhi") == "2024-01-03"
         assert store.history_before("Delhi", "2024-01-03")["aqi"].tolist() == [100.0, 110.0]
+
+    def test_reappending_a_date_replaces_instead_of_duplicating(self):
+        frame = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-02"],
+                "city": ["Delhi", "Delhi"],
+                "aqi": [100.0, 110.0],
+            }
+        )
+        store = HistoryStore(frame, max_days=10)
+        store.append({"date": "2024-01-02", "city": "Delhi", "aqi": 999.0})
+
+        assert store.snapshot() == {"Delhi": 2}
+        assert store.history_before("Delhi", "2024-01-03")["aqi"].tolist() == [100.0, 999.0]
+
+    def test_out_of_order_insert_keeps_dates_sorted(self):
+        frame = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-03"],
+                "city": ["Delhi", "Delhi"],
+                "aqi": [100.0, 120.0],
+            }
+        )
+        store = HistoryStore(frame, max_days=10)
+        store.append({"date": "2024-01-02", "city": "Delhi", "aqi": 130.0})
+
+        history = store.history_before("Delhi", "2024-01-04")
+        assert history["date"].tolist() == ["2024-01-01", "2024-01-02", "2024-01-03"]
+        assert store.last_date("Delhi") == "2024-01-03"
+
+    def test_append_beyond_max_days_trims_the_oldest_rows(self):
+        dates = pd.date_range("2024-01-01", periods=5, freq="D").strftime("%Y-%m-%d").tolist()
+        frame = pd.DataFrame({"date": dates, "city": "Delhi", "aqi": [10.0 + i for i in range(5)]})
+        store = HistoryStore(frame, max_days=3)
+        assert store.snapshot() == {"Delhi": 3}
+
+        store.append({"date": "2024-01-06", "city": "Delhi", "aqi": 99.0})
+        assert store.snapshot() == {"Delhi": 3}
+        history = store.history_before("Delhi", "2024-01-07")
+        assert history["date"].tolist() == ["2024-01-04", "2024-01-05", "2024-01-06"]
+
+    def test_reset_does_not_mutate_the_callers_frame(self):
+        frame = pd.DataFrame(
+            {"date": ["2024-01-01"], "city": ["Delhi"], "aqi": [100.0], "target_aqi": [1.0]}
+        )
+        before = frame.copy(deep=True)
+        store = HistoryStore(frame, max_days=5)
+        store.append({"date": "2024-01-02", "city": "Delhi", "aqi": 101.0})
+
+        pd.testing.assert_frame_equal(frame, before)
+
+    def test_concurrent_appends_and_reads_stay_consistent(self):
+        import threading
+
+        store = HistoryStore(None, max_days=1000)
+        errors: list[BaseException] = []
+
+        def writer(city: str, start: int) -> None:
+            try:
+                for offset in range(50):
+                    day = pd.Timestamp("2024-01-01") + pd.Timedelta(days=start + offset)
+                    store.append(
+                        {"date": day.strftime("%Y-%m-%d"), "city": city, "aqi": float(offset)}
+                    )
+            except BaseException as exc:  # noqa: BLE001 - surfaced below
+                errors.append(exc)
+
+        def reader() -> None:
+            try:
+                for _ in range(200):
+                    store.snapshot()
+                    store.history_before("Delhi", "2025-01-01")
+            except BaseException as exc:  # noqa: BLE001 - surfaced below
+                errors.append(exc)
+
+        threads = [
+            threading.Thread(target=writer, args=("Delhi", 0)),
+            threading.Thread(target=writer, args=("Mumbai", 10)),
+            threading.Thread(target=reader),
+            threading.Thread(target=reader),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        assert not errors, errors
+        assert store.snapshot() == {"Delhi": 50, "Mumbai": 50}
+        assert store.history_days("Delhi", "2025-01-01") == 50
 
     def test_observation_schema_accepts_history_fields(self):
         allowed = set(Observation.model_fields)

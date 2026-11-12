@@ -30,7 +30,7 @@
     "median_ae": 17.462,
     "within_20_rate": 0.5531,
     "skill_score_vs_persistence": -0.6543,
-    "time_sec": 0.08
+    "time_sec": 0.07
   },
   {
     "task": "regression",
@@ -41,7 +41,7 @@
     "median_ae": 8.951,
     "within_20_rate": 0.7826,
     "skill_score_vs_persistence": 0.064,
-    "time_sec": 0.28
+    "time_sec": 0.36
   },
   {
     "task": "regression",
@@ -52,7 +52,7 @@
     "median_ae": 8.064,
     "within_20_rate": 0.7893,
     "skill_score_vs_persistence": 0.0816,
-    "time_sec": 6.6
+    "time_sec": 7.18
   },
   {
     "task": "regression",
@@ -63,7 +63,7 @@
     "median_ae": 7.974,
     "within_20_rate": 0.8015,
     "skill_score_vs_persistence": 0.107,
-    "time_sec": 0.47
+    "time_sec": 0.51
   },
   {
     "task": "regression",
@@ -85,7 +85,7 @@
     "median_ae": 8.41,
     "within_20_rate": 0.7884,
     "skill_score_vs_persistence": 0.0713,
-    "time_sec": 0.28
+    "time_sec": 0.36
   },
   {
     "task": "regression",
@@ -126,7 +126,7 @@
     "weighted_f1": 0.7808,
     "balanced_accuracy": 0.7401,
     "within_one_category_rate": 0.997,
-    "time_sec": 7.12
+    "time_sec": 6.86
   },
   {
     "task": "classification",
@@ -136,7 +136,7 @@
     "weighted_f1": 0.7945,
     "balanced_accuracy": 0.6557,
     "within_one_category_rate": 0.9973,
-    "time_sec": 0.9
+    "time_sec": 0.94
   },
   {
     "task": "classification",
@@ -146,7 +146,7 @@
     "weighted_f1": 0.7934,
     "balanced_accuracy": 0.7012,
     "within_one_category_rate": 0.9964,
-    "time_sec": 1.07
+    "time_sec": 1.09
   },
   {
     "task": "classification",
@@ -156,6 +156,6 @@
     "weighted_f1": 0.7979,
     "balanced_accuracy": 0.6309,
     "within_one_category_rate": 0.9973,
-    "time_sec": 2.16
+    "time_sec": 2.09
   }
 ]

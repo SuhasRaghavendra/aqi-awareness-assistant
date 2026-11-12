@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,16 @@ import yaml
 
 from src.models import model_risk as mr
 from src.models.package_model import HISTORY_SEED_DAYS, read_dvc_data_md5
-from src.serving.bundle import AqiBundle, sha256_file
+from src.serving.bundle import (
+    FORBIDDEN_SEED_COLUMNS,
+    HISTORY_SEED_FILENAME,
+    MANIFEST_FILENAME,
+    MANIFEST_SHA_FILENAME,
+    REFERENCE_STATS_FILENAME,
+    AqiBundle,
+    BundleIntegrityError,
+    sha256_file,
+)
 
 pytestmark = pytest.mark.model
 
@@ -41,8 +51,89 @@ def test_manifest_sha_matches_file(bundle_dir: Path) -> None:
 
 
 def test_payload_hashes_match_manifest(bundle_dir: Path, manifest: dict) -> None:
+    assert manifest["bundle_sha256"] == sha256_file(bundle_dir / "bundle.joblib")
     assert manifest["reference_stats_sha"] == sha256_file(bundle_dir / "reference_stats.json")
     assert manifest["history_seed_sha"] == sha256_file(bundle_dir / "history_seed.parquet")
+
+
+def test_history_seed_does_not_ship_the_label(bundle: AqiBundle) -> None:
+    leaked = FORBIDDEN_SEED_COLUMNS & set(bundle.history_seed.columns)
+    assert not leaked, f"history seed ships label columns: {sorted(leaked)}"
+
+
+def _copy_bundle(bundle_dir: Path, tmp_path: Path) -> Path:
+    target = tmp_path / "bundle"
+    shutil.copytree(bundle_dir, target)
+    return target
+
+
+def test_load_rejects_a_tampered_payload(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    payload = target / "bundle.joblib"
+    data = bytearray(payload.read_bytes())
+    data[len(data) // 2] ^= 0xFF
+    payload.write_bytes(bytes(data))
+
+    with pytest.raises(BundleIntegrityError, match="bundle.joblib"):
+        AqiBundle.load(target)
+
+
+def test_load_rejects_a_tampered_manifest(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    manifest_path = target / MANIFEST_FILENAME
+    manifest_path.write_bytes(manifest_path.read_bytes() + b" ")
+
+    with pytest.raises(BundleIntegrityError, match="MANIFEST"):
+        AqiBundle.load(target)
+
+
+def test_load_rejects_a_tampered_reference_stats(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    stats = target / REFERENCE_STATS_FILENAME
+    stats.write_bytes(stats.read_bytes().replace(b"{", b"{ ", 1))
+
+    with pytest.raises(BundleIntegrityError, match="reference_stats"):
+        AqiBundle.load(target)
+
+
+def test_load_rejects_a_tampered_history_seed(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    seed = target / HISTORY_SEED_FILENAME
+    data = bytearray(seed.read_bytes())
+    data[len(data) // 2] ^= 0xFF
+    seed.write_bytes(bytes(data))
+
+    with pytest.raises(BundleIntegrityError, match="history_seed"):
+        AqiBundle.load(target)
+
+
+def test_load_rejects_a_missing_manifest_sha(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    (target / MANIFEST_SHA_FILENAME).unlink()
+
+    with pytest.raises(FileNotFoundError):
+        AqiBundle.load(target)
+
+
+def test_load_rejects_a_bundle_missing_its_manifest(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    (target / MANIFEST_FILENAME).unlink()
+
+    with pytest.raises(FileNotFoundError):
+        AqiBundle.load(target)
+
+
+def test_load_without_verification_is_only_for_forensics(bundle_dir: Path, tmp_path: Path) -> None:
+    target = _copy_bundle(bundle_dir, tmp_path)
+    stats = target / REFERENCE_STATS_FILENAME
+    stats.write_bytes(stats.read_bytes().replace(b"{", b"{ ", 1))
+
+    # verify=False must be the only way to open a bundle whose payload is known
+    # to be corrupt; the default path refuses.
+    with pytest.raises(BundleIntegrityError):
+        AqiBundle.load(target)
+    forensic = AqiBundle.load(target, verify=False)
+    assert forensic.feature_count > 0
 
 
 def test_text_artifacts_use_lf_bytes(bundle_dir: Path) -> None:

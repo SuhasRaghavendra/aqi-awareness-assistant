@@ -107,7 +107,7 @@ Ablation experiments evaluated on the validation split empirically quantify the 
 
 ## 5. Inference Service (Phase 3)
 
-The Phase 2 champion (`residual_lightgbm`, 103 features, bundle `1.0`) is served by a FastAPI app in `src/service/`. The client sends **today's raw observations only**; the server rebuilds every calendar, city-static, vehicle/IIP, GRAP, festival and lag/rolling feature from the bundle's 45-day per-city history seed, using the same feature code as offline training (`src/features/serving_features.py`).
+The Phase 2 champion (`residual_lightgbm`, 103 features, bundle `1.1`) is served by a FastAPI app in `src/service/`. The client sends **today's raw observations only**; the server rebuilds every calendar, city-static, vehicle/IIP, GRAP, festival and lag/rolling feature from the bundle's 45-day per-city history seed, using the same feature code as offline training (`src/features/serving_features.py`).
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -197,8 +197,11 @@ cp .env.example .env
 
 ### 6.2 Verification & Execution
 ```bash
-# Run the full test suite (120 tests: data, features, models, Phase 3 service)
+# Run the full test suite (146 tests: data, features, models, integrity, Phase 3 service)
 pytest -q
+
+# Recompute every corruption/leakage invariant (64 checks; exits non-zero on drift)
+python scripts/audit_integrity.py
 
 # Run automated logbook governance check
 python scripts/check_logbook.py
@@ -212,6 +215,14 @@ dvc repro
 # Launch local MLflow Experiment Tracking UI
 mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 ```
+
+Every hashed artifact is written atomically and verified before use. The
+champion bundle is loaded through `AqiBundle.load(verify=True)`, which checks
+`MANIFEST.sha256` → `MANIFEST.json` → every payload **before** unpickling, so a
+tampered or half-written `bundle.joblib` can never be served or registered. The
+train/val/test md5 digests are frozen in `params.yaml` (`integrity:`), enforced
+by the audit and by `tests/test_data_integrity.py`; changing a split now
+requires a deliberate hash update and an ADR.
 
 ---
 
@@ -227,9 +238,9 @@ aqi-awareness-assistant/
 │   ├── interim/              # Daily aggregated panels, cleaned panels
 │   └── processed/            # Chronological splits (train, val, test) & feature list
 ├── docs/
-│   ├── logbook/              # Audit trail: 15 step-close entries (001 to 015) & INDEX.md
+│   ├── logbook/              # Audit trail: 16 step-close entries (001 to 016) & INDEX.md
 │   ├── CHANGELOG.md          # Keep-a-Changelog release notes
-│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-029)
+│   ├── decisions.md          # Architectural Decision Records (ADRs D-001 to D-034)
 │   ├── data_card.md          # Formal dataset schema, sourcing, and validation card
 │   └── dataset_approval.md   # Faculty project approval document
 ├── models/                   # Serialized model artifacts (.joblib, scalers)
@@ -241,7 +252,7 @@ aqi-awareness-assistant/
 │   ├── step_reports/         # Machine-readable JSON snapshots per step
 │   ├── demo_script.md        # 5-minute presentation & evaluation walkthrough
 │   └── milestone1_report.md  # Comprehensive final synthesis report
-├── scripts/                  # log_step.py, build_logbook_index.py, view_dataset.py
+├── scripts/                  # log_step.py, build_logbook_index.py, view_dataset.py, audit_integrity.py
 ├── src/
 │   ├── data/                 # discover, download, ingest, validate, hourly_to_daily, merge, clean
 │   ├── features/             # aqi_utils (CPCB breakpoints), build_features, serving_features (shared online/offline)
@@ -249,7 +260,7 @@ aqi-awareness-assistant/
 │   ├── service/              # FastAPI app, schemas, predictor, history store, middleware
 │   ├── serving/              # Champion bundle loader and MLflow pyfunc adapter
 │   └── utils/                # logging_utils, stage_stats, mlflow_utils, reproducibility
-└── tests/                    # 120 automated pytest tests (data, features, models, service parity/latency)
+└── tests/                    # 146 automated pytest tests (data, features, models, integrity, service parity/latency)
 ```
 
 ---
@@ -259,7 +270,7 @@ aqi-awareness-assistant/
 To maintain an unforgeable development audit trail, every advancement strictly executed the **Step-Close Protocol**:
 1. Run automated test suite (`pytest tests/ -q`).
 2. Run data transformation with context-managed audit emission (`reports/metrics/<stage>_stats.json`).
-3. Auto-append data change log (`docs/data_change_log.md`).
+3. Optionally append the data change log (`AQI_STAGE_CHANGELOG=1`).
 4. Generate step-close entry (`scripts/log_step.py --step <NNN> --title "<title>"`).
 5. Document ADRs in `docs/decisions.md` and rebuild `docs/logbook/INDEX.md`.
 6. Enforce pre-push verification via `scripts/check_logbook.py`.
@@ -283,6 +294,7 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **013** | 2026-11-10 | Byte-stable champion bundle | Phase 2 | Suhas Raghavendra | `a587632` |
 | **014** | 2026-11-10 | Validation-selected G4 and deterministic manifest | Phase 1 / 2 | Suhas Raghavendra | `a587632` |
 | **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
+| **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0–3 | Suhas Raghavendra | `<hash>` |
 
 ---
 

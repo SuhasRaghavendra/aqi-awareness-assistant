@@ -17,14 +17,16 @@ Usage::
         st.drop(reason="missing AQI target", n=100)
         st.record_output_frame(df_out)
 
-On exit the stats JSON is written to ``reports/metrics/<stage>_stats.json``
-and a summary section is appended to ``docs/data_change_log.md``.
+On exit the stats JSON is written to ``reports/metrics/<stage>_stats.json``.
+Appending a summary to ``docs/data_change_log.md`` is opt-in
+(``AQI_STAGE_CHANGELOG=1``) because a pipeline run must not modify git-tracked
+documentation with wall-clock timestamps.
 """
 
 from __future__ import annotations
 
 import hashlib
-import json
+import os
 import subprocess
 import time
 from collections.abc import Generator
@@ -36,6 +38,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.utils.io import atomic_write_json
 from src.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -44,7 +47,6 @@ logger = get_logger(__name__)
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _METRICS_DIR = _REPO_ROOT / "reports" / "metrics"
 _CHANGE_LOG = _REPO_ROOT / "docs" / "data_change_log.md"
-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -267,11 +269,12 @@ def track_stage(
         _METRICS_DIR.mkdir(parents=True, exist_ok=True)
         metrics_path = _METRICS_DIR / f"{stage}_stats.json"
         data = st.to_dict()
-        metrics_path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+        atomic_write_json(metrics_path, data, default=str)
         logger.info("Stage stats written -> %s", metrics_path)
 
-        # ── Append to data_change_log.md ─────────────────────────────────────
-        _append_change_log(st)
+        # ── Optionally append to the human-curated change log ────────────────
+        if os.environ.get("AQI_STAGE_CHANGELOG") == "1":
+            _append_change_log(st)
 
 
 def _append_change_log(st: StageStats) -> None:

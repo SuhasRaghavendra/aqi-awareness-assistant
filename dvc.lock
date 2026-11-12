@@ -337,8 +337,8 @@ stages:
       size: 5645
     - path: src/features/build_features.py
       hash: md5
-      md5: 1c108c5811c9c250de2a17f2296474e4
-      size: 14457
+      md5: 3a770f0b628d0dea53abc04c2213a2f0
+      size: 14357
     params:
       params.yaml:
         features:
@@ -365,8 +365,8 @@ stages:
     outs:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: f27ea1c5fa5f5ff7678b15a760cd795f
-      size: 6631
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
     - path: data/processed/scaler.joblib
       hash: md5
       md5: f6cb0fca0416e232c91cd60694422aa0
@@ -385,15 +385,15 @@ stages:
       size: 717507
     - path: reports/metrics/features_stats.json
       hash: md5
-      md5: 83b401f2957370657405a8c2fba0e06b
-      size: 20327
+      md5: 4aca9e9521468d0cbbfff47b5078a7e3
+      size: 19663
   train:
     cmd: python -m src.models.train --scaler data/processed/scaler.joblib
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: f27ea1c5fa5f5ff7678b15a760cd795f
-      size: 6631
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
     - path: data/processed/scaler.joblib
       hash: md5
       md5: f6cb0fca0416e232c91cd60694422aa0
@@ -445,15 +445,15 @@ stages:
       nfiles: 15
     - path: reports/metrics/val_metrics.json
       hash: md5
-      md5: 8e3413391f45b58631d9f4b7b63278da
-      size: 3753
+      md5: 026eb9c37a40cbd8a304b97657f183a4
+      size: 3755
   evaluate:
     cmd: python -m src.models.evaluate --scaler data/processed/scaler.joblib
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: f27ea1c5fa5f5ff7678b15a760cd795f
-      size: 6631
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
     - path: data/processed/scaler.joblib
       hash: md5
       md5: f6cb0fca0416e232c91cd60694422aa0
@@ -498,8 +498,8 @@ stages:
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: f27ea1c5fa5f5ff7678b15a760cd795f
-      size: 6631
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
     - path: data/processed/scaler.joblib
       hash: md5
       md5: f6cb0fca0416e232c91cd60694422aa0
@@ -527,8 +527,8 @@ stages:
       size: 1490
     - path: src/models/model_risk.py
       hash: md5
-      md5: c1ddf8c2fdd3126b6ca772cd95a9e50e
-      size: 26690
+      md5: 3f42c12c4d250e1deaef44ed7d2523cc
+      size: 27406
     - path: src/models/residual.py
       hash: md5
       md5: cea66ffdf431e55da7e6c25cbd1119cd
@@ -540,21 +540,25 @@ stages:
           train_end: '2023-12-31'
           val_end: '2024-12-31'
     outs:
+    - path: reports/metrics/latency.json
+      hash: md5
+      md5: b05b0077ba824d486a6233143b533b0b
+      size: 142
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: fa4d89dca11096a4034ba727db220b1b
-      size: 8461
+      md5: ecb4a040e8b12bf5c3ee706d562f368c
+      size: 8173
     - path: reports/metrics/reference_stats.json
       hash: md5
-      md5: 0161c207ff44d8a9fb665e34cda91a1e
-      size: 22679
+      md5: 1e227d498ca9b16de0e8d7304eef6bcf
+      size: 21830
   register:
     cmd: python -m src.models.register_model --build
     deps:
     - path: data/processed/feature_list.json
       hash: md5
-      md5: f27ea1c5fa5f5ff7678b15a760cd795f
-      size: 6631
+      md5: 4ef40f68889167f2e62d1910e9dcb9d1
+      size: 6384
     - path: data/processed/scaler.joblib
       hash: md5
       md5: f6cb0fca0416e232c91cd60694422aa0
@@ -570,40 +574,40 @@ stages:
       nfiles: 15
     - path: reports/metrics/model_risk_card.json
       hash: md5
-      md5: fa4d89dca11096a4034ba727db220b1b
-      size: 8461
+      md5: ecb4a040e8b12bf5c3ee706d562f368c
+      size: 8173
     - path: reports/metrics/reference_stats.json
       hash: md5
-      md5: 0161c207ff44d8a9fb665e34cda91a1e
-      size: 22679
+      md5: 1e227d498ca9b16de0e8d7304eef6bcf
+      size: 21830
     - path: reports/metrics/val_metrics.json
       hash: md5
-      md5: 8e3413391f45b58631d9f4b7b63278da
-      size: 3753
+      md5: 026eb9c37a40cbd8a304b97657f183a4
+      size: 3755
     - path: src/config.py
       hash: md5
       md5: 2c18ade013cf4e48bbb05431ce01cc9e
       size: 1490
     - path: src/models/model_risk.py
       hash: md5
-      md5: c1ddf8c2fdd3126b6ca772cd95a9e50e
-      size: 26690
+      md5: 3f42c12c4d250e1deaef44ed7d2523cc
+      size: 27406
     - path: src/models/package_model.py
       hash: md5
-      md5: 514a04ae8d5c7e74a8a850f607e01d5a
-      size: 11022
+      md5: e3be8049d1cfca5985c17747e245ede8
+      size: 11305
     - path: src/models/register_model.py
       hash: md5
-      md5: 43717a308ae7d9c2d84b7810de392d79
-      size: 11745
+      md5: 2c024354a2b92d03c157227a3112a441
+      size: 11508
     - path: src/serving/__init__.py
       hash: md5
       md5: c6b132785d42719da1e5a9b4dd6de2c7
       size: 54
     - path: src/serving/bundle.py
       hash: md5
-      md5: 505a6e61e4354715f2dde2bf236cc8f9
-      size: 5960
+      md5: 6a2c2b25af3ddc31922d3513b0838a0c
+      size: 13808
     - path: src/utils/mlflow_utils.py
       hash: md5
       md5: f6ae3351d7152d9b86d3d312eb08ebe0
@@ -640,6 +644,10 @@ stages:
           - 30
           use_calendar: true
           use_city_onehot: true
+        integrity:
+          train_md5: 49bd4c88748327afa12057c2fe71b0e7
+          val_md5: 462b7712b4cea342fe36ca80868a29f4
+          test_md5: bd1de9ea97083402bd9ccaceb1072e3c
         seed: 42
         split:
           train_end: '2023-12-31'
@@ -647,6 +655,6 @@ stages:
     outs:
     - path: artifacts/champion/
       hash: md5
-      md5: 9f355ea32e40f21bb07fc6407d5dbb49.dir
-      size: 811359
+      md5: 4359c1d3292e067b8aa3fcfd9c3d7d9c.dir
+      size: 800636
       nfiles: 5

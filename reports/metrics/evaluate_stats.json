@@ -1,15 +1,15 @@
 {
   "stage": "evaluate",
-  "start_time": "2026-11-12T05:18:05.366476+00:00",
-  "end_time": "2026-11-12T05:18:05.373039+00:00",
-  "duration_s": 0.007,
-  "git_commit": "5700eac",
+  "start_time": "2026-11-12T05:42:59.273103+00:00",
+  "end_time": "2026-11-12T05:42:59.284559+00:00",
+  "duration_s": 0.008,
+  "git_commit": "21a2f86",
   "params_hash": "d2497f4f5008",
   "inputs": [
     {
       "path": "data\\processed\\test.parquet",
       "exists": true,
-      "size_bytes": 457927,
+      "size_bytes": 461061,
       "rows": 1852,
       "columns": [
         "date",
@@ -136,27 +136,27 @@
     {
       "path": "reports\\metrics\\test_metrics.json",
       "exists": true,
-      "size_bytes": 3402
+      "size_bytes": 3398
     },
     {
       "path": "reports\\figures\\evaluation\\predicted_vs_actual.png",
       "exists": true,
-      "size_bytes": 356906
+      "size_bytes": 356695
     },
     {
       "path": "reports\\figures\\evaluation\\residual_histogram.png",
       "exists": true,
-      "size_bytes": 95014
+      "size_bytes": 93705
     },
     {
       "path": "reports\\figures\\evaluation\\confusion_matrix.png",
       "exists": true,
-      "size_bytes": 112045
+      "size_bytes": 109736
     },
     {
       "path": "reports\\figures\\evaluation\\city_error_breakdown.png",
       "exists": true,
-      "size_bytes": 75702
+      "size_bytes": 86490
     }
   ],
   "frame_stats": {

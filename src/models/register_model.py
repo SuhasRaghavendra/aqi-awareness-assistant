@@ -36,19 +36,15 @@ def read_json(path: Path) -> Any:
 
 
 def load_bundle_and_manifest(bundle_dir: Path) -> tuple[AqiBundle, dict[str, Any], str]:
-    """Load a bundle and verify that MANIFEST.json matches MANIFEST.sha256."""
-    manifest_path = bundle_dir / MANIFEST_FILENAME
-    sha_path = bundle_dir / MANIFEST_SHA_FILENAME
-    if not manifest_path.exists() or not sha_path.exists():
-        raise FileNotFoundError(f"Bundle manifest is incomplete: {bundle_dir}")
-    expected = sha_path.read_text(encoding="utf-8").strip()
-    actual = sha256_file(manifest_path)
-    if expected != actual:
-        raise RuntimeError(
-            f"MANIFEST sha mismatch for {manifest_path}: expected {expected}, got {actual}"
-        )
+    """Load a bundle, verifying MANIFEST.sha256 and every payload hash.
+
+    ``AqiBundle.load`` refuses to unpickle ``bundle.joblib`` unless the manifest
+    and all payload digests match, so a corrupted or partially written bundle
+    can never be registered.
+    """
     bundle = AqiBundle.load(bundle_dir)
-    return bundle, read_json(manifest_path), actual
+    manifest_path = bundle_dir / MANIFEST_FILENAME
+    return bundle, read_json(manifest_path), sha256_file(manifest_path)
 
 
 def verify_bundle_consistency(manifest: dict[str, Any], base: Path) -> None:

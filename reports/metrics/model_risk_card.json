@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-11-12T09:22:01+05:30",
+  "generated_at": "2026-03-26T00:00:00+00:00",
   "model": {
-    "id": "aqi-champion-5700eac4-residual_lightgbm",
+    "id": "aqi-champion-21a2f863-residual_lightgbm",
     "name": "residual_lightgbm",
     "path": "models/residual_lightgbm.joblib",
     "artifact_md5": "033819888bd9a79319a382071efd0e4e",
@@ -29,7 +29,7 @@
       "train": "49bd4c88748327afa12057c2fe71b0e7",
       "val": "462b7712b4cea342fe36ca80868a29f4",
       "test": "bd1de9ea97083402bd9ccaceb1072e3c",
-      "feature_list": "f27ea1c5fa5f5ff7678b15a760cd795f",
+      "feature_list": "4ef40f68889167f2e62d1910e9dcb9d1",
       "scaler": "f6cb0fca0416e232c91cd60694422aa0"
     },
     "n_features": 103,
@@ -46,7 +46,7 @@
       "test_cities": 9
     }
   },
-  "git_commit": "5700eac44833274d473459f77331d580fe4fca89",
+  "git_commit": "21a2f863edf4f51b4daa97e60bd9019ca5abccca",
   "gates": {
     "G1": {
       "name": "Skill vs persistence > 0 on val and test",
@@ -109,10 +109,9 @@
       "name": "Single-row latency",
       "threshold": "p95 single-row latency < 50 ms on the selected artifact",
       "value": {
-        "p50_ms": 7.2298,
-        "p95_ms": 7.4761,
-        "p99_ms": 7.5688,
+        "threshold_ms": 50.0,
         "iterations": 200,
+        "report": "reports/metrics/latency.json",
         "champion": "residual_lightgbm",
         "random_forest_excluded_as_champion": true
       },
@@ -253,9 +252,9 @@
     "dates": 447
   },
   "latency": {
-    "p50_ms": 7.2298,
-    "p95_ms": 7.4761,
-    "p99_ms": 7.5688,
+    "p50_ms": 5.7981,
+    "p95_ms": 6.0453,
+    "p99_ms": 6.5528,
     "iterations": 200,
     "threshold_ms": 50.0
   },

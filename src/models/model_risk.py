@@ -32,7 +32,8 @@ import pandas as pd
 
 from src.config import load_params
 from src.features.serving_features import build_feature_frame
-from src.utils.reproducibility import build_timestamp
+from src.utils.io import atomic_write_json
+from src.utils.reproducibility import frame_timestamp
 
 CATEGORY_ORDER = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poor", "Severe"]
 POOR_PLUS = {"Poor", "Very Poor", "Severe"}
@@ -129,7 +130,7 @@ def build_reference_stats(
     split = params.get("split", {})
     return {
         "schema_version": "1.0",
-        "generated_at": build_timestamp(root or repo_root()),
+        "generated_at": frame_timestamp(train_df),
         "n_features": len(feature_names),
         "feature_names": list(feature_names),
         "train_rows": int(len(train_df)),
@@ -574,13 +575,30 @@ def build_risk_card(
             "name": "Single-row latency",
             "threshold": GATE_THRESHOLDS["G5"],
             "value": {
-                **latency,
+                # Wall-clock percentiles are not reproducible byte-for-byte, so
+                # the measurement lives in reports/metrics/latency.json and the
+                # risk card (which is hashed into the bundle) records only the
+                # deterministic gate decision and its evidence pointer.
+                "threshold_ms": 50.0,
+                "iterations": int(latency["iterations"]),
+                "report": "reports/metrics/latency.json",
                 "champion": champion.name,
                 "random_forest_excluded_as_champion": True,
             },
             "status": "pass" if latency["p95_ms"] < 50.0 else "fail",
         },
     }
+
+    # Latency is measured wall-clock and therefore not reproducible byte-for-byte.
+    # Keep it out of the hashed risk card, in its own metrics artifact.
+    atomic_write_json(
+        base / "reports/metrics/latency.json",
+        {
+            **latency,
+            "threshold_ms": 50.0,
+            "champion": champion.name,
+        },
+    )
 
     data_files = {
         "train": base / "data/processed/train.parquet",
@@ -593,7 +611,7 @@ def build_risk_card(
     commit = git_commit(base)
     return {
         "schema_version": "1.0",
-        "generated_at": build_timestamp(base),
+        "generated_at": frame_timestamp(test_df),
         "model": {
             "id": f"aqi-champion-{commit[:8]}-{champion.name}",
             "name": champion.name,
@@ -678,14 +696,12 @@ def main() -> None:
         args.reference_stats if args.reference_stats.is_absolute() else base / args.reference_stats
     )
     stats_path.parent.mkdir(parents=True, exist_ok=True)
-    with stats_path.open("w", encoding="utf-8") as fh:
-        json.dump(reference_stats, fh, indent=2)
+    atomic_write_json(stats_path, reference_stats)
 
     risk_card = build_risk_card(base, reference_stats=reference_stats)
     card_path = args.risk_card if args.risk_card.is_absolute() else base / args.risk_card
     card_path.parent.mkdir(parents=True, exist_ok=True)
-    with card_path.open("w", encoding="utf-8") as fh:
-        json.dump(risk_card, fh, indent=2)
+    atomic_write_json(card_path, risk_card)
 
     print("\n" + "=" * 78)
     print("PHASE 1: MODEL RISK / QUALITY AUDIT")

@@ -1,0 +1,8 @@
+{
+  "p50_ms": 5.7981,
+  "p95_ms": 6.0453,
+  "p99_ms": 6.5528,
+  "iterations": 200,
+  "threshold_ms": 50.0,
+  "champion": "residual_lightgbm"
+}

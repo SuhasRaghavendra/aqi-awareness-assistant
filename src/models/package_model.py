@@ -19,12 +19,11 @@ import yaml
 from src.config import load_params
 from src.models import model_risk
 from src.serving.bundle import (
-    HISTORY_SEED_FILENAME,
-    REFERENCE_STATS_FILENAME,
+    FORBIDDEN_SEED_COLUMNS,
     AqiBundle,
     sha256_file,
 )
-from src.utils.reproducibility import build_timestamp
+from src.utils.io import replace_directory
 
 GATE_WAIVERS = {
     "G3": (
@@ -117,11 +116,19 @@ def residual_quantiles(val_df: pd.DataFrame, preds: np.ndarray) -> dict[str, dic
 
 
 def build_history_seed(val_df: pd.DataFrame, days: int = HISTORY_SEED_DAYS) -> pd.DataFrame:
-    """Take the most recent ``days`` validation rows per city as serving history."""
+    """Take the most recent ``days`` validation rows per city as serving history.
+
+    The label columns are dropped: the serving bundle only needs the observed
+    inputs plus day-``t`` AQI, and shipping ``target_aqi`` (tomorrow's value)
+    would put the answer inside the inference artifact.
+    """
     frame = val_df.copy()
     frame["date"] = pd.to_datetime(frame["date"])
     last_date = frame.groupby("city")["date"].transform("max")
     seed = frame[frame["date"] >= last_date - pd.Timedelta(days=days - 1)].copy()
+    leaked = [column for column in FORBIDDEN_SEED_COLUMNS if column in seed.columns]
+    if leaked:
+        seed = seed.drop(columns=leaked)
     seed["date"] = seed["date"].dt.strftime("%Y-%m-%d")
     return seed.sort_values(["city", "date"]).reset_index(drop=True)
 
@@ -192,13 +199,10 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
 
     seed = build_history_seed(val_df)
     bundle_dir = base / "artifacts/champion"
-    if bundle_dir.exists():
-        shutil.rmtree(bundle_dir)
-    bundle_dir.mkdir(parents=True, exist_ok=True)
-    seed.to_parquet(bundle_dir / HISTORY_SEED_FILENAME, index=False)
-    # LF on every platform: MANIFEST.reference_stats_sha hashes these exact bytes.
-    with (bundle_dir / REFERENCE_STATS_FILENAME).open("w", encoding="utf-8", newline="\n") as fh:
-        json.dump(reference_stats, fh, indent=2)
+    staging = base / "artifacts" / ".champion.staging"
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True, exist_ok=True)
 
     dvc_data_md5 = read_dvc_data_md5(base, DVC_DATA_PATH)
     feature_config = {
@@ -207,8 +211,10 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
     }
     feature_names_sha = hashlib.sha256("\n".join(feature_names).encode("utf-8")).hexdigest()
     manifest = {
-        "bundle_version": "1.0",
-        "created_at": build_timestamp(base),
+        "bundle_version": "1.1",
+        # Data-derived, not wall-clock: rebuilding the same splits yields the
+        # same bytes, so the bundle hash and registry version stay stable.
+        "created_at": risk_card["generated_at"],
         "model": {
             "name": champion.name,
             "path": str(champion.path.relative_to(base)).replace("\\", "/"),
@@ -232,9 +238,6 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
         "dvc_data_version": dvc_data_md5,
         "params_sha256": sha256_file(base / "params.yaml"),
         "risk_card_sha": sha256_file(base / "reports/metrics/model_risk_card.json"),
-        "reference_stats_sha": sha256_file(bundle_dir / REFERENCE_STATS_FILENAME),
-        "history_seed_sha": sha256_file(bundle_dir / HISTORY_SEED_FILENAME),
-        "history_seed_rows": int(len(seed)),
         "history_seed_days": HISTORY_SEED_DAYS,
         "split": risk_card["data"]["split_dates"],
         "gate_status": gate_status,
@@ -261,7 +264,11 @@ def build_bundle(root: Path | None = None) -> tuple[AqiBundle, dict[str, Any], P
         fallback_model=fallback_model,
         fallback_name="persistence",
     )
-    bundle.save(bundle_dir, include_payload=False)
+    # save() writes every payload atomically, hashes it into MANIFEST.json and
+    # returns the completed manifest; the directory is then swapped into place
+    # so a crash cannot leave a half-published champion.
+    manifest = bundle.save(staging, include_payload=True)
+    replace_directory(staging, bundle_dir)
     return bundle, manifest, bundle_dir
 
 

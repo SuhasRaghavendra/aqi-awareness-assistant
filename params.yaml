@@ -1,5 +1,14 @@
 seed: 42
 
+# --- Frozen-split integrity (ADR D-033) ---
+# Any change here must be deliberate: the md5 of a split is part of the
+# champion's provenance. `scripts/audit_integrity.py` and
+# `tests/test_data_integrity.py` fail when a file no longer matches.
+integrity:
+  train_md5: 49bd4c88748327afa12057c2fe71b0e7
+  val_md5: 462b7712b4cea342fe36ca80868a29f4
+  test_md5: bd1de9ea97083402bd9ccaceb1072e3c
+
 data:
   window_start: "2019-01-01"
   snapshot_end: "2026-09-30"

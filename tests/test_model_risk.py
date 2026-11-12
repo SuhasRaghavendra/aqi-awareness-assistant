@@ -393,15 +393,23 @@ def test_reference_stats_timestamp_is_reproducible(
         test_df, feature_manifest["feature_names"], params, root=repo_root
     )
     assert first["generated_at"] == second["generated_at"]
-    assert first["generated_at"] == mr.build_timestamp(repo_root)
+    # Data-derived, not wall-clock or HEAD-derived: rebuilding the same split
+    # yields the same bytes at any commit.
+    assert first["generated_at"] == mr.frame_timestamp(test_df)
 
 
-def test_gate_g5_latency(risk_card: dict) -> None:
+def test_gate_g5_latency(repo_root: Path, risk_card: dict) -> None:
     gate = risk_card["gates"]["G5"]
     assert gate["threshold"] == mr.GATE_THRESHOLDS["G5"]
-    assert float(gate["value"]["p95_ms"]) < 50.0
     assert gate["status"] == "pass"
     assert gate["value"]["champion"] != "random_forest_reg"
+    assert gate["value"]["threshold_ms"] == 50.0
+    # Wall-clock percentiles live in their own artifact so the hashed risk card
+    # stays byte-stable across rebuilds.
+    report = mr.read_json(repo_root / gate["value"]["report"])
+    assert float(report["p95_ms"]) < 50.0
+    assert report["threshold_ms"] == 50.0
+    assert report["champion"] == gate["value"]["champion"]
 
 
 def test_risk_card_metadata_and_limitations(
