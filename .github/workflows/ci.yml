@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-serve.txt -r requirements-dev.txt
       - name: Run unit tests
         run: pytest -m "not model and not data and not registry and not slow and not service"
 
@@ -65,7 +65,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-serve.txt -r requirements-dev.txt
       - name: Run service tests
         run: pytest -m service tests/test_service.py -v
 
@@ -84,7 +84,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-serve.txt -r requirements-dev.txt
       - name: Run model gate
         run: pytest -m "model and not data" -v
       - name: Verify bundle hashes without DVC data
@@ -104,7 +104,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-serve.txt -r requirements-dev.txt
       - name: Verify registry parity
         run: python scripts/verify_registry.py
 
