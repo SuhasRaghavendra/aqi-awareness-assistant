@@ -3,7 +3,7 @@
 - **Date/time:** 2026-11-12T12:30:00+05:30
 - **Author:** <student-A>      **Reviewer:** <student-B>
 - **Phase:** 3           **Branch / PR:** `main` / #<n>
-- **Git commit(s):** `5700eac44833` (base; changes in working tree at time of writing)      **Data version:** `val.parquet` md5 `462b7712b4cea342fe36ca80868a29f4` (no data change in this step)
+- **Git commit(s):** `23f78f5c1952` (step); base `5700eac44833`      **Data version:** `val.parquet` md5 `462b7712b4cea342fe36ca80868a29f4` (no data change in this step)
 - **MLflow run IDs (if any):** N/A — serving consumes the champion bundle from Step 014
 
 ## 1. Objective
@@ -105,6 +105,21 @@ result within `1e-6` and leaves the store untouched.
 All checks passed!           # python -m ruff check src tests scripts
 62 files would be left unchanged  # python -m black --check .
 ```
+
+**Pipeline and registry consistency.** After the refactor, `dvc repro` re-ran
+`features` through `register`. The rebuilt `train.parquet`, `val.parquet`,
+`test.parquet` and `scaler.joblib` were **byte-identical** to the pre-refactor
+versions (md5 `49bd4c88…`, `462b7712…`, `bd1de9ea…`, `f6cb0fca…`), confirming
+the shared-feature refactor is behaviour-preserving. `dvc status` is clean.
+The regenerated bundle was registered as MLflow v10, promoted to `@champion`,
+and `register_model --verify` reports **max diff 0.0** on 423 fixture rows.
+
+One residual issue found here and assigned to Step 016: `feature_list.json`
+embeds `datetime.now()`, so a fresh rebuild changes its bytes even when the
+features are unchanged. It is not hashed into the bundle directly, but it does
+invalidate the `train`/`evaluate`/`model_risk`/`register` stages. The fix
+(deterministic, content-derived timestamps plus LF-only writes) lands with the
+integrity work, not here, so this step stays a pure Phase 3 baseline.
 
 ## 5. Decisions and rationale
 
