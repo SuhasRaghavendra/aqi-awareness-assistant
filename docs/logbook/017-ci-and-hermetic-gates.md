@@ -3,7 +3,7 @@
 - **Date/time:** 2026-11-12T12:10:00+05:30
 - **Author:** <student-A>      **Reviewer:** <student-B>
 - **Phase:** 0–3           **Branch / PR:** `main` / #<n>
-- **Git commit(s):** `<hash>`      **Data version:** frozen splits unchanged (`val` md5 `462b7712b4cea342fe36ca80868a29f4`); the same bytes are now committed as `tests/fixtures/val_snapshot.parquet`
+- **Git commit(s):** `a7598a55df8a`      **Data version:** frozen splits unchanged (`val` md5 `462b7712b4cea342fe36ca80868a29f4`); the same bytes are now committed as `tests/fixtures/val_snapshot.parquet`
 - **MLflow run IDs (if any):** N/A — parity is checked in a throwaway SQLite registry, not the local `mlflow.db`
 
 ## 1. Objective

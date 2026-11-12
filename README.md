@@ -295,7 +295,7 @@ To maintain an unforgeable development audit trail, every advancement strictly e
 | **014** | 2026-11-10 | Validation-selected G4 and deterministic manifest | Phase 1 / 2 | Suhas Raghavendra | `a587632` |
 | **015** | 2026-11-12 | FastAPI inference service | Phase 3 | Suhas Raghavendra | `5700eac` |
 | **016** | 2026-11-12 | Integrity, atomic artifacts and serving safety | Phases 0-3 | Suhas Raghavendra | `f9fa35922404` |
-| **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `<hash>` |
+| **017** | 2026-11-12 | CI repair and hermetic quality gates | Phases 0-3 | Suhas Raghavendra | `a7598a55df8a` |
 
 ---
 
