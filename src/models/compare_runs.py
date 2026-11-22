@@ -1,13 +1,14 @@
 """
 src/models/compare_runs.py
 --------------------------
-Phase 7: Query MLflow tracking database (sqlite:///mlflow.db)
+Phase 7: Query the configured MLflow tracking server.
 and export a comprehensive run comparison table to reports/metrics/run_comparison.csv.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import mlflow
@@ -20,7 +21,14 @@ logger = get_logger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 7: Compare MLflow Runs")
-    parser.add_argument("--tracking-uri", type=str, default="sqlite:///mlflow.db")
+    parser.add_argument(
+        "--tracking-uri",
+        type=str,
+        default=os.getenv(
+            "MLFLOW_TRACKING_URI",
+            "https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.mlflow",
+        ),
+    )
     parser.add_argument(
         "--output-csv", type=Path, default=Path("reports/metrics/run_comparison.csv")
     )

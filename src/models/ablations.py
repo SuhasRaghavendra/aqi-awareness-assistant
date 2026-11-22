@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -77,7 +78,14 @@ def main() -> None:
     parser.add_argument(
         "--output-fig", type=Path, default=Path("reports/figures/ablations/ablation_study.png")
     )
-    parser.add_argument("--tracking-uri", type=str, default="sqlite:///mlflow.db")
+    parser.add_argument(
+        "--tracking-uri",
+        type=str,
+        default=os.getenv(
+            "MLFLOW_TRACKING_URI",
+            "https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.mlflow",
+        ),
+    )
     args = parser.parse_args()
 
     setup_logging(stage="ablations")

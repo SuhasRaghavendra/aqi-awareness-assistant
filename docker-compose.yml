@@ -47,7 +47,7 @@ services:
     depends_on:
       - prometheus
 
-  # ── MLflow profile: local experiment UI on the sqlite file ────────────────
+  # ── Optional local MLflow fallback; hosted showcase uses DagsHub ──────────
   mlflow-ui:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: aqi-mlflow
@@ -63,4 +63,3 @@ services:
       --default-artifact-root /mlflow/mlruns
       --host 0.0.0.0
       --port 5000
-

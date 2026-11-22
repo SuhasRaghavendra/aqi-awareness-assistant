@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,10 @@ from src.serving.pyfunc import AqiBundlePyfunc
 from src.utils.mlflow_utils import setup_experiment, start_run
 
 DEFAULT_MODEL_NAME = "Indian-AQI-Predictor"
-DEFAULT_TRACKING_URI = "sqlite:///mlflow.db"
+DEFAULT_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.mlflow",
+)
 LOGBOOK_ENTRY = "012-registry-and-bundling.md"
 
 

@@ -32,6 +32,7 @@ try:
     from prometheus_client import (
         CONTENT_TYPE_LATEST,
         Counter,
+        Gauge,
         Histogram,
         generate_latest,
     )
@@ -64,6 +65,21 @@ try:
         "aqi_out_of_range_total",
         "Predictions whose inputs fell outside the training range",
         ["field"],
+    )
+    FEATURE_DRIFT_PSI = Gauge(
+        "aqi_feature_drift_psi",
+        "Rolling Population Stability Index (PSI) per input feature (warn > 0.2)",
+        ["feature"],
+    )
+    REALIZED_ABS_ERROR = Gauge(
+        "aqi_realized_abs_error",
+        "Most recent realized absolute AQI prediction error per city",
+        ["city"],
+    )
+    ROLLING_14D_MAE = Gauge(
+        "aqi_rolling_14d_mae",
+        "Rolling 14-day realized MAE per city (alert > 1.5x val MAE)",
+        ["city"],
     )
 
 except ImportError:  # pragma: no cover
@@ -178,3 +194,21 @@ def record_prediction(
         PREDICTION_HISTOGRAM.labels(city=city).observe(max(float(aqi), 0.0))
     for field in out_of_range_fields:
         OUT_OF_RANGE_COUNT.labels(field=field).inc()
+
+
+def record_monitoring(
+    city: str,
+    psi_by_feature: dict[str, float] | None = None,
+    realized_abs_error: float | None = None,
+    rolling_14d_mae: float | None = None,
+) -> None:
+    """Update Prometheus drift (PSI) and live realized-error gauges."""
+    if not _PROM_AVAILABLE:
+        return
+    if psi_by_feature:
+        for feature, psi in psi_by_feature.items():
+            FEATURE_DRIFT_PSI.labels(feature=feature).set(float(psi))
+    if realized_abs_error is not None:
+        REALIZED_ABS_ERROR.labels(city=city).set(float(realized_abs_error))
+    if rolling_14d_mae is not None:
+        ROLLING_14D_MAE.labels(city=city).set(float(rolling_14d_mae))

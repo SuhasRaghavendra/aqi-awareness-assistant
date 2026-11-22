@@ -1,714 +1,954 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AQI MLOps Project — Complete Evaluator Defense & Comprehensive Project Guide</title>
-<style>
-  :root {
-    --primary: #1e3a8a;
-    --primary-light: #3b82f6;
-    --accent: #0284c7;
-    --success: #15803d;
-    --warning: #b45309;
-    --danger: #b91c1c;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --border: #e2e8f0;
-    --code-bg: #0f172a;
-    --code-text: #f1f5f9;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.65;
-    background-color: var(--bg);
-    color: var(--text);
-    padding: 0;
-  }
-  .header {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0369a1 100%);
-    color: white;
-    padding: 3rem 2rem;
-    border-bottom: 4px solid var(--accent);
-  }
-  .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  .header h1 {
-    font-size: 2.25rem;
-    font-weight: 800;
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.025em;
-  }
-  .header p {
-    font-size: 1.15rem;
-    color: #bae6fd;
-    max-width: 900px;
-    margin-bottom: 1.5rem;
-  }
-  .badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-  }
-  .badge.live { background: #10b981; color: white; border: none; }
-  .layout {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 2rem;
-  }
-  @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
-  }
-  .sidebar {
-    position: sticky;
-    top: 2rem;
-    height: fit-content;
-    background: var(--card);
-    border-radius: 12px;
-    padding: 1.25rem;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  .sidebar h3 {
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 0.5rem;
-  }
-  .sidebar ul {
-    list-style: none;
-  }
-  .sidebar li {
-    margin-bottom: 0.5rem;
-  }
-  .sidebar a {
-    color: var(--text);
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    display: block;
-    padding: 0.35rem 0.5rem;
-    border-radius: 6px;
-    transition: all 0.15s;
-  }
-  .sidebar a:hover {
-    background: #e0f2fe;
-    color: var(--accent);
-  }
-  .content {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 2.5rem;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  section {
-    margin-bottom: 3.5rem;
-    scroll-margin-top: 2rem;
-  }
-  h2 {
-    font-size: 1.65rem;
-    color: var(--primary);
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 0.6rem;
-    margin-bottom: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  h3 {
-    font-size: 1.25rem;
-    color: #1e293b;
-    margin: 1.75rem 0 0.75rem 0;
-  }
-  h4 {
-    font-size: 1.05rem;
-    color: #334155;
-    margin: 1.25rem 0 0.5rem 0;
-  }
-  p, li {
-    color: #334155;
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-  }
-  ul, ol {
-    padding-left: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  li { margin-bottom: 0.4rem; }
-  strong { color: var(--text); }
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin: 1rem 0;
-  }
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin: 1rem 0;
-  }
-  @media (max-width: 700px) {
-    .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  }
-  .card-box {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem;
-  }
-  .card-box.highlight {
-    background: #f0f9ff;
-    border-color: #bae6fd;
-  }
-  .card-box.success {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
-  }
-  .card-box.warning {
-    background: #fffbeb;
-    border-color: #fef3c7;
-  }
-  .metric-value {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: var(--primary);
-    line-height: 1.2;
-    margin-bottom: 0.25rem;
-  }
-  .metric-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1.25rem 0;
-    font-size: 0.95rem;
-  }
-  th, td {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border: 1px solid var(--border);
-  }
-  th {
-    background: #f1f5f9;
-    font-weight: 700;
-    color: #1e293b;
-  }
-  tr:nth-child(even) {
-    background: #f8fafc;
-  }
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.88em;
-    background: #f1f5f9;
-    color: #0f172a;
-    padding: 0.2em 0.4em;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-  }
-  pre {
-    background: var(--code-bg);
-    color: var(--code-text);
-    padding: 1.25rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin: 1rem 0;
-  }
-  pre code {
-    background: transparent;
-    color: inherit;
-    border: none;
-    padding: 0;
-  }
-  .qa-box {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-left: 4px solid var(--primary-light);
-    border-radius: 6px;
-    padding: 1.25rem;
-    margin: 1.25rem 0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  }
-  .qa-box .question {
-    font-weight: 700;
-    color: var(--primary);
-    font-size: 1.05rem;
-    margin-bottom: 0.6rem;
-  }
-  .qa-box .answer {
-    color: #334155;
-    font-size: 0.96rem;
-    line-height: 1.6;
-  }
-  .qa-box.critical {
-    border-left-color: #dc2626;
-    background: #fff5f5;
-  }
-  .qa-box.critical .question {
-    color: #991b1b;
-  }
-  .alert {
-    padding: 1rem 1.25rem;
-    border-radius: 8px;
-    margin: 1.25rem 0;
-    font-size: 0.95rem;
-    border-left: 4px solid;
-  }
-  .alert.info {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #1e40af;
-  }
-  .alert.warning {
-    background: #fffbeb;
-    border-color: #f59e0b;
-    color: #92400e;
-  }
-  .alert.success {
-    background: #f0fdf4;
-    border-color: #10b981;
-    color: #065f46;
-  }
-  .flowchart {
-    background: #0f172a;
-    color: #e2e8f0;
-    padding: 1.5rem;
-    border-radius: 8px;
-    font-family: monospace;
-    white-space: pre;
-    overflow-x: auto;
-    font-size: 0.85rem;
-    line-height: 1.4;
-  }
-  @media print {
-    body { background: white; color: black; }
-    .sidebar { display: none; }
-    .layout { grid-template-columns: 1fr; margin: 0; padding: 0; }
-    .content { box-shadow: none; border: none; padding: 0; }
-    .header { padding: 1.5rem 0; }
-    section { page-break-inside: avoid; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AQI MLOps Project — Complete Evaluator Defense & Comprehensive Project Guide</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --accent: #0284c7;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --code-text: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.65;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 0;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0369a1 100%);
+      color: white;
+      padding: 3rem 2rem;
+      border-bottom: 4px solid var(--accent);
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.025em;
+    }
+
+    .header p {
+      font-size: 1.15rem;
+      color: #bae6fd;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .badge.live {
+      background: #10b981;
+      color: white;
+      border: none;
+    }
+
+    .layout {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 2rem;
+      height: fit-content;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar h3 {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar li {
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: block;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .sidebar a:hover {
+      background: #e0f2fe;
+      color: var(--accent);
+    }
+
+    .content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 2.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    h2 {
+      font-size: 1.65rem;
+      color: var(--primary);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      color: #1e293b;
+      margin: 1.75rem 0 0.75rem 0;
+    }
+
+    h4 {
+      font-size: 1.05rem;
+      color: #334155;
+      margin: 1.25rem 0 0.5rem 0;
+    }
+
+    p,
+    li {
+      color: #334155;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    strong {
+      color: var(--text);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 700px) {
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .card-box.highlight {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
+
+    .card-box.success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .card-box.warning {
+      background: #fffbeb;
+      border-color: #fef3c7;
+    }
+
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88em;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      border: none;
+      padding: 0;
+    }
+
+    .qa-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid var(--primary-light);
+      border-radius: 6px;
+      padding: 1.25rem;
+      margin: 1.25rem 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .qa-box .question {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 1.05rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .qa-box .answer {
+      color: #334155;
+      font-size: 0.96rem;
+      line-height: 1.6;
+    }
+
+    .qa-box.critical {
+      border-left-color: #dc2626;
+      background: #fff5f5;
+    }
+
+    .qa-box.critical .question {
+      color: #991b1b;
+    }
+
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.25rem 0;
+      font-size: 0.95rem;
+      border-left: 4px solid;
+    }
+
+    .alert.info {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+
+    .alert.warning {
+      background: #fffbeb;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .alert.success {
+      background: #f0fdf4;
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .flowchart {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 8px;
+      font-family: monospace;
+      white-space: pre;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+        margin: 0;
+        padding: 0;
+      }
+
+      .content {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+      }
+
+      .header {
+        padding: 1.5rem 0;
+      }
+
+      section {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="header-content">
-    <h1>AI-Based Air Quality Awareness Assistant</h1>
-    <p>Comprehensive Project Defense, Architecture Manual & Evaluator Q&amp;A Guide</p>
-    <div class="badges">
-      <span class="badge live">🟢 Live on Render: https://aqi-predictor-gxbd.onrender.com</span>
-      <span class="badge">Model: Residual LightGBM Monotone v1.1</span>
-      <span class="badge">Features: 103 Multimodal</span>
-      <span class="badge">CI/CD: GitHub Actions (7 Jobs)</span>
-      <span class="badge">Container: GHCR (362 MB, Non-Root)</span>
-      <span class="badge">Audit: 64/64 Integrity Checks Passed</span>
+  <div class="header">
+    <div class="header-content">
+      <h1>AI-Based Air Quality Awareness Assistant</h1>
+      <p>Comprehensive Project Defense, Architecture Manual & Evaluator Q&amp;A Guide</p>
+      <div class="badges">
+        <span class="badge live">🟢 Live on Render: https://aqi-predictor-gxbd.onrender.com</span>
+        <span class="badge">Model: Residual LightGBM Monotone v1.1</span>
+        <span class="badge">Features: 103 Multimodal</span>
+        <span class="badge">CI/CD: GitHub Actions (7 Jobs)</span>
+        <span class="badge">Container: GHCR (362 MB, Non-Root)</span>
+        <span class="badge">Audit: 64/64 Integrity Checks Passed</span>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="layout">
-  <div class="sidebar">
-    <h3>Defense Guide Index</h3>
-    <ul>
-      <li><a href="#summary">1. Executive Summary & Pitch</a></li>
-      <li><a href="#problem">2. Problem & Tasks</a></li>
-      <li><a href="#data">3. Data & Leakage Controls</a></li>
-      <li><a href="#features">4. Feature Engineering (103)</a></li>
-      <li><a href="#model">5. Modeling & The Residual Fix</a></li>
-      <li><a href="#gates">6. Quality Gates & Metamorphic</a></li>
-      <li><a href="#registry">7. Registry & Champion Bundle</a></li>
-      <li><a href="#serving">8. FastAPI Serving Engine</a></li>
-      <li><a href="#docker">9. Docker & Hardening</a></li>
-      <li><a href="#cicd">10. CI/CD & Automated Gates</a></li>
-      <li><a href="#cloud">11. Cloud Deploy & Monitoring</a></li>
-      <li><a href="#evaluator-qa">12. Evaluator Q&amp;A (Defense Bible)</a></li>
-    </ul>
-  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <h3>Defense Guide Index</h3>
+      <ul>
+        <li><a href="#summary">1. Executive Summary & Pitch</a></li>
+        <li><a href="#problem">2. Problem & Tasks</a></li>
+        <li><a href="#data">3. Data & Leakage Controls</a></li>
+        <li><a href="#features">4. Feature Engineering (103)</a></li>
+        <li><a href="#model">5. Modeling & The Residual Fix</a></li>
+        <li><a href="#gates">6. Quality Gates & Metamorphic</a></li>
+        <li><a href="#registry">7. Registry & Champion Bundle</a></li>
+        <li><a href="#serving">8. FastAPI Serving Engine</a></li>
+        <li><a href="#docker">9. Docker & Hardening</a></li>
+        <li><a href="#cicd">10. CI/CD & Automated Gates</a></li>
+        <li><a href="#cloud">11. Cloud Deploy & Monitoring</a></li>
+        <li><a href="#evaluator-qa">12. Evaluator Q&amp;A (Defense Bible)</a></li>
+      </ul>
+    </div>
 
-  <div class="content">
+    <div class="content">
 
-    <!-- 1. EXECUTIVE SUMMARY -->
-    <section id="summary">
-      <h2>1. Executive Summary &amp; The 60-Second Pitch</h2>
-      <div class="card-box highlight">
-        <p><strong>The Core Elevator Pitch:</strong></p>
-        <p><em>"Most academic air quality projects simply fit an unconstrained XGBoost or LSTM on a random split in a Jupyter notebook, which leaks future information and silently predicts that adding satellite fire pollution lowers AQI. Our project is a complete, production-grade MLOps system that forecasts Next-Day AQI and CPCB health risk categories across 9 Indian metropolitan cities. We engineered a strictly chronological, leak-free pipeline across 103 multimodal features, mathematically solved the persistence defeat using a residual LightGBM with monotone constraints, packaged the champion into a cryptographically verified bundle, containerized it into a 362 MB non-root image with zero CVEs, guarded it with a 7-job CI/CD pipeline on GitHub Actions, and deployed it live to the cloud with sub-15ms inference latency and active Prometheus drift monitoring."</em></p>
-      </div>
-
-      <div class="grid-3" style="margin-top: 1.5rem;">
-        <div class="card-box">
-          <div class="metric-value">14.028</div>
-          <div class="metric-label">Holdout Test MAE (AQI pts)</div>
-          <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Beats persistence baseline (14.720) with positive skill across 1,852 unseen rows.</p>
+      <!-- 1. EXECUTIVE SUMMARY -->
+      <section id="summary">
+        <h2>1. Executive Summary &amp; The 60-Second Pitch</h2>
+        <div class="card-box highlight">
+          <p><strong>The Core Elevator Pitch:</strong></p>
+          <p><em>"Most academic air quality projects simply fit an unconstrained XGBoost or LSTM on a random split in a
+              Jupyter notebook, which leaks future information and silently predicts that adding satellite fire
+              pollution lowers AQI. Our project is a complete, production-grade MLOps system that forecasts Next-Day AQI
+              and CPCB health risk categories across 9 Indian metropolitan cities. We engineered a strictly
+              chronological, leak-free pipeline across 103 multimodal features, mathematically solved the persistence
+              defeat using a residual LightGBM with monotone constraints, packaged the champion into a cryptographically
+              verified bundle, containerized it into a 362 MB non-root image with zero CVEs, guarded it with a 7-job
+              CI/CD pipeline on GitHub Actions, and deployed it live to the cloud with sub-15ms inference latency and
+              active Prometheus drift monitoring."</em></p>
         </div>
-        <div class="card-box">
-          <div class="metric-value">13.2 ms</div>
-          <div class="metric-label">Live Inference Latency</div>
-          <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Budget is &lt; 50 ms. Single-row server processing time in production.</p>
+
+        <div class="grid-3" style="margin-top: 1.5rem;">
+          <div class="card-box">
+            <div class="metric-value">14.028</div>
+            <div class="metric-label">Holdout Test MAE (AQI pts)</div>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Beats persistence baseline
+              (14.720) with positive skill across 1,852 unseen rows.</p>
+          </div>
+          <div class="card-box">
+            <div class="metric-value">13.2 ms</div>
+            <div class="metric-label">Live Inference Latency</div>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Budget is &lt; 50 ms.
+              Single-row server processing time in production.</p>
+          </div>
+          <div class="card-box">
+            <div class="metric-value">0.0%</div>
+            <div class="metric-label">Metamorphic Violation Rate</div>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Strict physical directional
+              guarantee: fire increases never decrease predicted AQI.</p>
+          </div>
         </div>
-        <div class="card-box">
-          <div class="metric-value">0.0%</div>
-          <div class="metric-label">Metamorphic Violation Rate</div>
-          <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Strict physical directional guarantee: fire increases never decrease predicted AQI.</p>
+      </section>
+
+      <!-- 2. PROBLEM & TASKS -->
+      <section id="problem">
+        <h2>2. Problem Statement &amp; Formulation</h2>
+        <p>In India, regulatory CPCB (Central Pollution Control Board) stations measure air pollutants retrospectively.
+          By the time a "Severe" AQI reading is published, vulnerable populations (asthmatics, elderly, children) have
+          already suffered acute exposure, and city administrators cannot take preventive action.</p>
+
+        <p>This system operates in real-time at day $t$ to forecast conditions for day $t+1$:</p>
+        <ul>
+          <li><strong>Task A (Continuous AQI Regression):</strong> Predict the next-day continuous CPCB AQI value ($0
+            \le \hat{y}_{t+1} \le 500$) given observations up to day $t$.</li>
+          <li><strong>Task B (CPCB Statutory Category Classification):</strong> Predict the statutory health hazard
+            band: <code>Good (0-50)</code>, <code>Satisfactory (51-100)</code>, <code>Moderate (101-200)</code>,
+            <code>Poor (201-300)</code>, <code>Very Poor (301-400)</code>, and <code>Severe (401-500)</code>.</li>
+        </ul>
+
+        <table>
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>State</th>
+              <th>Primary Pollution Driver</th>
+              <th>Geography / Stagnation Factor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Delhi</strong></td>
+              <td>Delhi NCR</td>
+              <td>Stubble burning, vehicles, winter inversions</td>
+              <td>Landlocked Indo-Gangetic Plain, trapped boundary layer</td>
+            </tr>
+            <tr>
+              <td><strong>Lucknow</strong></td>
+              <td>Uttar Pradesh</td>
+              <td>Agricultural burning, biomass, winter fog</td>
+              <td>Indo-Gangetic Plain downwind plume</td>
+            </tr>
+            <tr>
+              <td><strong>Kolkata</strong></td>
+              <td>West Bengal</td>
+              <td>Industrial emissions, port logistics, winter calm</td>
+              <td>Coastal plain with high humidity stagnation</td>
+            </tr>
+            <tr>
+              <td><strong>Mumbai</strong></td>
+              <td>Maharashtra</td>
+              <td>Vehicular traffic, coastal construction</td>
+              <td>Maritime boundary layer with diurnal land-sea breeze</td>
+            </tr>
+            <tr>
+              <td><strong>Chennai</strong></td>
+              <td>Tamil Nadu</td>
+              <td>Traffic, industrial clusters, port logistics</td>
+              <td>Coastal tropical, northeast monsoon dispersion</td>
+            </tr>
+            <tr>
+              <td><strong>Bengaluru</strong></td>
+              <td>Karnataka</td>
+              <td>Rapid urbanization, vehicular diesel emissions</td>
+              <td>Deccan plateau elevation (920m), strong dispersion</td>
+            </tr>
+            <tr>
+              <td><strong>Hyderabad</strong></td>
+              <td>Telangana</td>
+              <td>Vehicular emissions, industrial pharma belts</td>
+              <td>Deccan plateau, moderate seasonal dispersion</td>
+            </tr>
+            <tr>
+              <td><strong>Ahmedabad</strong></td>
+              <td>Gujarat</td>
+              <td>Textile/chemical industries, dust, transport</td>
+              <td>Semi-arid arid fringe, high particulate background</td>
+            </tr>
+            <tr>
+              <td><strong>Pune</strong></td>
+              <td>Maharashtra</td>
+              <td>Vehicular growth, valley basin entrapment</td>
+              <td>Leeward Western Ghats basin</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 3. DATA & LEAKAGE CONTROLS -->
+      <section id="data">
+        <h2>3. Data Sourcing, Panel Construction &amp; Zero-Leakage Controls</h2>
+        <p>A machine learning model is only as good as its data integrity. The evaluators will likely ask: <em>"Where
+            did you get your data and how did you prevent data leakage?"</em></p>
+
+        <h3>3.1 Data Sinks &amp; Multimodal Sources</h3>
+        <ul>
+          <li><strong>Air Quality Data (Ground Truth):</strong> CPCB CAAQM ground monitoring stations sourced via the
+            verified <strong>XKDR Forum India AQI dataset</strong>. Provides clean daily station-level observations for
+            all 9 cities.</li>
+          <li><strong>Meteorological Reanalysis:</strong> <strong>ECMWF ERA5 reanalysis via Open-Meteo API</strong>.
+            Extracted coordinate-based surface temperature (min/mean/max), relative humidity, precipitation, boundary
+            layer wind speed, and surface pressure.</li>
+          <li><strong>Satellite Fire Radiative Power (FRP):</strong> <strong>NASA FIRMS</strong> (MODIS / VIIRS active
+            fire detections). Features computed within a 500 km radius of each city center (fire count, total FRP sum,
+            and distance to nearest active fire cluster).</li>
+          <li><strong>Socioeconomic &amp; Policy Context:</strong> Delhi GRAP (Graded Response Action Plan) stages 0–4
+            calendar, statutory Indian national festival calendars (Diwali/monsoon flags), RBI Index of Industrial
+            Production (IIP), and Ministry of Road Transport (MoRTH) vehicular fuel fraction shares.</li>
+        </ul>
+
+        <h3>3.2 Chronological Split vs. Random Split</h3>
+        <div class="alert warning">
+          <strong>Critical Concept: Why Random K-Fold CV is Catastrophic for Time-Series!</strong><br>
+          In air quality forecasting, neighboring days share high temporal autocorrelation (e.g. yesterday's AQI is
+          highly predictive of today's AQI). If you perform a random train/test split, the model trains on Monday and
+          Wednesday and tests on Tuesday. This is a severe future data leak that results in artificially inflated $R^2 >
+          0.95$ in papers that completely collapses in real deployment.
         </div>
-      </div>
-    </section>
+        <p>We enforced a <strong>strictly chronological, non-overlapping split</strong> (Architectural Decision Record
+          <code>D-004</code> and <code>D-018</code>):</p>
+        <ul>
+          <li><strong>Training Set:</strong> Inception to <strong>2023-12-31</strong> (Multi-year historical base:
+            14,000+ station-days).</li>
+          <li><strong>Validation Set:</strong> <strong>2024-01-01 to 2024-12-31</strong> (Full 365-day annual cycle used
+            for hyperparameter tuning, forward-chained calibration, and gate evaluation).</li>
+          <li><strong>Holdout Test Set:</strong> <strong>2025-01-01 to 2026-03-26</strong> (1,852 rows across all 9
+            cities; untouched during modeling, evaluated strictly once).</li>
+        </ul>
 
-    <!-- 2. PROBLEM & TASKS -->
-    <section id="problem">
-      <h2>2. Problem Statement &amp; Formulation</h2>
-      <p>In India, regulatory CPCB (Central Pollution Control Board) stations measure air pollutants retrospectively. By the time a "Severe" AQI reading is published, vulnerable populations (asthmatics, elderly, children) have already suffered acute exposure, and city administrators cannot take preventive action.</p>
-      
-      <p>This system operates in real-time at day $t$ to forecast conditions for day $t+1$:</p>
-      <ul>
-        <li><strong>Task A (Continuous AQI Regression):</strong> Predict the next-day continuous CPCB AQI value ($0 \le \hat{y}_{t+1} \le 500$) given observations up to day $t$.</li>
-        <li><strong>Task B (CPCB Statutory Category Classification):</strong> Predict the statutory health hazard band: <code>Good (0-50)</code>, <code>Satisfactory (51-100)</code>, <code>Moderate (101-200)</code>, <code>Poor (201-300)</code>, <code>Very Poor (301-400)</code>, and <code>Severe (401-500)</code>.</li>
-      </ul>
+        <h3>3.3 Single Scaler Isolation (Zero Test Leakage)</h3>
+        <p>Many ML pipelines mistakenly fit a <code>StandardScaler</code> on the entire dataset or refit separate
+          scalers in training and evaluation scripts. We enforce a <strong>single fitted scaler</strong>:</p>
+        <ul>
+          <li>Fitted strictly on <code>train.parquet</code> during <code>src/features/build_features.py</code>.</li>
+          <li>Saved as an immutable artifact <code>data/processed/scaler.joblib</code>.</li>
+          <li>Loaded identically by <code>src/models/train.py</code>, <code>src/models/evaluate.py</code>, and the
+            production FastAPI inference engine.</li>
+          <li>Verified by our automated integrity audit: <code>scaler.mean_matches_a_fresh_train_fit == 0.0</code>.</li>
+        </ul>
+      </section>
 
-      <table>
-        <thead>
-          <tr>
-            <th>City</th>
-            <th>State</th>
-            <th>Primary Pollution Driver</th>
-            <th>Geography / Stagnation Factor</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>Delhi</strong></td><td>Delhi NCR</td><td>Stubble burning, vehicles, winter inversions</td><td>Landlocked Indo-Gangetic Plain, trapped boundary layer</td></tr>
-          <tr><td><strong>Lucknow</strong></td><td>Uttar Pradesh</td><td>Agricultural burning, biomass, winter fog</td><td>Indo-Gangetic Plain downwind plume</td></tr>
-          <tr><td><strong>Kolkata</strong></td><td>West Bengal</td><td>Industrial emissions, port logistics, winter calm</td><td>Coastal plain with high humidity stagnation</td></tr>
-          <tr><td><strong>Mumbai</strong></td><td>Maharashtra</td><td>Vehicular traffic, coastal construction</td><td>Maritime boundary layer with diurnal land-sea breeze</td></tr>
-          <tr><td><strong>Chennai</strong></td><td>Tamil Nadu</td><td>Traffic, industrial clusters, port logistics</td><td>Coastal tropical, northeast monsoon dispersion</td></tr>
-          <tr><td><strong>Bengaluru</strong></td><td>Karnataka</td><td>Rapid urbanization, vehicular diesel emissions</td><td>Deccan plateau elevation (920m), strong dispersion</td></tr>
-          <tr><td><strong>Hyderabad</strong></td><td>Telangana</td><td>Vehicular emissions, industrial pharma belts</td><td>Deccan plateau, moderate seasonal dispersion</td></tr>
-          <tr><td><strong>Ahmedabad</strong></td><td>Gujarat</td><td>Textile/chemical industries, dust, transport</td><td>Semi-arid arid fringe, high particulate background</td></tr>
-          <tr><td><strong>Pune</strong></td><td>Maharashtra</td><td>Vehicular growth, valley basin entrapment</td><td>Leeward Western Ghats basin</td></tr>
-        </tbody>
-      </table>
-    </section>
+      <!-- 4. FEATURE ENGINEERING -->
+      <section id="features">
+        <h2>4. Feature Engineering Architecture (103 Features)</h2>
+        <p>Our pipeline constructs <strong>103 features</strong> dynamically loaded from <code>feature_list.json</code>.
+          No feature count is hardcoded anywhere in the codebase.</p>
 
-    <!-- 3. DATA & LEAKAGE CONTROLS -->
-    <section id="data">
-      <h2>3. Data Sourcing, Panel Construction &amp; Zero-Leakage Controls</h2>
-      <p>A machine learning model is only as good as its data integrity. The evaluators will likely ask: <em>"Where did you get your data and how did you prevent data leakage?"</em></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Count</th>
+              <th>Key Variables &amp; Formulations</th>
+              <th>Physical &amp; Domain Motivation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>AQI Autoregressive Lags</strong></td>
+              <td>18</td>
+              <td><code>aqi</code>, <code>aqi_lag_1</code>, <code>lag_2</code>, <code>lag_3</code>, <code>lag_7</code>,
+                <code>lag_14</code>, <code>aqi_roll_mean_7d</code>, <code>14d</code>, <code>30d</code>,
+                <code>aqi_roll_std_7d</code>, <code>aqi_roll_max_7d</code>, <code>aqi_diff_1d</code></td>
+              <td>Captures persistence, inertia, and week-over-week seasonal rhythm (lag 7 captures recurring weekend
+                traffic lulls). All rolling windows strictly shifted by 1 day to prevent target leakage.</td>
+            </tr>
+            <tr>
+              <td><strong>Satellite Fire Plumes (NASA FIRMS)</strong></td>
+              <td>36</td>
+              <td><code>fire_count_500km</code>, <code>fire_frp_sum_500km</code>, <code>fire_dist_min_km</code>, lags 1,
+                3, 7, rollings 7d, 14d, 30d, <code>fire_burning_season</code> flag</td>
+              <td>Measures upwind agricultural biomass burning intensity across Punjab, Haryana, and Uttar Pradesh
+                during post-monsoon harvesting.</td>
+            </tr>
+            <tr>
+              <td><strong>Meteorological (ERA5)</strong></td>
+              <td>20</td>
+              <td><code>temp_2m_min/mean/max</code>, <code>relative_humidity_2m_mean</code>,
+                <code>wind_speed_10m_mean</code>, <code>wind_dir_10m_dominant</code>,
+                <code>surface_pressure_mean</code>, <code>wind_roll_mean_3d/7d</code></td>
+              <td>Dispersion mechanics: low wind speeds cause stagnant accumulation; high relative humidity accelerates
+                secondary sulfate/nitrate aerosol formation.</td>
+            </tr>
+            <tr>
+              <td><strong>Physical Interaction Terms</strong></td>
+              <td>10</td>
+              <td><code>fire_x_low_wind</code>, <code>inversion_x_fire</code>, <code>winter_stagnation_index</code>,
+                <code>festival_burning_overlap</code></td>
+              <td>Coupled thermodynamics: fires produce devastating AQI spikes specifically when combined with near-zero
+                wind speeds and thermal boundary layer inversions.</td>
+            </tr>
+            <tr>
+              <td><strong>Calendar &amp; Policy</strong></td>
+              <td>11</td>
+              <td><code>grap_stage</code> (0-4), <code>grap_lag_1</code>, <code>festival_flag</code> (Diwali
+                counterfactual), day-of-week (0-6), month, season one-hots</td>
+              <td>Captures regulatory interventions (diesel generator bans, construction halts) and episodic festival
+                emissions.</td>
+            </tr>
+            <tr>
+              <td><strong>Vehicular &amp; Industrial Context</strong></td>
+              <td>8</td>
+              <td><code>diesel_frac</code>, <code>cng_frac</code>, <code>ev_frac</code>, <code>two_wheeler_frac</code>,
+                <code>vehicles_per_lakh</code>, <code>diesel_vehicle_intensity</code>,
+                <code>iip_manufacturing_index</code></td>
+              <td>City-specific mobile fleet emission baselines and economic manufacturing activity intensity.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-      <h3>3.1 Data Sinks &amp; Multimodal Sources</h3>
-      <ul>
-        <li><strong>Air Quality Data (Ground Truth):</strong> CPCB CAAQM ground monitoring stations sourced via the verified <strong>XKDR Forum India AQI dataset</strong>. Provides clean daily station-level observations for all 9 cities.</li>
-        <li><strong>Meteorological Reanalysis:</strong> <strong>ECMWF ERA5 reanalysis via Open-Meteo API</strong>. Extracted coordinate-based surface temperature (min/mean/max), relative humidity, precipitation, boundary layer wind speed, and surface pressure.</li>
-        <li><strong>Satellite Fire Radiative Power (FRP):</strong> <strong>NASA FIRMS</strong> (MODIS / VIIRS active fire detections). Features computed within a 500 km radius of each city center (fire count, total FRP sum, and distance to nearest active fire cluster).</li>
-        <li><strong>Socioeconomic &amp; Policy Context:</strong> Delhi GRAP (Graded Response Action Plan) stages 0–4 calendar, statutory Indian national festival calendars (Diwali/monsoon flags), RBI Index of Industrial Production (IIP), and Ministry of Road Transport (MoRTH) vehicular fuel fraction shares.</li>
-      </ul>
+      <!-- 5. MODELING & THE RESIDUAL FIX -->
+      <section id="model">
+        <h2>5. Modeling Decisions &amp; The Residual Monotone Breakthrough</h2>
 
-      <h3>3.2 Chronological Split vs. Random Split</h3>
-      <div class="alert warning">
-        <strong>Critical Concept: Why Random K-Fold CV is Catastrophic for Time-Series!</strong><br>
-        In air quality forecasting, neighboring days share high temporal autocorrelation (e.g. yesterday's AQI is highly predictive of today's AQI). If you perform a random train/test split, the model trains on Monday and Wednesday and tests on Tuesday. This is a severe future data leak that results in artificially inflated $R^2 > 0.95$ in papers that completely collapses in real deployment.
-      </div>
-      <p>We enforced a <strong>strictly chronological, non-overlapping split</strong> (Architectural Decision Record <code>D-004</code> and <code>D-018</code>):</p>
-      <ul>
-        <li><strong>Training Set:</strong> Inception to <strong>2023-12-31</strong> (Multi-year historical base: 14,000+ station-days).</li>
-        <li><strong>Validation Set:</strong> <strong>2024-01-01 to 2024-12-31</strong> (Full 365-day annual cycle used for hyperparameter tuning, forward-chained calibration, and gate evaluation).</li>
-        <li><strong>Holdout Test Set:</strong> <strong>2025-01-01 to 2026-03-26</strong> (1,852 rows across all 9 cities; untouched during modeling, evaluated strictly once).</li>
-      </ul>
-
-      <h3>3.3 Single Scaler Isolation (Zero Test Leakage)</h3>
-      <p>Many ML pipelines mistakenly fit a <code>StandardScaler</code> on the entire dataset or refit separate scalers in training and evaluation scripts. We enforce a <strong>single fitted scaler</strong>:</p>
-      <ul>
-        <li>Fitted strictly on <code>train.parquet</code> during <code>src/features/build_features.py</code>.</li>
-        <li>Saved as an immutable artifact <code>data/processed/scaler.joblib</code>.</li>
-        <li>Loaded identically by <code>src/models/train.py</code>, <code>src/models/evaluate.py</code>, and the production FastAPI inference engine.</li>
-        <li>Verified by our automated integrity audit: <code>scaler.mean_matches_a_fresh_train_fit == 0.0</code>.</li>
-      </ul>
-    </section>
-
-    <!-- 4. FEATURE ENGINEERING -->
-    <section id="features">
-      <h2>4. Feature Engineering Architecture (103 Features)</h2>
-      <p>Our pipeline constructs <strong>103 features</strong> dynamically loaded from <code>feature_list.json</code>. No feature count is hardcoded anywhere in the codebase.</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Group</th>
-            <th>Count</th>
-            <th>Key Variables &amp; Formulations</th>
-            <th>Physical &amp; Domain Motivation</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>AQI Autoregressive Lags</strong></td>
-            <td>18</td>
-            <td><code>aqi</code>, <code>aqi_lag_1</code>, <code>lag_2</code>, <code>lag_3</code>, <code>lag_7</code>, <code>lag_14</code>, <code>aqi_roll_mean_7d</code>, <code>14d</code>, <code>30d</code>, <code>aqi_roll_std_7d</code>, <code>aqi_roll_max_7d</code>, <code>aqi_diff_1d</code></td>
-            <td>Captures persistence, inertia, and week-over-week seasonal rhythm (lag 7 captures recurring weekend traffic lulls). All rolling windows strictly shifted by 1 day to prevent target leakage.</td>
-          </tr>
-          <tr>
-            <td><strong>Satellite Fire Plumes (NASA FIRMS)</strong></td>
-            <td>36</td>
-            <td><code>fire_count_500km</code>, <code>fire_frp_sum_500km</code>, <code>fire_dist_min_km</code>, lags 1, 3, 7, rollings 7d, 14d, 30d, <code>fire_burning_season</code> flag</td>
-            <td>Measures upwind agricultural biomass burning intensity across Punjab, Haryana, and Uttar Pradesh during post-monsoon harvesting.</td>
-          </tr>
-          <tr>
-            <td><strong>Meteorological (ERA5)</strong></td>
-            <td>20</td>
-            <td><code>temp_2m_min/mean/max</code>, <code>relative_humidity_2m_mean</code>, <code>wind_speed_10m_mean</code>, <code>wind_dir_10m_dominant</code>, <code>surface_pressure_mean</code>, <code>wind_roll_mean_3d/7d</code></td>
-            <td>Dispersion mechanics: low wind speeds cause stagnant accumulation; high relative humidity accelerates secondary sulfate/nitrate aerosol formation.</td>
-          </tr>
-          <tr>
-            <td><strong>Physical Interaction Terms</strong></td>
-            <td>10</td>
-            <td><code>fire_x_low_wind</code>, <code>inversion_x_fire</code>, <code>winter_stagnation_index</code>, <code>festival_burning_overlap</code></td>
-            <td>Coupled thermodynamics: fires produce devastating AQI spikes specifically when combined with near-zero wind speeds and thermal boundary layer inversions.</td>
-          </tr>
-          <tr>
-            <td><strong>Calendar &amp; Policy</strong></td>
-            <td>11</td>
-            <td><code>grap_stage</code> (0-4), <code>grap_lag_1</code>, <code>festival_flag</code> (Diwali counterfactual), day-of-week (0-6), month, season one-hots</td>
-            <td>Captures regulatory interventions (diesel generator bans, construction halts) and episodic festival emissions.</td>
-          </tr>
-          <tr>
-            <td><strong>Vehicular &amp; Industrial Context</strong></td>
-            <td>8</td>
-            <td><code>diesel_frac</code>, <code>cng_frac</code>, <code>ev_frac</code>, <code>two_wheeler_frac</code>, <code>vehicles_per_lakh</code>, <code>diesel_vehicle_intensity</code>, <code>iip_manufacturing_index</code></td>
-            <td>City-specific mobile fleet emission baselines and economic manufacturing activity intensity.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- 5. MODELING & THE RESIDUAL FIX -->
-    <section id="model">
-      <h2>5. Modeling Decisions &amp; The Residual Monotone Breakthrough</h2>
-
-      <div class="alert info">
-        <strong>The "Persistence Defeat" Trap (Why most air quality models fail in industry):</strong><br>
-        In air quality forecasting, today's AQI is an extremely strong predictor of tomorrow's AQI. The naive persistence heuristic ($\hat{y}_{t+1} = y_t$) achieves an impressive $R^2 \approx 0.86$ and $\text{MAE} \approx 14.5$. When standard direct regressors (Ridge, Random Forest, XGBoost) are trained to predict raw tomorrow AQI, they consistently <em>lose</em> to persistence because their gradients smooth out sharp transitions!
-      </div>
-
-      <h3>5.1 The Solution: Persistence-Anchored Residual Modeling</h3>
-      <p>Instead of tasking the learner with predicting absolute AQI level, we reformulated the objective:</p>
-      <p style="text-align: center; font-size: 1.15rem; font-weight: 700; margin: 1rem 0;">
-        $\text{Target} = y_{t+1} - y_t \quad (\Delta\text{AQI})$<br>
-        $\hat{y}_{t+1} = y_t + \hat{\Delta}_{\text{model}}$
-      </p>
-      <p>By anchoring the prediction to current AQI ($y_t$), the machine learning model focuses 100% of its capacity on learning the <em>rate of atmospheric change</em> driven by weather dispersion, wind shifts, and fire surges.</p>
-
-      <h3>5.2 The Metamorphic Flaw &amp; Monotone Constraints</h3>
-      <p>When unconstrained decision trees (GBDT) are trained on tabular data, splits are made greedily. On holdout tests, an unconstrained tree can evaluate a counterfactual scenario with <strong>5,000 active fires</strong> and predict a <em>lower</em> AQI than a scenario with 0 fires simply because of a spurious leaf split on a collinear feature!</p>
-      <p>To eliminate this, we implemented <strong>Monotone Constraints</strong> in LightGBM (Architectural Decision Record <code>D-030</code>):</p>
-      <ul>
-        <li><strong>Positive Monotonicity ($+1$):</strong> <code>fire_count_500km</code>, <code>fire_frp_sum_500km</code>, fire rollings, fire lags, <code>fire_x_low_wind</code>, <code>inversion_x_fire</code>. <em>Constraint: As fire activity increases, predicted AQI must never decrease.</em></li>
-        <li><strong>Negative Monotonicity ($-1$):</strong> <code>wind_speed_10m_mean</code>, wind lags, wind rollings. <em>Constraint: As wind speed increases (improving ventilation), predicted AQI must never increase.</em></li>
-      </ul>
-
-      <h3>5.3 The Benchmark Leaderboard (Holdout Test 2025–2026)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Model Candidate</th>
-            <th>Test RMSE</th>
-            <th>Test MAE</th>
-            <th>Test R²</th>
-            <th>Skill vs. Persistence</th>
-            <th>Metamorphic Violation Rate</th>
-            <th>Verdict</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background: #f0fdf4; font-weight: bold;">
-            <td>residual_lightgbm_monotone (Champion)</td>
-            <td>23.886</td>
-            <td>14.028</td>
-            <td>0.8772</td>
-            <td>+6.40%</td>
-            <td>0.0% (Strict)</td>
-            <td>🏆 Crowned Champion</td>
-          </tr>
-          <tr>
-            <td>residual_lightgbm (Unconstrained)</td>
-            <td>23.821</td>
-            <td>14.114</td>
-            <td>0.8779</td>
-            <td>+6.65%</td>
-            <td>6.6% violations</td>
-            <td>Rejected (Safety failure)</td>
-          </tr>
-          <tr>
-            <td>xgboost_reg</td>
-            <td>23.898</td>
-            <td>13.990</td>
-            <td>0.8771</td>
-            <td>+6.35%</td>
-            <td>8.4% violations</td>
-            <td>Unconstrained</td>
-          </tr>
-          <tr>
-            <td>random_forest_reg</td>
-            <td>24.026</td>
-            <td>14.255</td>
-            <td>0.8757</td>
-            <td>+5.85%</td>
-            <td>12.1% violations</td>
-            <td>Excluded on artifact size (&gt;150MB)</td>
-          </tr>
-          <tr>
-            <td>residual_ridge</td>
-            <td>24.127</td>
-            <td>14.239</td>
-            <td>0.8747</td>
-            <td>+5.45%</td>
-            <td>N/A</td>
-            <td>Linear fallback</td>
-          </tr>
-          <tr style="background: #fef2f2;">
-            <td>Persistence Baseline ($\hat{y}_{t+1}=y_t$)</td>
-            <td>25.518</td>
-            <td>14.720</td>
-            <td>0.8598</td>
-            <td>0.00% (Baseline)</td>
-            <td>N/A</td>
-            <td>Benchmark Floor</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- 6. QUALITY GATES -->
-    <section id="gates">
-      <h2>6. The 5 Quality Gates &amp; Metamorphic Invariance</h2>
-      <p>Unlike standard coursework where high accuracy alone guarantees a pass, a production MLOps system must clear explicit <strong>Automated Quality Gates</strong>:</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Gate ID</th>
-            <th>Gate Name</th>
-            <th>Formal Mathematical Threshold</th>
-            <th>Actual Result</th>
-            <th>Gate Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Gate 1</strong></td>
-            <td>Skill Score vs. Persistence</td>
-            <td>$\text{Skill} = 1 - \frac{\text{RMSE}_{\text{model}}}{\text{RMSE}_{\text{persistence}}} > 0$</td>
-            <td>Val: <strong>+8.74%</strong><br>Test: <strong>+6.40%</strong></td>
-            <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
-          </tr>
-          <tr>
-            <td><strong>Gate 2</strong></td>
-            <td>Performance Floor</td>
-            <td>Test $R^2 \ge 0.65$ and Test $\text{MAE} \le 30$</td>
-            <td>Test $R^2$: <strong>0.8772</strong><br>Test MAE: <strong>14.028</strong></td>
-            <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
-          </tr>
-          <tr>
-            <td><strong>Gate 3</strong></td>
-            <td>Per-City Persistence Parity</td>
-            <td>$\frac{\text{MAE}_{\text{model}}(c)}{\text{MAE}_{\text{persist}}(c)} \le 1.05 \quad \forall c \in \text{Cities}$</td>
-            <td>8 of 9 cities pass.<br>Kolkata: <strong>1.0597×</strong></td>
-            <td><span style="color: var(--warning); font-weight: 700;">⚠️ WAIVED (ADR D-038)</span></td>
-          </tr>
-          <tr>
-            <td><strong>Gate 4</strong></td>
-            <td>Categorical Risk Bounds</td>
-            <td>Within-one-category accuracy $\ge 95\%$</td>
-            <td><strong>99.51%</strong></td>
-            <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
-          </tr>
-          <tr>
-            <td><strong>Gate 5</strong></td>
-            <td>Latency Budget</td>
-            <td>Single row $p95 < 50\text{ ms}$, Batch $p95 < 100\text{ ms}$</td>
-            <td>Single $p95$: <strong>13.2 ms</strong><br>Batch $p95$: <strong>76.4 ms</strong></td>
-            <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="qa-box critical">
-        <div class="question">⚠️ The Evaluator Trap Question: "Why did Kolkata fail Gate 3 and why did you waive it instead of fixing it?"</div>
-        <div class="answer">
-          <strong>The Perfect Defense Answer:</strong><br>
-          <em>"In Kolkata, the model's test MAE was 14.59 versus persistence at 13.77 (ratio 1.0597, slightly above the 1.05 threshold). We refused to take the unscientific route of hand-tuning features specifically for Kolkata or tweaking the 1.05 threshold after seeing test data, because doing so causes severe holdout data snooping and test leakage! Instead, per ADR D-031 and D-038, we pre-registered our decision: apply a uniform per-city additive bias correction on validation folds, evaluate test strictly once, and if any city narrowly misses, formally record the transparent waiver in the Risk Card and MLflow tags. Evaluators value methodological honesty and immutable audit trails over artificially doctored results."</em>
+        <div class="alert info">
+          <strong>The "Persistence Defeat" Trap (Why most air quality models fail in industry):</strong><br>
+          In air quality forecasting, today's AQI is an extremely strong predictor of tomorrow's AQI. The naive
+          persistence heuristic ($\hat{y}_{t+1} = y_t$) achieves an impressive $R^2 \approx 0.86$ and $\text{MAE}
+          \approx 14.5$. When standard direct regressors (Ridge, Random Forest, XGBoost) are trained to predict raw
+          tomorrow AQI, they consistently <em>lose</em> to persistence because their gradients smooth out sharp
+          transitions!
         </div>
-      </div>
-    </section>
 
-    <!-- 7. REGISTRY & CHAMPION BUNDLE -->
-    <section id="registry">
-      <h2>7. Model Registry &amp; The Byte-Stable Champion Bundle</h2>
-      <p>Models are logged and tracked via <strong>MLflow 3.17</strong>. Instead of deprecated staging tags (Staging/Production), we use modern <strong>MLflow Aliases</strong>: <code>@challenger</code> and <code>@champion</code>.</p>
+        <h3>5.1 The Solution: Persistence-Anchored Residual Modeling</h3>
+        <p>Instead of tasking the learner with predicting absolute AQI level, we reformulated the objective:</p>
+        <p style="text-align: center; font-size: 1.15rem; font-weight: 700; margin: 1rem 0;">
+          $\text{Target} = y_{t+1} - y_t \quad (\Delta\text{AQI})$<br>
+          $\hat{y}_{t+1} = y_t + \hat{\Delta}_{\text{model}}$
+        </p>
+        <p>By anchoring the prediction to current AQI ($y_t$), the machine learning model focuses 100% of its capacity
+          on learning the <em>rate of atmospheric change</em> driven by weather dispersion, wind shifts, and fire
+          surges.</p>
 
-      <h3>7.1 The Byte-Stable Champion Bundle Format 1.1</h3>
-      <p>In production, relying on dynamic MLflow database connections can fail due to network drops or SQLite locks. We package the champion model into an atomic, standalone directory committed to Git at <code>artifacts/champion/</code>:</p>
-      <ul>
-        <li><code>bundle.joblib</code> (878 KB): Serialized model, fitted <code>StandardScaler</code>, 103 feature names, residual quantiles (10th, 50th, 90th) for confidence interval calculation, and per-city calibration offsets.</li>
-        <li><code>history_seed.parquet</code> (162 KB): Seed rows containing the last 45 days of observations for each of the 9 cities (405 rows total). This allows the service to boot from scratch and compute lags immediately without requiring a database warm-up!</li>
-        <li><code>reference_stats.json</code> (21 KB): Mean, standard deviation, and quantile distribution for all 103 features calculated exclusively from the training set (used for live drift detection).</li>
-        <li><code>MANIFEST.json</code> &amp; <code>MANIFEST.sha256</code>: Machine-readable specification recording exact SHA-256 digests of all bundle contents, git commit SHA, data MD5, gate results, and feature count.</li>
-      </ul>
+        <h3>5.2 The Metamorphic Flaw &amp; Monotone Constraints</h3>
+        <p>When unconstrained decision trees (GBDT) are trained on tabular data, splits are made greedily. On holdout
+          tests, an unconstrained tree can evaluate a counterfactual scenario with <strong>5,000 active fires</strong>
+          and predict a <em>lower</em> AQI than a scenario with 0 fires simply because of a spurious leaf split on a
+          collinear feature!</p>
+        <p>To eliminate this, we implemented <strong>Monotone Constraints</strong> in LightGBM (Architectural Decision
+          Record <code>D-030</code>):</p>
+        <ul>
+          <li><strong>Positive Monotonicity ($+1$):</strong> <code>fire_count_500km</code>,
+            <code>fire_frp_sum_500km</code>, fire rollings, fire lags, <code>fire_x_low_wind</code>,
+            <code>inversion_x_fire</code>. <em>Constraint: As fire activity increases, predicted AQI must never
+              decrease.</em></li>
+          <li><strong>Negative Monotonicity ($-1$):</strong> <code>wind_speed_10m_mean</code>, wind lags, wind rollings.
+            <em>Constraint: As wind speed increases (improving ventilation), predicted AQI must never increase.</em>
+          </li>
+        </ul>
 
-      <h3>7.2 Security Chain of Custody: Hash Verification Before Unpickling</h3>
-      <p>Python's <code>joblib.load()</code> or <code>pickle.loads()</code> execute arbitrary bytecode. If a model file is corrupted or maliciously altered on disk, unpickling it creates an immediate Remote Code Execution (RCE) vulnerability. Our custom <code>AqiBundle.load(verify=True)</code> executes a strict three-tier cryptographic check:</p>
-      <pre><code>MANIFEST.sha256  ──[Assert Match]──>  MANIFEST.json  ──[Assert Match]──>  bundle.joblib (Loaded ONLY if hash verified!)</code></pre>
-    </section>
+        <h3>5.3 The Benchmark Leaderboard (Holdout Test 2025–2026)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model Candidate</th>
+              <th>Test RMSE</th>
+              <th>Test MAE</th>
+              <th>Test R²</th>
+              <th>Skill vs. Persistence</th>
+              <th>Metamorphic Violation Rate</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #f0fdf4; font-weight: bold;">
+              <td>residual_lightgbm_monotone (Champion)</td>
+              <td>23.886</td>
+              <td>14.028</td>
+              <td>0.8772</td>
+              <td>+6.40%</td>
+              <td>0.0% (Strict)</td>
+              <td>🏆 Crowned Champion</td>
+            </tr>
+            <tr>
+              <td>residual_lightgbm (Unconstrained)</td>
+              <td>23.821</td>
+              <td>14.114</td>
+              <td>0.8779</td>
+              <td>+6.65%</td>
+              <td>6.6% violations</td>
+              <td>Rejected (Safety failure)</td>
+            </tr>
+            <tr>
+              <td>xgboost_reg</td>
+              <td>23.898</td>
+              <td>13.990</td>
+              <td>0.8771</td>
+              <td>+6.35%</td>
+              <td>8.4% violations</td>
+              <td>Unconstrained</td>
+            </tr>
+            <tr>
+              <td>random_forest_reg</td>
+              <td>24.026</td>
+              <td>14.255</td>
+              <td>0.8757</td>
+              <td>+5.85%</td>
+              <td>12.1% violations</td>
+              <td>Excluded on artifact size (&gt;150MB)</td>
+            </tr>
+            <tr>
+              <td>residual_ridge</td>
+              <td>24.127</td>
+              <td>14.239</td>
+              <td>0.8747</td>
+              <td>+5.45%</td>
+              <td>N/A</td>
+              <td>Linear fallback</td>
+            </tr>
+            <tr style="background: #fef2f2;">
+              <td>Persistence Baseline ($\hat{y}_{t+1}=y_t$)</td>
+              <td>25.518</td>
+              <td>14.720</td>
+              <td>0.8598</td>
+              <td>0.00% (Baseline)</td>
+              <td>N/A</td>
+              <td>Benchmark Floor</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-    <!-- 8. FASTAPI SERVING ENGINE -->
-    <section id="serving">
-      <h2>8. Production FastAPI Serving Engine</h2>
-      <p>The inference service lives in <code>src/service/</code> and is built on <strong>FastAPI + Uvicorn</strong>.</p>
+      <!-- 6. QUALITY GATES -->
+      <section id="gates">
+        <h2>6. The 5 Quality Gates &amp; Metamorphic Invariance</h2>
+        <p>Unlike standard coursework where high accuracy alone guarantees a pass, a production MLOps system must clear
+          explicit <strong>Automated Quality Gates</strong>:</p>
 
-      <h3>8.1 Eliminating Training-Serving Skew</h3>
-      <p>The most common bug in machine learning production is <strong>Training-Serving Skew</strong> (where data preprocessing in Python during training is re-implemented differently in JavaScript, C++, or another serving module). We eliminated this entirely: both offline DVC feature engineering and the online FastAPI service import the exact same pure functions from <code>src/features/serving_features.py</code>!</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Gate ID</th>
+              <th>Gate Name</th>
+              <th>Formal Mathematical Threshold</th>
+              <th>Actual Result</th>
+              <th>Gate Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Gate 1</strong></td>
+              <td>Skill Score vs. Persistence</td>
+              <td>$\text{Skill} = 1 - \frac{\text{RMSE}_{\text{model}}}{\text{RMSE}_{\text{persistence}}} > 0$</td>
+              <td>Val: <strong>+8.74%</strong><br>Test: <strong>+6.40%</strong></td>
+              <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gate 2</strong></td>
+              <td>Performance Floor</td>
+              <td>Test $R^2 \ge 0.65$ and Test $\text{MAE} \le 30$</td>
+              <td>Test $R^2$: <strong>0.8772</strong><br>Test MAE: <strong>14.028</strong></td>
+              <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gate 3</strong></td>
+              <td>Per-City Persistence Parity</td>
+              <td>$\frac{\text{MAE}_{\text{model}}(c)}{\text{MAE}_{\text{persist}}(c)} \le 1.05 \quad \forall c \in
+                \text{Cities}$</td>
+              <td>8 of 9 cities pass.<br>Kolkata: <strong>1.0597×</strong></td>
+              <td><span style="color: var(--warning); font-weight: 700;">⚠️ WAIVED (ADR D-038)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gate 4</strong></td>
+              <td>Categorical Risk Bounds</td>
+              <td>Within-one-category accuracy $\ge 95\%$</td>
+              <td><strong>99.51%</strong></td>
+              <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gate 5</strong></td>
+              <td>Latency Budget</td>
+              <td>Single row $p95 < 50\text{ ms}$, Batch $p95 < 100\text{ ms}$</td>
+              <td>Single $p95$: <strong>13.2 ms</strong><br>Batch $p95$: <strong>76.4 ms</strong></td>
+              <td><span style="color: var(--success); font-weight: 700;">✅ PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
 
-      <h3>8.2 Ultra-Minimal Client Interface (3 Required Fields)</h3>
-      <p>Callers are not forced to provide complex historical rolling means or 100+ feature values. The service accepts a minimal 3-field JSON payload:</p>
-      <pre><code>POST /predict
+        <div class="qa-box critical">
+          <div class="question">⚠️ The Evaluator Trap Question: "Why did Kolkata fail Gate 3 and why did you waive it
+            instead of fixing it?"</div>
+          <div class="answer">
+            <strong>The Perfect Defense Answer:</strong><br>
+            <em>"In Kolkata, the model's test MAE was 14.59 versus persistence at 13.77 (ratio 1.0597, slightly above
+              the 1.05 threshold). We refused to take the unscientific route of hand-tuning features specifically for
+              Kolkata or tweaking the 1.05 threshold after seeing test data, because doing so causes severe holdout data
+              snooping and test leakage! Instead, per ADR D-031 and D-038, we pre-registered our decision: apply a
+              uniform per-city additive bias correction on validation folds, evaluate test strictly once, and if any
+              city narrowly misses, formally record the transparent waiver in the Risk Card and MLflow tags. Evaluators
+              value methodological honesty and immutable audit trails over artificially doctored results."</em>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. REGISTRY & CHAMPION BUNDLE -->
+      <section id="registry">
+        <h2>7. Model Registry &amp; The Byte-Stable Champion Bundle</h2>
+        <p>Models are logged and tracked via <strong>MLflow 3.17</strong>. Instead of deprecated staging tags
+          (Staging/Production), we use modern <strong>MLflow Aliases</strong>: <code>@challenger</code> and
+          <code>@champion</code>.</p>
+
+        <h3>7.1 The Byte-Stable Champion Bundle Format 1.1</h3>
+        <p>In production, relying on dynamic MLflow database connections can fail due to network drops or SQLite locks.
+          We package the champion model into an atomic, standalone directory committed to Git at
+          <code>artifacts/champion/</code>:</p>
+        <ul>
+          <li><code>bundle.joblib</code> (878 KB): Serialized model, fitted <code>StandardScaler</code>, 103 feature
+            names, residual quantiles (10th, 50th, 90th) for confidence interval calculation, and per-city calibration
+            offsets.</li>
+          <li><code>history_seed.parquet</code> (162 KB): Seed rows containing the last 45 days of observations for each
+            of the 9 cities (405 rows total). This allows the service to boot from scratch and compute lags immediately
+            without requiring a database warm-up!</li>
+          <li><code>reference_stats.json</code> (21 KB): Mean, standard deviation, and quantile distribution for all 103
+            features calculated exclusively from the training set (used for live drift detection).</li>
+          <li><code>MANIFEST.json</code> &amp; <code>MANIFEST.sha256</code>: Machine-readable specification recording
+            exact SHA-256 digests of all bundle contents, git commit SHA, data MD5, gate results, and feature count.
+          </li>
+        </ul>
+
+        <h3>7.2 Security Chain of Custody: Hash Verification Before Unpickling</h3>
+        <p>Python's <code>joblib.load()</code> or <code>pickle.loads()</code> execute arbitrary bytecode. If a model
+          file is corrupted or maliciously altered on disk, unpickling it creates an immediate Remote Code Execution
+          (RCE) vulnerability. Our custom <code>AqiBundle.load(verify=True)</code> executes a strict three-tier
+          cryptographic check:</p>
+        <pre><code>MANIFEST.sha256  ──[Assert Match]──>  MANIFEST.json  ──[Assert Match]──>  bundle.joblib (Loaded ONLY if hash verified!)</code></pre>
+      </section>
+
+      <!-- 8. FASTAPI SERVING ENGINE -->
+      <section id="serving">
+        <h2>8. Production FastAPI Serving Engine</h2>
+        <p>The inference service lives in <code>src/service/</code> and is built on <strong>FastAPI + Uvicorn</strong>.
+        </p>
+
+        <h3>8.1 Eliminating Training-Serving Skew</h3>
+        <p>The most common bug in machine learning production is <strong>Training-Serving Skew</strong> (where data
+          preprocessing in Python during training is re-implemented differently in JavaScript, C++, or another serving
+          module). We eliminated this entirely: both offline DVC feature engineering and the online FastAPI service
+          import the exact same pure functions from <code>src/features/serving_features.py</code>!</p>
+
+        <h3>8.2 Ultra-Minimal Client Interface (3 Required Fields)</h3>
+        <p>Callers are not forced to provide complex historical rolling means or 100+ feature values. The service
+          accepts a minimal 3-field JSON payload:</p>
+        <pre><code>POST /predict
 {
   "city": "Delhi",
   "date": "2026-11-12",
   "aqi": 285.0
 }</code></pre>
-      <p>The server automatically fills static city coordinates, joins calendar/festival flags, pulls the 45-day history seed to compute lags and rolling statistics, executes the residual LightGBM inference, applies per-city calibration, and responds in <strong>~11 milliseconds</strong>:</p>
-      <pre><code>200 OK
+        <p>The server automatically fills static city coordinates, joins calendar/festival flags, pulls the 45-day
+          history seed to compute lags and rolling statistics, executes the residual LightGBM inference, applies
+          per-city calibration, and responds in <strong>~11 milliseconds</strong>:</p>
+        <pre><code>200 OK
 {
   "city": "Delhi",
   "target_date": "2026-11-13",
@@ -724,192 +964,278 @@
   "latency_ms": 11.97
 }</code></pre>
 
-      <h3>8.3 Service Endpoints Matrix</h3>
-      <ul>
-        <li><code>GET /health</code>: Liveness probe (returns <code>{"status":"healthy"}</code>). Used by orchestrators to know if the container is running.</li>
-        <li><code>GET /ready</code>: Readiness probe (returns 503 until model, scaler, and 45-day history seed are confirmed in RAM).</li>
-        <li><code>GET /metadata</code>: Complete lineage, model version, validation/test metrics, and gate status.</li>
-        <li><code>POST /predict</code>: Single-city prediction endpoint.</li>
-        <li><code>POST /predict/batch</code>: Vectorized batch prediction (up to 63 rows: 9 cities × 7 days).</li>
-        <li><code>GET /metrics</code>: Prometheus scrape endpoint.</li>
-        <li><code>GET /docs</code>: Interactive Swagger / OpenAPI documentation.</li>
-      </ul>
-    </section>
-
-    <!-- 9. DOCKER & HARDENING -->
-    <section id="docker">
-      <h2>9. Docker Containerization &amp; Security Hardening</h2>
-      <p>The inference service is packaged in a production-hardened multi-stage <code>Dockerfile</code> based on <code>python:3.12-slim-bookworm</code>.</p>
-
-      <h3>9.1 Multi-Stage Build Efficiency</h3>
-      <ul>
-        <li><strong>Stage 1 (Builder):</strong> Installs build compilers (<code>build-essential</code>, <code>libgomp1</code>) and compiles Python wheels from <code>requirements-serve.txt</code> into <code>/build/wheels</code>.</li>
-        <li><strong>Stage 2 (Runner):</strong> A clean, minimal image that copies wheels from the builder and installs them with <code>--no-index</code>. Compilers, build caches, and package managers are excluded from the final image, reducing image size to <strong>362 MB</strong> (well under the 500 MB budget).</li>
-      </ul>
-
-      <h3>9.2 Non-Root Execution (Defense-in-Depth)</h3>
-      <p>Running containers as root (UID 0) is a major security risk. In our container:</p>
-      <ul>
-        <li>A dedicated system user is created: <code>groupadd -g 10001 appgroup && useradd -u 10001 -g appgroup -m appuser</code>.</li>
-        <li>All application files are chowned to <code>appuser:appgroup</code>.</li>
-        <li>The container explicitly drops privileges: <code>USER appuser</code> (UID 10001).</li>
-      </ul>
-
-      <h3>9.3 Security Vulnerability Gate (Zero CVEs)</h3>
-      <p>During CD, the container is scanned using <strong>Aqua Security Trivy</strong>. When an upstream vulnerability was detected in <code>pyarrow==22.0.0</code> (CVE-2026-25087 - High Severity), we immediately upgraded to <code>pyarrow==23.0.1</code> in both requirements files, achieving a completely clean vulnerability scan: <strong>0 Critical, 0 High</strong>.</p>
-    </section>
-
-    <!-- 10. CI/CD & AUTOMATED GATES -->
-    <section id="cicd">
-      <h2>10. GitHub Actions CI/CD Pipeline</h2>
-      <p>The repository enforces continuous integration and continuous delivery via two automated workflows:</p>
-
-      <h3>10.1 CI Workflow (<code>.github/workflows/ci.yml</code>)</h3>
-      <p>Triggered on every Pull Request and push to <code>main</code> across <strong>7 parallel jobs</strong>:</p>
-      <ol>
-        <li><code>lint</code>: Enforces PEP-8 code styling via <code>ruff check</code> and <code>black --check</code>.</li>
-        <li><code>unit</code>: Executes 174 fast unit tests across data modules and utility functions.</li>
-        <li><code>model-gate</code>: Validates that the champion bundle passes all metamorphic, determinism, and quality gates.</li>
-        <li><code>registry</code>: Spawns a temporary SQLite tracking store, registers the bundle, loads <code>models:/Indian-AQI-Predictor@champion</code>, and asserts $1 \times 10^{-6}$ mathematical parity against the offline bundle.</li>
-        <li><code>service</code>: Boots the FastAPI test client and verifies latency budgets and schema contracts.</li>
-        <li><code>docker</code>: Builds the container from scratch and runs <code>scripts/test_container.sh</code>.</li>
-        <li><code>dvc-consistency</code>: Verifies dataset reproducibility against remote DagsHub storage when credentials exist.</li>
-      </ol>
-      <div class="alert success">
-        <strong>The Broken-Model PR Test:</strong> To prove our branch protection works, we opened a test PR (branch <code>test/broken-model-gate</code>) containing an intentionally corrupted model that violated the metamorphic fire direction. GitHub Actions <code>model-gate</code> automatically failed and blocked the PR from merging!
-      </div>
-
-      <h3>10.2 CD Workflow (<code>.github/workflows/cd.yml</code>)</h3>
-      <p>Triggered whenever a semantic version tag (e.g. <code>v1.0.2</code>) is pushed:</p>
-      <ol>
-        <li>Builds the Docker container via Buildx.</li>
-        <li>Runs Aqua Trivy vulnerability scanner (fails if any fixable Critical/High CVE is found).</li>
-        <li>Pushes multi-tagged container images to <strong>GitHub Container Registry (GHCR)</strong>: <code>latest</code>, <code>v1.0.2</code>, and commit-pinned <code>sha-&lt;commit&gt;</code>.</li>
-        <li>Render automatically detects the updated image and redeploys without downtime.</li>
-      </ol>
-    </section>
-
-    <!-- 11. CLOUD DEPLOY & MONITORING -->
-    <section id="cloud">
-      <h2>11. Live Cloud Deployment &amp; Monitoring (Phase 6)</h2>
-      <p>The service is deployed live on <strong>Render Web Service PaaS</strong> in the Oregon region.</p>
-
-      <div class="card-box success">
-        <p><strong>Live Production Access Points:</strong></p>
+        <h3>8.3 Service Endpoints Matrix</h3>
         <ul>
-          <li><strong>Base API:</strong> <code>https://aqi-predictor-gxbd.onrender.com</code></li>
-          <li><strong>Interactive Swagger Docs:</strong> <code>https://aqi-predictor-gxbd.onrender.com/docs</code></li>
-          <li><strong>Prometheus Metrics:</strong> <code>https://aqi-predictor-gxbd.onrender.com/metrics</code></li>
-          <li><strong>Container Image:</strong> <code>ghcr.io/suhasraghavendra/aqi-awareness-assistant:latest</code></li>
+          <li><code>GET /health</code>: Liveness probe (returns <code>{"status":"healthy"}</code>). Used by
+            orchestrators to know if the container is running.</li>
+          <li><code>GET /ready</code>: Readiness probe (returns 503 until model, scaler, and 45-day history seed are
+            confirmed in RAM).</li>
+          <li><code>GET /metadata</code>: Complete lineage, model version, validation/test metrics, and gate status.
+          </li>
+          <li><code>POST /predict</code>: Single-city prediction endpoint.</li>
+          <li><code>POST /predict/batch</code>: Vectorized batch prediction (up to 63 rows: 9 cities × 7 days).</li>
+          <li><code>GET /metrics</code>: Prometheus scrape endpoint.</li>
+          <li><code>GET /docs</code>: Interactive Swagger / OpenAPI documentation.</li>
         </ul>
-      </div>
+      </section>
 
-      <h3>11.1 Real-Time Prometheus Telemetry</h3>
-      <p>The endpoint <code>/metrics</code> exposes production metrics scraped by Prometheus:</p>
-      <ul>
-        <li><code>aqi_http_requests_total</code>: Counter partitioned by endpoint, HTTP method, and status code.</li>
-        <li><code>aqi_http_request_duration_seconds</code>: High-resolution latency histogram.</li>
-        <li><code>aqi_predictions_total</code>: Counter tracking predictions served per city and model used.</li>
-        <li><code>aqi_prediction_value</code>: Histogram tracking the distribution of predicted AQI values.</li>
-        <li><code>aqi_out_of_range_total</code>: Counter tracking inputs that fall outside the historical training range $[\min_{\text{train}}, \max_{\text{train}}]$.</li>
-      </ul>
+      <!-- 9. DOCKER & HARDENING -->
+      <section id="docker">
+        <h2>9. Docker Containerization &amp; Security Hardening</h2>
+        <p>The inference service is packaged in a production-hardened multi-stage <code>Dockerfile</code> based on
+          <code>python:3.12-slim-bookworm</code>.</p>
 
-      <h3>11.2 The Production Runbook (Drift &amp; Retraining Protocol)</h3>
-      <p>Documented in <code>docs/RUNBOOK.md</code>:</p>
-      <ul>
-        <li><strong>Feature Drift Detection (PSI):</strong> Population Stability Index computed over a rolling 500-request window against <code>reference_stats.json</code>.
-          <br>$\text{PSI} < 0.1$: Normal fluctuation.
-          <br>$0.1 \le \text{PSI} \le 0.2$: Moderate shift (log warning).
-          <br>$\text{PSI} > 0.2$: Significant feature drift (triggers P1 retraining alert).
-        </li>
-        <li><strong>Realized Accuracy Degradation:</strong> 14-day rolling realized MAE monitored against the baseline validation MAE ($13.23$). If rolling MAE exceeds $1.5 \times 13.23 = 19.85$, trigger automated retraining.</li>
-        <li><strong>One-Click Instant Rollback:</strong> If an incident occurs, administrators can change the Render container image tag in 1 click from <code>:latest</code> back to any stable commit SHA tag (e.g. <code>:sha-11cd466</code>), restoring previous verified service in &lt; 20 seconds.</li>
-      </ul>
-    </section>
+        <h3>9.1 Multi-Stage Build Efficiency</h3>
+        <ul>
+          <li><strong>Stage 1 (Builder):</strong> Installs build compilers (<code>build-essential</code>,
+            <code>libgomp1</code>) and compiles Python wheels from <code>requirements-serve.txt</code> into
+            <code>/build/wheels</code>.</li>
+          <li><strong>Stage 2 (Runner):</strong> A clean, minimal image that copies wheels from the builder and installs
+            them with <code>--no-index</code>. Compilers, build caches, and package managers are excluded from the final
+            image, reducing image size to <strong>362 MB</strong> (well under the 500 MB budget).</li>
+        </ul>
 
-    <!-- 12. EVALUATOR Q&A -->
-    <section id="evaluator-qa">
-      <h2>12. Master Evaluator Q&amp;A (The Defense Bible)</h2>
-      <p>Here are the exact technical questions evaluators are most likely to ask, along with comprehensive, bullet-proof answers:</p>
+        <h3>9.2 Non-Root Execution (Defense-in-Depth)</h3>
+        <p>Running containers as root (UID 0) is a major security risk. In our container:</p>
+        <ul>
+          <li>A dedicated system user is created:
+            <code>groupadd -g 10001 appgroup && useradd -u 10001 -g appgroup -m appuser</code>.</li>
+          <li>All application files are chowned to <code>appuser:appgroup</code>.</li>
+          <li>The container explicitly drops privileges: <code>USER appuser</code> (UID 10001).</li>
+        </ul>
 
-      <div class="qa-box">
-        <div class="question">Q1: "Why did you use LightGBM instead of an LSTM, GRU, or Transformer for time-series forecasting?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"We considered Deep Learning architectures (LSTM/Transformers), but empirical research on tabular time-series panels (e.g. Grinsztajn et al., NeurIPS 2022) demonstrates that gradient-boosted decision trees consistently outperform deep networks on tabular data with heterogeneous numerical and categorical features. Furthermore, LSTMs require extensive sequence padding, are vulnerable to irregular sensor dropouts, have significantly higher inference latency (&gt;100ms vs our 11ms), require 10x more training data, and cannot easily support strict physical monotonicity constraints. LightGBM enabled exact directional monotonicity on fire/wind features while easily beating persistence in under 15ms."</em>
+        <h3>9.3 Security Vulnerability Gate (Zero CVEs)</h3>
+        <p>During CD, the container is scanned using <strong>Aqua Security Trivy</strong>. When an upstream
+          vulnerability was detected in <code>pyarrow==22.0.0</code> (CVE-2026-25087 - High Severity), we immediately
+          upgraded to <code>pyarrow==23.0.1</code> in both requirements files, achieving a completely clean
+          vulnerability scan: <strong>0 Critical, 0 High</strong>.</p>
+      </section>
+
+      <!-- 10. CI/CD & AUTOMATED GATES -->
+      <section id="cicd">
+        <h2>10. GitHub Actions CI/CD Pipeline</h2>
+        <p>The repository enforces continuous integration and continuous delivery via two automated workflows:</p>
+
+        <h3>10.1 CI Workflow (<code>.github/workflows/ci.yml</code>)</h3>
+        <p>Triggered on every Pull Request and push to <code>main</code> across <strong>7 parallel jobs</strong>:</p>
+        <ol>
+          <li><code>lint</code>: Enforces PEP-8 code styling via <code>ruff check</code> and <code>black --check</code>.
+          </li>
+          <li><code>unit</code>: Executes 174 fast unit tests across data modules and utility functions.</li>
+          <li><code>model-gate</code>: Validates that the champion bundle passes all metamorphic, determinism, and
+            quality gates.</li>
+          <li><code>registry</code>: Spawns a temporary SQLite tracking store, registers the bundle, loads
+            <code>models:/Indian-AQI-Predictor@champion</code>, and asserts $1 \times 10^{-6}$ mathematical parity
+            against the offline bundle.</li>
+          <li><code>service</code>: Boots the FastAPI test client and verifies latency budgets and schema contracts.
+          </li>
+          <li><code>docker</code>: Builds the container from scratch and runs <code>scripts/test_container.sh</code>.
+          </li>
+          <li><code>dvc-consistency</code>: Verifies dataset reproducibility against remote DagsHub storage when
+            credentials exist.</li>
+        </ol>
+        <div class="alert success">
+          <strong>The Broken-Model PR Test:</strong> To prove our branch protection works, we opened a test PR (branch
+          <code>test/broken-model-gate</code>) containing an intentionally corrupted model that violated the metamorphic
+          fire direction. GitHub Actions <code>model-gate</code> automatically failed and blocked the PR from merging!
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q2: "What is data leakage and how did your architecture guarantee zero leakage?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"Data leakage occurs when information from the target or test distribution inadvertently enters the training phase. We prevented leakage across three architectural layers:
-          1. <strong>Temporal Split:</strong> We strictly used a chronological split (Train $\le 2023$, Val $2024$, Test $2025+$) rather than random K-Fold.
-          2. <strong>Lag & Rolling Shifts:</strong> Every lag and rolling feature (e.g. <code>aqi_roll_mean_7d</code>) is strictly shifted by 1 day so day $t+1$'s target is never visible during feature aggregation.
-          3. <strong>Scaler Isolation:</strong> The <code>StandardScaler</code> was fitted exclusively on the training split, saved to disk, and reused as an immutable object during validation, test, and live inference."</em>
+        <h3>10.2 CD Workflow (<code>.github/workflows/cd.yml</code>)</h3>
+        <p>Triggered whenever a semantic version tag (e.g. <code>v1.0.2</code>) is pushed:</p>
+        <ol>
+          <li>Builds the Docker container via Buildx.</li>
+          <li>Runs Aqua Trivy vulnerability scanner (fails if any fixable Critical/High CVE is found).</li>
+          <li>Pushes multi-tagged container images to <strong>GitHub Container Registry (GHCR)</strong>:
+            <code>latest</code>, <code>v1.0.2</code>, and commit-pinned <code>sha-&lt;commit&gt;</code>.</li>
+          <li>Render automatically detects the updated image and redeploys without downtime.</li>
+        </ol>
+      </section>
+
+      <!-- 11. CLOUD DEPLOY & MONITORING -->
+      <section id="cloud">
+        <h2>11. Live Cloud Deployment &amp; Monitoring (Phase 6)</h2>
+        <p>The service is deployed live on <strong>Render Web Service PaaS</strong> in the Oregon region.</p>
+
+        <div class="card-box success">
+          <p><strong>Live Production Access Points:</strong></p>
+          <ul>
+            <li><strong>Base API:</strong> <code>https://aqi-predictor-gxbd.onrender.com</code></li>
+            <li><strong>Interactive Swagger Docs:</strong> <code>https://aqi-predictor-gxbd.onrender.com/docs</code>
+            </li>
+            <li><strong>Prometheus Metrics:</strong> <code>https://aqi-predictor-gxbd.onrender.com/metrics</code></li>
+            <li><strong>Container Image:</strong> <code>ghcr.io/suhasraghavendra/aqi-awareness-assistant:latest</code>
+            </li>
+          </ul>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q3: "What is the difference between your /health and /ready endpoints?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"In Kubernetes and modern cloud PaaS architectures, liveness and readiness serve completely different operational purposes:
-          - <code>/health</code> is a <strong>Liveness Probe</strong>. It tests whether the Python Uvicorn process is alive and accepting TCP sockets. If it returns non-200, the container orchestrator immediately kills and restarts the container.
-          - <code>/ready</code> is a <strong>Readiness Probe</strong>. It tests whether the machine learning model artifact, fitted scaler, and 45-day history seed have finished deserializing into RAM. If <code>/ready</code> returns 503, the load balancer keeps the container alive but does not route client traffic to it until it is fully warmed up."</em>
+        <h3>11.1 Real-Time Prometheus Telemetry</h3>
+        <p>The endpoint <code>/metrics</code> exposes production metrics scraped by Prometheus:</p>
+        <ul>
+          <li><code>aqi_http_requests_total</code>: Counter partitioned by endpoint, HTTP method, and status code.</li>
+          <li><code>aqi_http_request_duration_seconds</code>: High-resolution latency histogram.</li>
+          <li><code>aqi_predictions_total</code>: Counter tracking predictions served per city and model used.</li>
+          <li><code>aqi_prediction_value</code>: Histogram tracking the distribution of predicted AQI values.</li>
+          <li><code>aqi_out_of_range_total</code>: Counter tracking inputs that fall outside the historical training
+            range $[\min_{\text{train}}, \max_{\text{train}}]$.</li>
+        </ul>
+
+        <h3>11.2 The Production Runbook (Drift &amp; Retraining Protocol)</h3>
+        <p>Documented in <code>docs/RUNBOOK.md</code>:</p>
+        <ul>
+          <li><strong>Feature Drift Detection (PSI):</strong> Population Stability Index computed over a rolling
+            500-request window against <code>reference_stats.json</code>.
+            <br>$\text{PSI} < 0.1$: Normal fluctuation. <br>$0.1 \le \text{PSI} \le 0.2$: Moderate shift (log warning).
+              <br>$\text{PSI} > 0.2$: Significant feature drift (triggers P1 retraining alert).
+          </li>
+          <li><strong>Realized Accuracy Degradation:</strong> 14-day rolling realized MAE monitored against the baseline
+            validation MAE ($13.23$). If rolling MAE exceeds $1.5 \times 13.23 = 19.85$, trigger automated retraining.
+          </li>
+          <li><strong>One-Click Instant Rollback:</strong> If an incident occurs, administrators can change the Render
+            container image tag in 1 click from <code>:latest</code> back to any stable commit SHA tag (e.g.
+            <code>:sha-11cd466</code>), restoring previous verified service in &lt; 20 seconds.</li>
+        </ul>
+      </section>
+
+      <!-- 12. EVALUATOR Q&A -->
+      <section id="evaluator-qa">
+        <h2>12. Master Evaluator Q&amp;A (The Defense Bible)</h2>
+        <p>Here are the exact technical questions evaluators are most likely to ask, along with comprehensive,
+          bullet-proof answers:</p>
+
+        <div class="qa-box">
+          <div class="question">Q1: "Why did you use LightGBM instead of an LSTM, GRU, or Transformer for time-series
+            forecasting?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"We considered Deep Learning architectures (LSTM/Transformers), but empirical
+              research on tabular time-series panels (e.g. Grinsztajn et al., NeurIPS 2022) demonstrates that
+              gradient-boosted decision trees consistently outperform deep networks on tabular data with heterogeneous
+              numerical and categorical features. Furthermore, LSTMs require extensive sequence padding, are vulnerable
+              to irregular sensor dropouts, have significantly higher inference latency (&gt;100ms vs our 11ms), require
+              10x more training data, and cannot easily support strict physical monotonicity constraints. LightGBM
+              enabled exact directional monotonicity on fire/wind features while easily beating persistence in under
+              15ms."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q4: "Why did you containerize with a non-root user (UID 10001) instead of standard root?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"Running container processes as root (UID 0) violates the principle of least privilege. In the event of a container breakout vulnerability (e.g. CVE in the Linux kernel or container runtime), a root process inside the container can potentially gain root access to the host virtual machine. By enforcing a dedicated non-root user <code>appuser:appgroup</code> (UID 10001), even if an attacker achieved code execution, their capabilities are strictly bounded inside the unprivileged namespace."</em>
+        <div class="qa-box">
+          <div class="question">Q2: "What is data leakage and how did your architecture guarantee zero leakage?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"Data leakage occurs when information from the target or test distribution
+              inadvertently enters the training phase. We prevented leakage across three architectural layers:
+              1. <strong>Temporal Split:</strong> We strictly used a chronological split (Train $\le 2023$, Val $2024$,
+              Test $2025+$) rather than random K-Fold.
+              2. <strong>Lag & Rolling Shifts:</strong> Every lag and rolling feature (e.g.
+              <code>aqi_roll_mean_7d</code>) is strictly shifted by 1 day so day $t+1$'s target is never visible during
+              feature aggregation.
+              3. <strong>Scaler Isolation:</strong> The <code>StandardScaler</code> was fitted exclusively on the
+              training split, saved to disk, and reused as an immutable object during validation, test, and live
+              inference."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q5: "How does your system handle missing sensor features when a user queries the live API?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"The service requires only 3 inputs from the caller: <code>city</code>, <code>date</code>, and today's <code>aqi</code>. If meteorological or fire variables are omitted, the server automatically imputes them using the precomputed training median from <code>reference_stats.json</code>. For historical lags, the server consults its in-memory 45-day history seed (pre-seeded from <code>history_seed.parquet</code>), seamlessly maintaining continuous rolling windows."</em>
+        <div class="qa-box">
+          <div class="question">Q3: "What is the difference between your /health and /ready endpoints?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"In Kubernetes and modern cloud PaaS architectures, liveness and readiness
+              serve completely different operational purposes:
+              - <code>/health</code> is a <strong>Liveness Probe</strong>. It tests whether the Python Uvicorn process
+              is alive and accepting TCP sockets. If it returns non-200, the container orchestrator immediately kills
+              and restarts the container.
+              - <code>/ready</code> is a <strong>Readiness Probe</strong>. It tests whether the machine learning model
+              artifact, fitted scaler, and 45-day history seed have finished deserializing into RAM. If
+              <code>/ready</code> returns 503, the load balancer keeps the container alive but does not route client
+              traffic to it until it is fully warmed up."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q6: "What is Metamorphic Testing and why is it superior to traditional unit testing for ML?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"Traditional unit tests check whether a given input produces an exact pre-calculated output (an oracle). But in ML, you don't always know what the exact output AQI should be for an unseen day. Metamorphic testing tests <strong>relational properties</strong>: if we take any valid day's input and increase upstream satellite fires by $5\times$, physical domain laws dictate that predicted AQI must either increase or stay constant—it must never drop. Our metamorphic suite perturbs raw inputs, rebuilds all 103 features, and asserts a non-monotone rate $\le 5\%$. Our champion achieved a perfect $0.0\%$ non-monotone rate."</em>
+        <div class="qa-box">
+          <div class="question">Q4: "Why did you containerize with a non-root user (UID 10001) instead of standard
+            root?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"Running container processes as root (UID 0) violates the principle of least
+              privilege. In the event of a container breakout vulnerability (e.g. CVE in the Linux kernel or container
+              runtime), a root process inside the container can potentially gain root access to the host virtual
+              machine. By enforcing a dedicated non-root user <code>appuser:appgroup</code> (UID 10001), even if an
+              attacker achieved code execution, their capabilities are strictly bounded inside the unprivileged
+              namespace."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q7: "How do you detect when your deployed model needs to be retrained?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"We monitor two continuous signals:
-          1. <strong>Input Data Drift:</strong> We calculate the Population Stability Index (PSI) over a rolling 500-request window against <code>reference_stats.json</code>. If PSI exceeds 0.2, an alert flags that input distributions have drifted significantly.
-          2. <strong>Realized Prediction Error:</strong> As clients report actual AQI for day $t$ when querying day $t+1$, we track a rolling 14-day MAE. If realized MAE exceeds $1.5\times$ our validation baseline ($> 19.85$ AQI points), a P1 alert triggers our standard automated retraining pipeline (<code>dvc repro</code> followed by our 5 automated quality gates)."</em>
+        <div class="qa-box">
+          <div class="question">Q5: "How does your system handle missing sensor features when a user queries the live
+            API?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"The service requires only 3 inputs from the caller: <code>city</code>,
+              <code>date</code>, and today's <code>aqi</code>. If meteorological or fire variables are omitted, the
+              server automatically imputes them using the precomputed training median from
+              <code>reference_stats.json</code>. For historical lags, the server consults its in-memory 45-day history
+              seed (pre-seeded from <code>history_seed.parquet</code>), seamlessly maintaining continuous rolling
+              windows."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q8: "Why does the live API return degraded: true and a warning about historical gaps?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"The champion bundle's frozen history seed contains regulatory CPCB data up to March 2026. When a user requests a prediction for a future date (e.g. November 2026), there is a multi-month calendar gap between the end of the frozen seed and the requested date. Instead of crashing, the service gracefully median-fills the intermediate lags, serves the forecast, and attaches <code>degraded: true</code> and an informative warning in the JSON response. This provides production resilience while maintaining absolute transparency with the client."</em>
+        <div class="qa-box">
+          <div class="question">Q6: "What is Metamorphic Testing and why is it superior to traditional unit testing for
+            ML?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"Traditional unit tests check whether a given input produces an exact
+              pre-calculated output (an oracle). But in ML, you don't always know what the exact output AQI should be
+              for an unseen day. Metamorphic testing tests <strong>relational properties</strong>: if we take any valid
+              day's input and increase upstream satellite fires by $5\times$, physical domain laws dictate that
+              predicted AQI must either increase or stay constant—it must never drop. Our metamorphic suite perturbs raw
+              inputs, rebuilds all 103 features, and asserts a non-monotone rate $\le 5\%$. Our champion achieved a
+              perfect $0.0\%$ non-monotone rate."</em>
+          </div>
         </div>
-      </div>
 
-      <div class="qa-box">
-        <div class="question">Q9: "How do you ensure reproducibility across different developer machines?"</div>
-        <div class="answer">
-          <strong>Answer:</strong> <em>"We enforce reproducibility through five distinct tools:
-          1. <strong>DVC (Data Version Control):</strong> Hashes every stage's inputs and outputs in <code>dvc.lock</code>, backed by remote DagsHub storage.
-          2. <strong>Git Commit Lineage:</strong> Every model artifact, manifest, and MLflow run is tagged with the exact Git commit SHA.
-          3. <strong>Data-Derived Timestamps:</strong> Artifact creation timestamps are derived from the newest dataset observation (not wall-clock time), making repeated builds byte-identical.
-          4. <strong>Pinned Dependencies:</strong> Exact package versions are pinned in <code>requirements.txt</code> and <code>requirements-serve.txt</code>.
-          5. <strong>Docker:</strong> The multi-stage container ensures the exact same runtime environment in local testing, GitHub Actions runners, and Render cloud servers."</em>
+        <div class="qa-box">
+          <div class="question">Q7: "How do you detect when your deployed model needs to be retrained?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"We monitor two continuous signals:
+              1. <strong>Input Data Drift:</strong> We calculate the Population Stability Index (PSI) over a rolling
+              500-request window against <code>reference_stats.json</code>. If PSI exceeds 0.2, an alert flags that
+              input distributions have drifted significantly.
+              2. <strong>Realized Prediction Error:</strong> As clients report actual AQI for day $t$ when querying day
+              $t+1$, we track a rolling 14-day MAE. If realized MAE exceeds $1.5\times$ our validation baseline ($>
+              19.85$ AQI points), a P1 alert triggers our standard automated retraining pipeline (<code>dvc repro</code>
+              followed by our 5 automated quality gates)."</em>
+          </div>
         </div>
-      </div>
-    </section>
 
+        <div class="qa-box">
+          <div class="question">Q8: "Why does the live API return degraded: true and a warning about historical gaps?"
+          </div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"The champion bundle's frozen history seed contains regulatory CPCB data up to
+              March 2026. When a user requests a prediction for a future date (e.g. November 2026), there is a
+              multi-month calendar gap between the end of the frozen seed and the requested date. Instead of crashing,
+              the service gracefully median-fills the intermediate lags, serves the forecast, and attaches
+              <code>degraded: true</code> and an informative warning in the JSON response. This provides production
+              resilience while maintaining absolute transparency with the client."</em>
+          </div>
+        </div>
+
+        <div class="qa-box">
+          <div class="question">Q9: "How do you ensure reproducibility across different developer machines?"</div>
+          <div class="answer">
+            <strong>Answer:</strong> <em>"We enforce reproducibility through five distinct tools:
+              1. <strong>DVC (Data Version Control):</strong> Hashes every stage's inputs and outputs in
+              <code>dvc.lock</code>, backed by remote DagsHub storage.
+              2. <strong>Git Commit Lineage:</strong> Every model artifact, manifest, and MLflow run is tagged with the
+              exact Git commit SHA.
+              3. <strong>Data-Derived Timestamps:</strong> Artifact creation timestamps are derived from the newest
+              dataset observation (not wall-clock time), making repeated builds byte-identical.
+              4. <strong>Pinned Dependencies:</strong> Exact package versions are pinned in
+              <code>requirements.txt</code> and <code>requirements-serve.txt</code>.
+              5. <strong>Docker:</strong> The multi-stage container ensures the exact same runtime environment in local
+              testing, GitHub Actions runners, and Render cloud servers."</em>
+          </div>
+        </div>
+      </section>
+
+    </div>
   </div>
-</div>
 
 </body>
+
 </html>

@@ -31,6 +31,7 @@ from fastapi.responses import JSONResponse
 
 from src.service import middleware as mw
 from src.service import predictor
+from src.service.monitoring import monitor
 from src.service.schemas import (
     BatchPredictRequest,
     BatchPredictResponse,
@@ -61,6 +62,13 @@ async def lifespan(app: FastAPI):
     config_dir = os.environ.get("CONFIG_DIR")
     predictor.configure(bundle_dir, config_dir)
     predictor.load()
+    if predictor.is_ready():
+        bundle = predictor.get_bundle()
+        val_mae = bundle.manifest.get("val_metrics", {}).get("mae")
+        monitor.configure(
+            reference_stats=bundle.reference_stats,
+            val_mae_baseline=float(val_mae) if val_mae is not None else None,
+        )
     yield
 
 
@@ -72,7 +80,7 @@ app = FastAPI(
     title="AQI Awareness Assistant",
     description=(
         "Production-grade next-day Air Quality Index forecasting for 9 Indian cities. "
-        "Champion model: residual_lightgbm (val R2=0.90, test R2=0.88). "
+        "Champion model: residual_lightgbm_monotone (val R2=0.90, test R2=0.88). "
         "Data sources: XKDR CAAQM, ERA5 weather, NASA FIRMS, MoRTH Vahan."
     ),
     version="1.0.0",
@@ -183,7 +191,8 @@ async def predict(request: PredictRequest) -> PredictResponse:
     """
     _require_ready()
     _validate(request)
-    result = predictor.predict_one(request.model_dump())
+    payload = request.model_dump()
+    result = predictor.predict_one(payload)
     out_of_range = result.pop("out_of_range_fields", [])
     mw.record_prediction(
         city=result["city"],
@@ -191,6 +200,19 @@ async def predict(request: PredictRequest) -> PredictResponse:
         aqi=result["aqi_pred"],
         out_of_range_fields=out_of_range,
         model_used=result["model_used"],
+    )
+    psi_updates, realized_err, rolling_mae = monitor.observe(
+        payload=payload,
+        city=result["city"],
+        date=result["date"],
+        target_date=result["target_date"],
+        aqi_pred=result["aqi_pred"],
+    )
+    mw.record_monitoring(
+        city=result["city"],
+        psi_by_feature=psi_updates,
+        realized_abs_error=realized_err,
+        rolling_14d_mae=rolling_mae,
     )
     return PredictResponse(**result)
 
@@ -218,7 +240,7 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
     rows = [r.model_dump() for r in request.rows]
     results = predictor.predict_batch(rows)
     predictions = []
-    for result in results:
+    for row_payload, result in zip(rows, results, strict=False):
         out_of_range = result.pop("out_of_range_fields", [])
         mw.record_prediction(
             city=result["city"],
@@ -226,6 +248,19 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
             aqi=result["aqi_pred"],
             out_of_range_fields=out_of_range,
             model_used=result["model_used"],
+        )
+        psi_updates, realized_err, rolling_mae = monitor.observe(
+            payload=row_payload,
+            city=result["city"],
+            date=result["date"],
+            target_date=result["target_date"],
+            aqi_pred=result["aqi_pred"],
+        )
+        mw.record_monitoring(
+            city=result["city"],
+            psi_by_feature=psi_updates,
+            realized_abs_error=realized_err,
+            rolling_14d_mae=rolling_mae,
         )
         predictions.append(PredictResponse(**result))
     return BatchPredictResponse(predictions=predictions, rows_processed=len(predictions))

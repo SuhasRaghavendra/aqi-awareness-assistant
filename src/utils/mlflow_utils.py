@@ -9,6 +9,7 @@ dvc_data_version as required by Section 4.3 item 9 of the implementation plan.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,10 @@ from src.utils.logging_utils import get_logger
 logger = get_logger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.mlflow",
+)
 
 
 def _git_commit_full() -> str:
@@ -35,7 +40,7 @@ def _git_commit_full() -> str:
         return "unknown"
 
 
-def setup_experiment(name: str, tracking_uri: str = "sqlite:///mlflow.db") -> str:
+def setup_experiment(name: str, tracking_uri: str = DEFAULT_TRACKING_URI) -> str:
     """Create or retrieve an MLflow experiment and return its ID."""
     mlflow.set_tracking_uri(tracking_uri)
     exp = mlflow.set_experiment(name)

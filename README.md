@@ -310,6 +310,11 @@ python scripts/audit_integrity.py
 # Run DVC pipeline end-to-end
 dvc repro
 
+# Publish model and data versions to hosted DagsHub MLflow
+# Set MLFLOW_TRACKING_USERNAME and MLFLOW_TRACKING_PASSWORD first.
+python scripts/publish_data_versions.py
+python -m src.models.register_model --promote
+
 # Start local inference server
 uvicorn src.service.app:app --host 0.0.0.0 --port 8000
 
@@ -318,6 +323,35 @@ python scripts/smoke_test.py --url http://localhost:8000
 ```
 
 ---
+
+### MLflow version showcase
+
+This project uses DagsHub as a hosted MLflow registry for the version
+showcase. It does not deploy an inference service:
+
+```powershell
+$env:MLFLOW_TRACKING_URI = "https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant.mlflow"
+$env:MLFLOW_TRACKING_USERNAME = "your_dagshub_username"
+$env:MLFLOW_TRACKING_PASSWORD = "your_dagshub_token"
+python scripts/publish_data_versions.py
+python -m src.models.register_model --promote
+```
+
+Open the repository's DagsHub page and select **Experiments** or **Models**:
+[DagsHub MLflow workspace](https://dagshub.com/SuhasRaghavendra/aqi-awareness-assistant).
+
+- **Models** → `Indian-AQI-Predictor` shows each registered model version and
+  `champion`/`challenger` aliases.
+- **Experiments** → `aqi-data-versions` shows one run per distinct DVC data
+  hash and links it to the registered model versions.
+- Model-version tags include `dvc_data_version`, `dvc_data_md5`,
+  `params_sha256`, and `git_commit`.
+
+The publishing command is idempotent and records only hashes and lineage
+metadata; it does not upload datasets or deploy a production service. Each
+successful registration creates a new registry version when the bundle is
+registered again. The existing local SQLite versions are separate from the
+hosted registry and are not copied automatically.
 
 ## 10. Repository Layout
 
