@@ -130,10 +130,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
       - name: Detect DVC credentials
         id: creds
         env:
@@ -145,6 +141,10 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "DAGSHUB_TOKEN is not configured; skipping the full-data job."
           fi
+      - uses: actions/setup-python@v5
+        if: steps.creds.outputs.available == 'true'
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
         if: steps.creds.outputs.available == 'true'
         run: |
