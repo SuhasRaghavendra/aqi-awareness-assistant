@@ -142,6 +142,18 @@ def validate_semantics(observation: Observation) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+class FeedbackRequest(BaseModel):
+    city: CITIES
+    date: date_type
+    actual_aqi: float = Field(ge=0, le=500, allow_inf_nan=False)
+
+
+class FeedbackResponse(BaseModel):
+    matched: bool
+    realized_abs_error: float | None
+    rolling_14d_mae: float | None
+
+
 class PredictionInterval(BaseModel):
     lower: float = Field(..., description="10th-percentile AQI from residual quantiles.")
     median: float = Field(..., description="50th-percentile AQI from residual quantiles.")

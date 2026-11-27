@@ -87,3 +87,71 @@ def test_metrics_endpoint_exposes_drift_and_error_gauges() -> None:
         assert "aqi_feature_drift_psi" in metrics_text
         assert "aqi_realized_abs_error" in metrics_text
         assert "aqi_rolling_14d_mae" in metrics_text
+
+
+def test_monitoring_feedback_matches_once_and_updates_summary() -> None:
+    with TestClient(app) as client:
+        initial = client.get("/monitoring/summary").json()
+        assert initial["ready"]
+        assert len(initial["feature_drift"]) == 6
+        assert initial["prediction_drift"]["psi"] is None
+        assert initial["mae_alert_threshold"] == 19.85
+
+        forecast = client.post(
+            "/predict", json={"city": "Delhi", "date": "2025-01-01", "aqi": 180}
+        ).json()
+        feedback = {"city": "Delhi", "date": "2025-01-02", "actual_aqi": 220}
+        assert client.post("/feedback", json={**feedback, "actual_aqi": -1}).status_code == 422
+        assert not client.post("/feedback", json={**feedback, "city": "Mumbai"}).json()["matched"]
+        result = client.post("/feedback", json=feedback).json()
+        error = round(abs(feedback["actual_aqi"] - forecast["aqi_pred"]), 4)
+        assert result == {"matched": True, "realized_abs_error": error, "rolling_14d_mae": error}
+        assert not client.post("/feedback", json=feedback).json()["matched"]
+
+        summary = client.get("/monitoring/summary").json()
+        assert summary["total_predictions"] == 1
+        assert summary["per_city_mae"]["Delhi"] == {"mae": error, "observations": 1}
+        assert summary["rolling_14d_mae"] == error
+        assert "aqi_global_rolling_14d_mae" in client.get("/metrics").text
+
+
+def test_prediction_drift_and_optional_inputs_follow_prediction_window() -> None:
+    m = ServiceMonitor(psi_window=10)
+    reference = {"mean": 100, "std": 20}
+    m.configure({"features": {"wind_speed_10m_mean": reference}, "target_aqi": reference})
+    for _ in range(10):
+        m.observe(
+            {"wind_speed_10m_mean": 100},
+            "Delhi",
+            "2025-01-01",
+            "2025-01-02",
+            250,
+            out_of_range_fields=["aqi", "wind_speed_10m_mean"],
+        )
+    summary = m.summary()
+    assert summary["prediction_drift"]["status"] == "RED"
+    assert summary["retrain_recommended"]
+    assert summary["feature_drift"]["wind_speed_10m_mean"]["z_score"] == 0
+    assert summary["out_of_range_predictions"] == 10
+    assert summary["out_of_range_counts"] == {"aqi": 10, "wind_speed_10m_mean": 10}
+    m.observe({}, "Delhi", "2025-01-01", "2025-01-02", 250)
+    assert m.summary()["feature_drift"]["wind_speed_10m_mean"]["psi"] is None
+
+
+def test_rolling_mae_expires_by_target_date_and_alerts_on_sustained_errors() -> None:
+    m = ServiceMonitor()
+    for day in (1, 2, 3):
+        m.observe({}, "Delhi", f"2025-01-0{day}", f"2025-01-0{day + 1}", 100)
+        assert m.observe_actual("Delhi", f"2025-01-0{day + 1}", 130) == (30, 30)
+    assert m.summary()["breached_cities"] == ["Delhi"]
+    assert m.summary()["retrain_recommended"]
+
+    m.observe({}, "Mumbai", "2025-01-16", "2025-01-17", 200)
+    m.observe_actual("Mumbai", "2025-01-17", 201)
+    summary = m.summary()
+    assert summary["per_city_mae"] == {
+        "Delhi": {"mae": 30, "observations": 1},
+        "Mumbai": {"mae": 1, "observations": 1},
+    }
+    assert summary["rolling_14d_mae"] == 15.5
+    assert not summary["retrain_recommended"]

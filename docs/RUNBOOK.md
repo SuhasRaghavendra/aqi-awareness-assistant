@@ -50,6 +50,8 @@ The Air Quality Index (AQI) Forecasting Inference Service serves continuous next
 | `/predict` | `POST` | `200 OK` | Single-city prediction: returns `aqi_pred`, `category`, `category_probs`, `aqi_interval_80`, and latency. |
 | `/predict/batch` | `POST` | `200 OK` | Vectorized batch prediction for all 9 cities. |
 | `/metrics` | `GET` | `200 OK` | Prometheus scrape endpoint (requests total, latency histograms, prediction distribution, out-of-range counts). |
+| `/monitoring/summary` | `GET` | `200 OK` | Worker-local input and prediction drift, realized MAE, out-of-range counts, and active alerts. |
+| `/feedback` | `POST` | `200 OK` | Pair a measured AQI value with a pending city and target date. The response reports whether a forecast matched. |
 | `/docs` | `GET` | `200 OK` | Interactive OpenAPI / Swagger documentation. |
 
 ---
@@ -66,7 +68,13 @@ The Air Quality Index (AQI) Forecasting Inference Service serves continuous next
 ## 4. Drift Monitoring & Alerting Protocol
 
 ### 4.1 Input Feature Drift (Population Stability Index - PSI)
-Feature distributions are baselined against `reports/metrics/reference_stats.json` (computed from the training split).
+The worker monitors six inputs over its most recent 500 prediction rows.
+Each feature needs at least 10 valid values in that window. PSI uses normal
+quintiles from the loaded bundle's training reference statistics. The summary
+also reports how far each recent feature mean is from its training mean in
+training standard deviations. Prediction PSI (`aqi_prediction_drift_psi`)
+uses the same window and compares the served forecast against the training
+`target_aqi` reference.
 
 $$\text{PSI} = \sum \left( P_i - Q_i \right) \times \ln\left( \frac{P_i}{Q_i} \right)$$
 
@@ -83,9 +91,25 @@ When a feature value falls outside $[\min_{\text{train}}, \max_{\text{train}}]$,
 - **Alert Rule:** If $\text{rate}(aqi\_out\_of\_range\_total[1h]) > 5\%$ of total requests, investigate sensor calibration drift or regional anomaly.
 
 ### 4.3 Realized Model Performance Drift (Rolling 14-Day MAE)
-Clients report realized AQI for day $t$ when querying day $t+1$. The service tracks realized prediction errors.
-- **Validation MAE Baseline:** $13.23\text{ AQI points}$.
-- **Alert Rule:** If 14-day rolling realized MAE exceeds $1.5 \times \text{Validation MAE}$ ($> 19.85\text{ AQI points}$), trigger **P1 Retraining Alert**.
+The worker pairs measured AQI with the corresponding forecast by city and target
+date. Actuals arrive with the next prediction request or through `POST /feedback`.
+A retry for an already matched forecast returns `matched: false`. Each worker
+keeps its own in-memory state.
+
+The window spans the latest matched target date and the preceding 13 calendar
+days. City and global alerts require at least three matched observations in
+their respective windows. The champion validation MAE is 13.233 AQI and the
+alert threshold is 19.85 AQI.
+
+```bash
+curl -fsS http://localhost:8000/monitoring/summary
+curl -fsS http://localhost:8000/feedback \
+  -H 'Content-Type: application/json' \
+  -d '{"city":"Delhi","date":"2025-01-02","actual_aqi":180}'
+```
+
+The example feedback matches a pending Delhi forecast with target date
+`2025-01-02`.
 
 ---
 
