@@ -1,4 +1,3 @@
-
 """
 src/service/app.py
 ------------------
@@ -45,7 +44,6 @@ from src.utils.logging_utils import (
     log_audit_event,
 )
 
-
 # --------------------------------------------------
 # Logging
 # --------------------------------------------------
@@ -57,6 +55,7 @@ logger = get_logger(__name__)
 # --------------------------------------------------
 # App lifecycle
 # --------------------------------------------------
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -73,17 +72,11 @@ async def lifespan(app: FastAPI):
     if predictor.is_ready():
         bundle = predictor.get_bundle()
 
-        val_mae = (
-            bundle.manifest["model"]
-            .get("val_metrics", {})
-            .get("mae")
-        )
+        val_mae = bundle.manifest["model"].get("val_metrics", {}).get("mae")
 
         monitor.configure(
             reference_stats=bundle.reference_stats,
-            val_mae_baseline=(
-                float(val_mae) if val_mae is not None else None
-            ),
+            val_mae_baseline=(float(val_mae) if val_mae is not None else None),
         )
 
     yield
@@ -96,8 +89,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AQI Awareness Assistant",
     description=(
-        "Production-grade next-day Air Quality Index forecasting "
-        "for 9 Indian cities."
+        "Production-grade next-day Air Quality Index forecasting for 9 Indian cities. "
+        "Champion model: residual_lightgbm_monotone (val R2=0.90, test R2=0.88). "
+        "Data sources: XKDR CAAQM, ERA5 weather, NASA FIRMS, MoRTH Vahan."
     ),
     version="1.0.0",
     lifespan=lifespan,
@@ -111,6 +105,7 @@ app.add_middleware(mw.TimingMiddleware)
 # --------------------------------------------------
 # Helper functions
 # --------------------------------------------------
+
 
 def _require_ready() -> None:
     """Check whether the prediction model is loaded."""
@@ -160,19 +155,25 @@ def _record_prediction(
     if realized_err is not None:
         mw.record_accuracy_summary(monitor.summary())
 
-    # Write prediction audit log
+    # Write structured prediction audit log (stdout JSON + JSONL audit file)
     log_audit_event(
         "prediction_served",
         request_id=request_id,
         city=result["city"],
         date=result["date"],
         target_date=result["target_date"],
+        input_aqi=payload.get("aqi"),
         aqi_pred=result["aqi_pred"],
         category=result.get("category"),
+        interval_80=result.get("aqi_interval_80"),
+        model_name=result.get("model_name"),
+        model_version=result.get("model_version"),
+        alias=result.get("alias"),
         model_used=result["model_used"],
         fallback_used=result["fallback_used"],
         degraded=result.get("degraded"),
         out_of_range_fields=out_of_range,
+        latency_ms=result.get("latency_ms"),
     )
 
 
@@ -195,6 +196,7 @@ def _validate(observation) -> None:
 # General route
 # --------------------------------------------------
 
+
 @app.get("/", tags=["General"])
 async def root():
     """Welcome page with API links."""
@@ -212,6 +214,7 @@ async def root():
 # --------------------------------------------------
 # Health and readiness routes
 # --------------------------------------------------
+
 
 @app.get(
     "/health",
@@ -249,13 +252,9 @@ async def ready() -> ReadyResponse:
     return ReadyResponse(
         ready=True,
         model_name=bundle.manifest["model"]["name"],
-        model_version=str(
-            bundle.manifest.get("bundle_version", "?")
-        ),
+        model_version=str(bundle.manifest.get("bundle_version", "?")),
         features_count=bundle.feature_count,
-        history_seed_days=int(
-            bundle.manifest.get("history_seed_days", 0)
-        ),
+        history_seed_days=int(bundle.manifest.get("history_seed_days", 0)),
     )
 
 
@@ -279,6 +278,7 @@ async def metadata() -> MetadataResponse:
 # --------------------------------------------------
 # Single prediction route
 # --------------------------------------------------
+
 
 @app.post(
     "/predict",
@@ -317,6 +317,7 @@ async def predict(
 # Batch prediction route
 # --------------------------------------------------
 
+
 @app.post(
     "/predict/batch",
     response_model=BatchPredictResponse,
@@ -339,17 +340,12 @@ async def predict_batch(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
-                    "message": (
-                        f"Impossible observation values in row {index}"
-                    ),
+                    "message": (f"Impossible observation values in row {index}"),
                     "errors": problems,
                 },
             )
 
-    rows = [
-        row.model_dump()
-        for row in request.rows
-    ]
+    rows = [row.model_dump() for row in request.rows]
 
     # Generate batch predictions
     results = predictor.predict_batch(rows)
@@ -375,9 +371,7 @@ async def predict_batch(
             request_id=request_id,
         )
 
-        predictions.append(
-            PredictResponse(**result)
-        )
+        predictions.append(PredictResponse(**result))
 
     return BatchPredictResponse(
         predictions=predictions,
@@ -388,6 +382,7 @@ async def predict_batch(
 # --------------------------------------------------
 # Prometheus metrics route
 # --------------------------------------------------
+
 
 @app.get(
     "/metrics",
@@ -402,6 +397,7 @@ async def metrics():
 # --------------------------------------------------
 # Monitoring summary route
 # --------------------------------------------------
+
 
 @app.get(
     "/monitoring/summary",
@@ -419,6 +415,7 @@ async def monitoring_summary():
 # --------------------------------------------------
 # Feedback route
 # --------------------------------------------------
+
 
 @app.post(
     "/feedback",
@@ -445,9 +442,7 @@ async def feedback(
             realized_abs_error=error,
         )
 
-        mw.record_accuracy_summary(
-            monitor.summary()
-        )
+        mw.record_accuracy_summary(monitor.summary())
 
     return FeedbackResponse(
         matched=error is not None,

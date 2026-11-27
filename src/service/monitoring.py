@@ -163,27 +163,33 @@ class ServiceMonitor:
                 values = [value for value in buffer if value is not None]
                 ref = self._ref_features.get(feature)
                 psi, z_score = None, None
+                prev_status = self._feature_drift.get(feature, {}).get("status")
                 if ref and len(values) >= 10 and ref["std"] > 0:
                     psi = compute_psi(values, ref["mean"], ref["std"])
                     z_score = round((sum(values) / len(values) - ref["mean"]) / ref["std"], 6)
                     psi_updates[feature] = psi
                     severity = self._psi_status(psi)
-                    if severity in ("AMBER", "RED"):
-                        logger.warning(
-                            "input_drift_detected",
-                            extra={
-                                "event": "input_drift",
-                                "feature": feature,
-                                "psi": psi,
-                                "severity": severity,
-                                "threshold": (
-                                    self._psi_warn
-                                    if severity == "RED"
-                                    else DEFAULT_PSI_AMBER_THRESHOLD
-                                ),
-                                "window_size": len(values),
-                            },
+                    if severity in ("AMBER", "RED") and severity != prev_status:
+                        log_audit_event(
+                            "input_drift",
+                            level=30,
+                            feature=feature,
+                            psi=psi,
+                            severity=severity,
+                            threshold=(
+                                self._psi_warn if severity == "RED" else DEFAULT_PSI_AMBER_THRESHOLD
+                            ),
+                            window_size=len(values),
                         )
+                        if severity == "RED":
+                            log_audit_event(
+                                "retrain_triggered",
+                                level=30,
+                                reason="psi_breach",
+                                breached_features=[feature],
+                                breached_cities=[],
+                                recommended_action="dvc repro && pytest -m model",
+                            )
                 self._feature_drift[feature] = {
                     "psi": psi,
                     "status": self._psi_status(psi),
@@ -230,16 +236,22 @@ class ServiceMonitor:
         errors = self._abs_errors.get(city, {})
         rolling_mae = round(sum(errors.values()) / len(errors), 4) if errors else None
         if len(errors) >= 3 and rolling_mae > self.mae_threshold:
-            logger.warning(
-                "live_mae_degradation",
-                extra={
-                    "event": "mae_alert",
-                    "city": city,
-                    "realized_abs_error": error,
-                    "rolling_14d_mae": rolling_mae,
-                    "alert_threshold": self.mae_threshold,
-                    "observations": len(errors),
-                },
+            log_audit_event(
+                "mae_alert",
+                level=30,
+                city=city,
+                realized_abs_error=error,
+                rolling_14d_mae=rolling_mae,
+                alert_threshold=self.mae_threshold,
+                observations=len(errors),
+            )
+            log_audit_event(
+                "retrain_triggered",
+                level=30,
+                reason="mae_breach",
+                breached_features=[],
+                breached_cities=[city],
+                recommended_action="dvc repro && pytest -m model",
             )
         return error, rolling_mae
 
@@ -275,15 +287,7 @@ class ServiceMonitor:
                 for city, errors in self._abs_errors.items()
                 if errors
             }
-            breached_features = [
-    name for name, row in features.items()
-    if row["status"] == "RED"
-]
-
-breached_cities = [
-    city for city, row in cities.items()
-    if row["status"] == "RED"
-]
+            breached_features = [name for name, row in features.items() if row["status"] == "RED"]
             breached_cities = [
                 city
                 for city, row in cities.items()

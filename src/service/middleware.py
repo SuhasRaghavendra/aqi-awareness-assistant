@@ -114,9 +114,9 @@ class TimingMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
         except Exception as exc:  # noqa: BLE001 - log then let FastAPI handle it
             elapsed = time.perf_counter() - start
-            
-                                                  log_audit_event(
+            log_audit_event(
                 "http_request",
+                level=40,
                 request_id=request_id,
                 method=request.method,
                 path=request.url.path,
@@ -139,21 +139,14 @@ class TimingMiddleware(BaseHTTPMiddleware):
 
         response.headers[REQUEST_ID_HEADER] = request_id
 
-                log_audit_event(
+        log_audit_event(
             "http_request",
             request_id=request_id,
             method=method,
             path=endpoint,
             status_code=status_code,
             latency_ms=round(elapsed * 1000.0, 3),
-        )(
-    "http_request",
-    request_id=request_id,
-    method=method,
-    path=endpoint,
-    status_code=status_code,
-    latency_ms=round(elapsed * 1000.0, 3),
-)
+        )
 
         if _PROM_AVAILABLE:
             REQUEST_COUNT.labels(
