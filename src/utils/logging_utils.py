@@ -1,127 +1,131 @@
-"""
-src/utils/logging_utils.py
---------------------------
-Configures project-wide logging:
-  - Human-readable output to the console (coloured by level).
-  - Machine-readable JSON Lines to logs/<stage>_<timestamp>.jsonl.
 
-Every src/ script should call ``get_logger(__name__)`` (or
-``setup_logging(stage)`` once at the entry-point) before doing any work.
-"""
+"""Project-wide structured logging and JSONL audit logging."""
 
 from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-# ── ANSI colour codes for console output ──────────────────────────────────────
-_COLOURS = {
-    "DEBUG": "\033[36m",  # cyan
-    "INFO": "\033[32m",  # green
-    "WARNING": "\033[33m",  # yellow
-    "ERROR": "\033[31m",  # red
-    "CRITICAL": "\033[35m",  # magenta
-    "RESET": "\033[0m",
-}
+_RESERVED = set(
+    logging.LogRecord("", 0, "", 0, "", (), None).__dict__
+)
+
+_LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
 
 
-class _ColouredFormatter(logging.Formatter):
-    """Console formatter with ANSI colour by level."""
+class JsonFormatter(logging.Formatter):
+    """Format each stdout record as a single-line JSON object."""
 
-    FMT = "%(asctime)s  %(levelname)-8s  %(name)s  —  %(message)s"
-    DATE_FMT = "%Y-%m-%d %H:%M:%S"
-
-    def format(self, record: logging.LogRecord) -> str:  # noqa: A003
-        colour = _COLOURS.get(record.levelname, "")
-        reset = _COLOURS["RESET"]
-        record.levelname = f"{colour}{record.levelname}{reset}"
-        return super().format(record)
-
-
-class _JsonlHandler(logging.Handler):
-    """Appends one JSON object per log record to a .jsonl file."""
-
-    def __init__(self, path: Path, stage: str, extra: dict[str, Any] | None = None) -> None:
-        super().__init__()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        self._fh = path.open("a", encoding="utf-8")
-        self._stage = stage
-        self._extra = extra or {}
-
-    def emit(self, record: logging.LogRecord) -> None:
+    def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
-            "stage": self._stage,
+            "timestamp": datetime.fromtimestamp(
+                record.created, tz=UTC
+            ).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
         }
+
+        for key, value in vars(record).items():
+            if key not in _RESERVED and not key.startswith("_"):
+                payload[key] = value
+
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
-        payload.update(self._extra)
-        # Merge any extra keys set via logger.info("msg", extra={"key": val})
-        for key in vars(record):
-            if key not in logging.LogRecord.__dict__ and not key.startswith("_"):
-                payload[key] = getattr(record, key)
+
+        return json.dumps(payload, default=str)
+
+
+class JsonlAuditHandler(logging.Handler):
+    """Append structured audit events to a JSON Lines file."""
+
+    def __init__(self, path: Path) -> None:
+        super().__init__()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.path = path
+        self._file = path.open("a", encoding="utf-8")
+
+    def emit(self, record: logging.LogRecord) -> None:
+        payload: dict[str, Any] = {
+            "timestamp": datetime.fromtimestamp(
+                record.created, tz=UTC
+            ).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+
+        for key, value in vars(record).items():
+            if key not in _RESERVED and not key.startswith("_"):
+                payload[key] = value
+
         try:
-            self._fh.write(json.dumps(payload, default=str) + "\n")
-            self._fh.flush()
-        except Exception:  # noqa: BLE001
+            self._file.write(json.dumps(payload, default=str) + "\n")
+            self._file.flush()
+        except Exception:
             self.handleError(record)
 
     def close(self) -> None:
         try:
-            self._fh.close()
+            self._file.close()
         finally:
             super().close()
 
 
-class JsonFormatter(logging.Formatter):
-    """Render each log record as a single JSON object (stdout-friendly)."""
-
-    _RESERVED = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
-
-    def format(self, record: logging.LogRecord) -> str:
-        payload: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-        for key, value in vars(record).items():
-            if key not in self._RESERVED and not key.startswith("_"):
-                payload[key] = value
-        if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
-        return json.dumps(payload, default=str)
-
-
 def configure_json_logging(level: int = logging.INFO) -> None:
-    """Install one JSON stdout handler on the root logger (idempotent).
+    """Configure JSON-formatted stdout logging."""
 
-    Used by the FastAPI service so request-id middleware can emit structured
-    JSON logs without each module knowing the format.
-    """
     root = logging.getLogger()
+
     if getattr(root, "_aqi_json_configured", False):
         return
+
     for handler in list(root.handlers):
         root.removeHandler(handler)
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     root.addHandler(handler)
     root.setLevel(level)
-    root._aqi_json_configured = True  # type: ignore[attr-defined]
+    root._aqi_json_configured = True
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+def get_audit_logger() -> logging.Logger:
+    """Return the dedicated JSONL audit logger."""
 
-_LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
-_configured_stages: set[str] = set()
+    logger = logging.getLogger("aqi.audit")
+
+    if getattr(logger, "_aqi_audit_configured", False):
+        return logger
+
+    path = Path(
+        os.environ.get(
+            "PREDICTION_LOG_PATH",
+            str(_LOG_DIR / "predictions_audit.jsonl"),
+        )
+    )
+
+    handler = JsonlAuditHandler(path)
+    handler.setLevel(logging.INFO)
+
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = True
+    logger._aqi_audit_configured = True
+
+    return logger
+
+
+def log_audit_event(event: str, **fields: Any) -> None:
+    """Write one structured event to stdout and the audit stream."""
+
+    logger = get_audit_logger()
+    logger.info(event, extra={"event": event, **fields})
 
 
 def setup_logging(
@@ -132,69 +136,42 @@ def setup_logging(
     file_level: int = logging.DEBUG,
     extra: dict[str, Any] | None = None,
 ) -> logging.Logger:
-    """Configure logging for *stage* and return the root-level logger for it.
-
-    Call this **once** at the entry point of each script/module.  Subsequent
-    calls with the same stage name are no-ops (idempotent).
-
-    Parameters
-    ----------
-    stage:
-        Short identifier for the pipeline stage (e.g. ``"download_openaq"``).
-        Used as the JSONL filename prefix and included in every log record.
-    log_dir:
-        Directory to write the JSONL file into.  Defaults to ``<repo>/logs/``.
-    console_level:
-        Minimum level for console output (default ``INFO``).
-    file_level:
-        Minimum level for JSONL file output (default ``DEBUG``).
-    extra:
-        Static key-value pairs to include in every JSON record (e.g.
-        ``{"git_commit": "abc1234"}``).
-
-    Returns
-    -------
-    logging.Logger
-        A logger named ``stage``.
-    """
-    if stage in _configured_stages:
-        return logging.getLogger(stage)
+    """Maintain compatibility with existing logging calls."""
 
     logger = logging.getLogger(stage)
+
+    if getattr(logger, "_aqi_stage_configured", False):
+        return logger
+
     logger.setLevel(min(console_level, file_level))
     logger.propagate = False
 
-    # Console handler
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(console_level)
-    fmt = _ColouredFormatter(_ColouredFormatter.FMT, datefmt=_ColouredFormatter.DATE_FMT)
-    ch.setFormatter(fmt)
-    logger.addHandler(ch)
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(console_level)
+    console.setFormatter(JsonFormatter())
+    logger.addHandler(console)
 
-    # JSONL file handler
-    ts = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
-    log_path = (log_dir or _LOG_DIR) / f"{stage}_{ts}.jsonl"
-    fh = _JsonlHandler(log_path, stage=stage, extra=extra)
-    fh.setLevel(file_level)
-    logger.addHandler(fh)
+    timestamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    path = (log_dir or _LOG_DIR) / f"{stage}_{timestamp}.jsonl"
 
-    _configured_stages.add(stage)
-    logger.debug("Logging initialised for stage '%s' -> %s", stage, log_path)
+    handler = JsonlAuditHandler(path)
+    handler.setLevel(file_level)
+    logger.addHandler(handler)
+
+    logger._aqi_stage_configured = True
+
+    if extra:
+        logger.debug("Logging metadata configured", extra=extra)
+
     return logger
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Return a logger for *name* (e.g. ``__name__``).
+    """Return a named project logger."""
 
-    If the root logger for the enclosing stage has not been configured yet,
-    this falls back to a basic console-only logger so callers never crash.
-    """
     logger = logging.getLogger(name)
-    if not logger.handlers and not logging.getLogger().handlers:
-        # Minimal fallback so imports don't silently lose messages
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(asctime)s  %(levelname)-8s  %(name)s  —  %(message)s",
-            stream=sys.stdout,
-        )
+
+    if not logging.getLogger().handlers:
+        configure_json_logging()
+
     return logger

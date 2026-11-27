@@ -22,7 +22,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.service.monitoring import MONITORED_FEATURES
 from src.service.schemas import CITIES
-from src.utils.logging_utils import get_logger
+from src.utils.logging_utils import get_logger, log_audit_event
 
 logger = get_logger(__name__)
 
@@ -114,17 +114,15 @@ class TimingMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
         except Exception as exc:  # noqa: BLE001 - log then let FastAPI handle it
             elapsed = time.perf_counter() - start
-            logger.exception(
-                "http_request_failed",
-                extra={
-                    "event": "http_request",
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status_code": 500,
-                    "latency_ms": round(elapsed * 1000.0, 3),
-                    "error": str(exc),
-                },
+            
+                                                  log_audit_event(
+                "http_request",
+                request_id=request_id,
+                method=request.method,
+                path=request.url.path,
+                status_code=500,
+                latency_ms=round(elapsed * 1000.0, 3),
+                error=str(exc),
             )
             if _PROM_AVAILABLE:
                 REQUEST_COUNT.labels(
@@ -141,17 +139,21 @@ class TimingMiddleware(BaseHTTPMiddleware):
 
         response.headers[REQUEST_ID_HEADER] = request_id
 
-        logger.info(
+                log_audit_event(
             "http_request",
-            extra={
-                "event": "http_request",
-                "request_id": request_id,
-                "method": method,
-                "path": endpoint,
-                "status_code": status_code,
-                "latency_ms": round(elapsed * 1000.0, 3),
-            },
-        )
+            request_id=request_id,
+            method=method,
+            path=endpoint,
+            status_code=status_code,
+            latency_ms=round(elapsed * 1000.0, 3),
+        )(
+    "http_request",
+    request_id=request_id,
+    method=method,
+    path=endpoint,
+    status_code=status_code,
+    latency_ms=round(elapsed * 1000.0, 3),
+)
 
         if _PROM_AVAILABLE:
             REQUEST_COUNT.labels(

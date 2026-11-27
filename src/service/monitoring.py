@@ -16,7 +16,7 @@ from collections import Counter, deque
 from datetime import date as calendar_date
 from typing import Any
 
-from src.utils.logging_utils import get_logger
+from src.utils.logging_utils import get_logger, log_audit_event
 
 logger = get_logger(__name__)
 
@@ -275,7 +275,15 @@ class ServiceMonitor:
                 for city, errors in self._abs_errors.items()
                 if errors
             }
-            breached_features = [name for name, row in features.items() if row["status"] == "RED"]
+            breached_features = [
+    name for name, row in features.items()
+    if row["status"] == "RED"
+]
+
+breached_cities = [
+    city for city, row in cities.items()
+    if row["status"] == "RED"
+]
             breached_cities = [
                 city
                 for city, row in cities.items()
