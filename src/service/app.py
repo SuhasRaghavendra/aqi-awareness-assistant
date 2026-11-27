@@ -21,10 +21,11 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from src.service import middleware as mw
 from src.service import predictor
+from src.service.dashboard import DASHBOARD_HTML
 from src.service.monitoring import monitor
 from src.service.schemas import (
     BatchPredictRequest,
@@ -143,6 +144,7 @@ def _record_prediction(
         target_date=result["target_date"],
         aqi_pred=result["aqi_pred"],
         out_of_range_fields=out_of_range,
+        latency_ms=result.get("latency_ms"),
     )
 
     mw.record_monitoring(
@@ -204,6 +206,7 @@ async def root():
     return {
         "message": "Welcome to the AQI Awareness Assistant API",
         "docs_url": "/docs",
+        "dashboard_url": "/dashboard",
         "health_url": "/health",
         "ready_url": "/ready",
         "metadata_url": "/metadata",
@@ -397,6 +400,16 @@ async def metrics():
 # --------------------------------------------------
 # Monitoring summary route
 # --------------------------------------------------
+
+
+@app.get(
+    "/dashboard",
+    response_class=HTMLResponse,
+    tags=["Observability"],
+)
+async def dashboard() -> HTMLResponse:
+    """Serve the built-in live performance and drift monitoring dashboard."""
+    return HTMLResponse(content=DASHBOARD_HTML)
 
 
 @app.get(

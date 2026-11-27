@@ -1,0 +1,53 @@
+groups:
+  - name: aqi_mlops_alerts
+    interval: 30s
+    rules:
+      - alert: AQIHighFeatureDriftPSI
+        expr: aqi_feature_drift_psi > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          pillar: monitoring
+        annotations:
+          summary: "High input feature drift detected (PSI > 0.2)"
+          description: "Feature {{ $labels.feature }} PSI is {{ $value }} (threshold 0.20). Trigger retraining review."
+
+      - alert: AQIHighPredictionDriftPSI
+        expr: aqi_prediction_drift_psi > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          pillar: monitoring
+        annotations:
+          summary: "High prediction output drift detected (PSI > 0.2)"
+          description: "Predicted AQI distribution PSI is {{ $value }} (threshold 0.20)."
+
+      - alert: AQIHighRollingMAE
+        expr: aqi_rolling_14d_mae > 19.85
+        for: 15m
+        labels:
+          severity: critical
+          pillar: monitoring
+        annotations:
+          summary: "Realized 14-day rolling MAE exceeded 1.5x validation baseline"
+          description: "City {{ $labels.city }} rolling 14-day MAE is {{ $value }} AQI points (limit 19.85)."
+
+      - alert: AQIHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(aqi_http_request_duration_seconds_bucket{endpoint="/predict"}[5m])) by (le)) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          pillar: sla
+        annotations:
+          summary: "Single-row /predict p95 latency exceeded 50 ms SLA budget"
+          description: "Current p95 latency is {{ $value }}s (budget 0.05s)."
+
+      - alert: AQIFallbackSpike
+        expr: sum(rate(aqi_predictions_total{fallback="True"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+          pillar: reliability
+        annotations:
+          summary: "Persistence fallback activated in production inference"
+          description: "The champion model fell back to persistence predictions."

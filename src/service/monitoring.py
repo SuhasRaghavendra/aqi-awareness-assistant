@@ -91,6 +91,7 @@ class ServiceMonitor:
         self._feature_drift: dict[str, dict[str, Any]] = {}
         self._ref_target: dict[str, float] = {}
         self._outputs: deque[float] = deque(maxlen=psi_window)
+        self._latencies: deque[float] = deque(maxlen=psi_window)
         self._prediction_psi: float | None = None
         self._total_predictions = 0
         self._out_of_range_predictions = 0
@@ -119,6 +120,7 @@ class ServiceMonitor:
                 buf.clear()
             self._feature_drift.clear()
             self._outputs.clear()
+            self._latencies.clear()
             self._prediction_psi = None
             self._out_of_range_predictions = 0
             self._out_of_range_fields.clear()
@@ -136,6 +138,7 @@ class ServiceMonitor:
         aqi_pred: float,
         *,
         out_of_range_fields: list[str] | tuple[str, ...] = (),
+        latency_ms: float | None = None,
     ) -> tuple[dict[str, float], float | None, float | None]:
         """Record one inference request and return (psi_by_feature, abs_error, rolling_mae)."""
         psi_updates: dict[str, float] = {}
@@ -144,6 +147,8 @@ class ServiceMonitor:
 
         with self._lock:
             self._total_predictions += 1
+            if latency_ms is not None and math.isfinite(latency_ms):
+                self._latencies.append(float(latency_ms))
             if out_of_range_fields:
                 self._out_of_range_predictions += 1
                 self._out_of_range_fields.update(set(out_of_range_fields))
@@ -310,8 +315,14 @@ class ServiceMonitor:
             global_mae = round(sum(errors) / len(errors), 4) if errors else None
             if len(errors) >= 3 and global_mae > self.mae_threshold:
                 alerts.append({"type": "mae_alert", "scope": "global", "severity": "RED"})
+            p95_latency = None
+            if self._latencies:
+                ordered = sorted(self._latencies)
+                idx = min(len(ordered) - 1, math.ceil(0.95 * len(ordered)) - 1)
+                p95_latency = round(ordered[max(0, idx)], 3)
             return {
                 "total_predictions": self._total_predictions,
+                "p95_latency_ms": p95_latency,
                 "rolling_14d_mae": global_mae,
                 "mae_alert_threshold": self.mae_threshold,
                 "val_mae_baseline": self._val_mae,

@@ -30,6 +30,7 @@ services:
     profiles: [monitoring]
     volumes:
       - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./configs/prometheus_alerts.yml:/etc/prometheus/prometheus_alerts.yml:ro
     ports:
       - "9090:9090"
     depends_on:
@@ -41,6 +42,9 @@ services:
     profiles: [monitoring]
     ports:
       - "3000:3000"
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
