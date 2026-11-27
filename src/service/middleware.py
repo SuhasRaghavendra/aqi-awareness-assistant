@@ -15,10 +15,13 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import get_args
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.service.monitoring import MONITORED_FEATURES
+from src.service.schemas import CITIES
 from src.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -70,6 +73,14 @@ try:
         "aqi_feature_drift_psi",
         "Rolling Population Stability Index (PSI) per input feature (warn > 0.2)",
         ["feature"],
+    )
+    PREDICTION_DRIFT_PSI = Gauge(
+        "aqi_prediction_drift_psi",
+        "Rolling PSI of forecasts compared with the training target AQI distribution",
+    )
+    ROLLING_GLOBAL_MAE = Gauge(
+        "aqi_global_rolling_14d_mae",
+        "Rolling 14-day MAE across all matched city-day observations",
     )
     REALIZED_ABS_ERROR = Gauge(
         "aqi_realized_abs_error",
@@ -201,14 +212,28 @@ def record_monitoring(
     psi_by_feature: dict[str, float] | None = None,
     realized_abs_error: float | None = None,
     rolling_14d_mae: float | None = None,
+    prediction_psi: float | None = None,
 ) -> None:
     """Update Prometheus drift (PSI) and live realized-error gauges."""
     if not _PROM_AVAILABLE:
         return
-    if psi_by_feature:
-        for feature, psi in psi_by_feature.items():
-            FEATURE_DRIFT_PSI.labels(feature=feature).set(float(psi))
+    if psi_by_feature is not None:
+        for feature in MONITORED_FEATURES:
+            FEATURE_DRIFT_PSI.labels(feature=feature).set(psi_by_feature.get(feature, float("nan")))
+    if prediction_psi is not None:
+        PREDICTION_DRIFT_PSI.set(prediction_psi)
     if realized_abs_error is not None:
         REALIZED_ABS_ERROR.labels(city=city).set(float(realized_abs_error))
     if rolling_14d_mae is not None:
         ROLLING_14D_MAE.labels(city=city).set(float(rolling_14d_mae))
+
+
+def record_accuracy_summary(summary: dict) -> None:
+    """Publish the bounded calendar window, including expired city series."""
+    if not _PROM_AVAILABLE:
+        return
+    cities = summary["per_city_mae"]
+    for city in get_args(CITIES):
+        ROLLING_14D_MAE.labels(city=city).set(cities.get(city, {}).get("mae", float("nan")))
+    global_mae = summary["rolling_14d_mae"]
+    ROLLING_GLOBAL_MAE.set(global_mae if global_mae is not None else float("nan"))

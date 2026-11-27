@@ -11,6 +11,8 @@ GET  /metadata        Model version, metrics, gates, feature count.
 POST /predict         Single city-day prediction.
 POST /predict/batch   Vectorised batch (up to 63 rows - 9 cities x 7 days).
 GET  /metrics         Prometheus exposition page.
+GET  /monitoring/summary  Current drift and accuracy metrics.
+POST /feedback        Submit realized AQI for a target date.
 
 Usage (local dev)
 -----------------
@@ -35,6 +37,8 @@ from src.service.monitoring import monitor
 from src.service.schemas import (
     BatchPredictRequest,
     BatchPredictResponse,
+    FeedbackRequest,
+    FeedbackResponse,
     HealthResponse,
     MetadataResponse,
     PredictRequest,
@@ -62,9 +66,10 @@ async def lifespan(app: FastAPI):
     config_dir = os.environ.get("CONFIG_DIR")
     predictor.configure(bundle_dir, config_dir)
     predictor.load()
+    monitor.reset()
     if predictor.is_ready():
         bundle = predictor.get_bundle()
-        val_mae = bundle.manifest.get("val_metrics", {}).get("mae")
+        val_mae = bundle.manifest["model"].get("val_metrics", {}).get("mae")
         monitor.configure(
             reference_stats=bundle.reference_stats,
             val_mae_baseline=float(val_mae) if val_mae is not None else None,
@@ -106,6 +111,33 @@ def _require_ready() -> None:
         )
 
 
+def _record_prediction(payload: dict, result: dict) -> None:
+    out_of_range = result.pop("out_of_range_fields", [])
+    mw.record_prediction(
+        city=result["city"],
+        fallback=result["fallback_used"],
+        aqi=result["aqi_pred"],
+        out_of_range_fields=out_of_range,
+        model_used=result["model_used"],
+    )
+    psi_updates, realized_err, _ = monitor.observe(
+        payload=payload,
+        city=result["city"],
+        date=result["date"],
+        target_date=result["target_date"],
+        aqi_pred=result["aqi_pred"],
+        out_of_range_fields=out_of_range,
+    )
+    mw.record_monitoring(
+        city=result["city"],
+        psi_by_feature=psi_updates,
+        prediction_psi=monitor.prediction_psi(),
+        realized_abs_error=realized_err,
+    )
+    if realized_err is not None:
+        mw.record_accuracy_summary(monitor.summary())
+
+
 def _validate(observation) -> None:
     """Reject physically impossible values with HTTP 400 (not schema 422)."""
     problems = validate_semantics(observation)
@@ -130,6 +162,7 @@ async def root():
         "health_url": "/health",
         "ready_url": "/ready",
         "metadata_url": "/metadata",
+        "monitoring_url": "/monitoring/summary",
     }
 
 
@@ -193,27 +226,7 @@ async def predict(request: PredictRequest) -> PredictResponse:
     _validate(request)
     payload = request.model_dump()
     result = predictor.predict_one(payload)
-    out_of_range = result.pop("out_of_range_fields", [])
-    mw.record_prediction(
-        city=result["city"],
-        fallback=result["fallback_used"],
-        aqi=result["aqi_pred"],
-        out_of_range_fields=out_of_range,
-        model_used=result["model_used"],
-    )
-    psi_updates, realized_err, rolling_mae = monitor.observe(
-        payload=payload,
-        city=result["city"],
-        date=result["date"],
-        target_date=result["target_date"],
-        aqi_pred=result["aqi_pred"],
-    )
-    mw.record_monitoring(
-        city=result["city"],
-        psi_by_feature=psi_updates,
-        realized_abs_error=realized_err,
-        rolling_14d_mae=rolling_mae,
-    )
+    _record_prediction(payload, result)
     return PredictResponse(**result)
 
 
@@ -241,27 +254,7 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
     results = predictor.predict_batch(rows)
     predictions = []
     for row_payload, result in zip(rows, results, strict=False):
-        out_of_range = result.pop("out_of_range_fields", [])
-        mw.record_prediction(
-            city=result["city"],
-            fallback=result["fallback_used"],
-            aqi=result["aqi_pred"],
-            out_of_range_fields=out_of_range,
-            model_used=result["model_used"],
-        )
-        psi_updates, realized_err, rolling_mae = monitor.observe(
-            payload=row_payload,
-            city=result["city"],
-            date=result["date"],
-            target_date=result["target_date"],
-            aqi_pred=result["aqi_pred"],
-        )
-        mw.record_monitoring(
-            city=result["city"],
-            psi_by_feature=psi_updates,
-            realized_abs_error=realized_err,
-            rolling_14d_mae=rolling_mae,
-        )
+        _record_prediction(row_payload, result)
         predictions.append(PredictResponse(**result))
     return BatchPredictResponse(predictions=predictions, rows_processed=len(predictions))
 
@@ -270,3 +263,22 @@ async def predict_batch(request: BatchPredictRequest) -> BatchPredictResponse:
 async def metrics():
     """Prometheus metrics exposition endpoint."""
     return mw.metrics_response()
+
+
+@app.get("/monitoring/summary", tags=["Observability"])
+async def monitoring_summary():
+    """Return monitoring statistics from this API worker."""
+    return {**monitor.summary(), "ready": predictor.is_ready()}
+
+
+@app.post("/feedback", response_model=FeedbackResponse, tags=["Observability"])
+async def feedback(request: FeedbackRequest) -> FeedbackResponse:
+    """Match a measured AQI value to its city and forecast target date."""
+    _require_ready()
+    error, mae = monitor.observe_actual(request.city, request.date.isoformat(), request.actual_aqi)
+    if error is not None:
+        mw.record_monitoring(request.city, realized_abs_error=error)
+        mw.record_accuracy_summary(monitor.summary())
+    return FeedbackResponse(
+        matched=error is not None, realized_abs_error=error, rolling_14d_mae=mae
+    )
